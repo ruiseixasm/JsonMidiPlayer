@@ -1,10 +1,19 @@
 # List all available generators command: cmake --help
-# Run cmake with a specific generated selected: cmake -g "MinGW Makefiles" ..
+# Run cmake with a specific generator selected: cmake -g "MinGW Makefiles" ..
 cmake_minimum_required(VERSION 3.25)
 project(MidiJsonPlayer)
 
-# Add all source files
-file(GLOB SOURCES "*.cpp")
+# Include directories
+include_directories(include)
+
+# Add main.cpp explicitly
+set(SOURCES main.cpp)
+
+# Add all source files from the src directory
+file(GLOB SRC_SOURCES "src/*.cpp")
+
+# Combine all sources
+list(APPEND SOURCES ${SRC_SOURCES})
 
 # Specify the executable name
 set(EXECUTABLE_NAME "MidiJsonPlayer.out")

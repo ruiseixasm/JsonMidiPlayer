@@ -3,6 +3,9 @@
 #include <algorithm>
 #include <nlohmann/json.hpp> // Include the JSON library
 
+// For convenience
+using json = nlohmann::json;
+
 // Define the Item class
 class Item {
 public:
@@ -43,6 +46,30 @@ int main() {
     for (const auto& item : itemList) {
         std::cout << item << std::endl;
     }
+
+
+    // Create a JSON object
+    json j;
+    j["name"] = "John";
+    j["age"] = 30;
+    j["city"] = "New York";
+    
+    // Output the JSON object
+    std::cout << j.dump(4) << std::endl; // Pretty print with 4 spaces indent
+    
+    // Parse a JSON string
+    std::string jsonString = R"({"name": "Jane", "age": 25, "city": "San Francisco"})";
+    json parsedJson = json::parse(jsonString);
+    
+    // Output parsed JSON object
+    std::cout << "Name: " << parsedJson["name"] << std::endl;
+    std::cout << "Age: " << parsedJson["age"] << std::endl;
+    std::cout << "City: " << parsedJson["city"] << std::endl;
+    
+    // Access and modify JSON values
+    parsedJson["age"] = 26;
+    std::cout << parsedJson.dump(4) << std::endl;
+    
 
     return 0;
 }

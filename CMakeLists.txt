@@ -4,7 +4,7 @@ cmake_minimum_required(VERSION 3.25)
 project(MidiJsonPlayer)
 
 # Include directories
-include_directories(include)
+include_directories(include single_include)
 
 # Add main.cpp explicitly
 set(SOURCES main.cpp)

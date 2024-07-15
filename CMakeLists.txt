@@ -33,6 +33,7 @@ list(APPEND SOURCES ${SRC_SOURCES})
 # Specify the executable name
 if (WIN32) # LINUX is new for CMake VERSION 3.25
     set(EXECUTABLE_NAME "MidiJsonPlayer")
+    add_compile_definitions(__WINDOWS_MM__)
 else()
     set(EXECUTABLE_NAME "MidiJsonPlayer.out")
 endif()

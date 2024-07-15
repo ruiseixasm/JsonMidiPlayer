@@ -13,6 +13,10 @@ include_directories(include single_include)
 # Add main.cpp explicitly
 set(SOURCES main.cpp)
 
+#
+# NEED TO REBUILD THE ENTIRE BUILD EACH TIME A NEW .CPP FILE IS ADDED!!!
+#
+
 # Add all source files from the src directory
 file(GLOB SRC_SOURCES "src/*.cpp")
 
@@ -20,7 +24,7 @@ file(GLOB SRC_SOURCES "src/*.cpp")
 list(APPEND SOURCES ${SRC_SOURCES})
 
 # Specify the executable name
-if (WIN32) # LINUX is new for CMake VERSSION 3.25
+if (WIN32) # LINUX is new for CMake VERSION 3.25
     set(EXECUTABLE_NAME "MidiJsonPlayer")
 else()
     set(EXECUTABLE_NAME "MidiJsonPlayer.out")

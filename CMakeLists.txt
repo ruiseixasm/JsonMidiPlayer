@@ -41,3 +41,22 @@ target_compile_options(${EXECUTABLE_NAME} PRIVATE -g)
 
 # Disable optimization for debug builds
 target_compile_options(${EXECUTABLE_NAME} PRIVATE -O0)
+
+# Check if we are on Windows
+if (WIN32)
+    # Find and link the winmm library
+    target_link_libraries(${EXECUTABLE_NAME} winmm)
+else()
+    # Find and link ALSA library
+    find_package(ALSA REQUIRED)
+    if (ALSA_FOUND)
+        include_directories(${ALSA_INCLUDE_DIRS})
+        target_link_libraries(${EXECUTABLE_NAME} ${ALSA_LIBRARIES})
+        add_definitions(-D__LINUX_ALSA__)
+    endif()
+
+    # # Find and link RtMidi library
+    # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/path/to/rtaudio)
+    # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/path/to/rtaudio/include)
+    # target_link_libraries(${EXECUTABLE_NAME} rtmidi)
+endif()

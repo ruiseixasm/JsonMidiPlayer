@@ -7,6 +7,13 @@ project(MidiJsonPlayer
         HOMEPAGE_URL "https://github.com/ruiseixasm/MidiJsonPlayer"
         LANGUAGES CXX)
 
+# # API Options
+# option(RTMIDI_API_JACK "Compile with JACK support." ${HAVE_JACK})
+# option(RTMIDI_API_WINMM "Compile with WINMM support." ${WIN32})
+# option(RTMIDI_API_CORE "Compile with CoreMIDI support." ${APPLE})
+# option(RTMIDI_API_ALSA "Compile with ALSA support." ${ALSA})
+# option(RTMIDI_API_AMIDI "Compile with Android support." ${ANDROID})
+
 # Include directories
 include_directories(include single_include)
 
@@ -43,9 +50,23 @@ target_compile_options(${EXECUTABLE_NAME} PRIVATE -g)
 target_compile_options(${EXECUTABLE_NAME} PRIVATE -O0)
 
 # Check if we are on Windows
-if (WIN32)
-    # Find and link the winmm library
-    target_link_libraries(${EXECUTABLE_NAME} winmm)
+if (WIN32)  # Try to load ASIO SDK
+    # find_package(ASIO)
+    # if(TARGET ASIO::SDK)
+    #     target_link_libraries(openshot-audio PRIVATE ASIO::SDK)
+    #     set(NEED_ASIO TRUE)
+    # endif()
+    # Order here can be important!
+    # For example, winmm.lib must come before kernel32.lib (if linked)
+    # or older 32-bit windows versions will have linking issues for
+    # certain entry points
+    target_link_libraries(${EXECUTABLE_NAME} PRIVATE
+            winmm.lib
+            ws2_32.lib
+            wininet.lib
+            version.lib
+            Shlwapi.dll
+        )
 else()
     # Find and link ALSA library
     find_package(ALSA REQUIRED)

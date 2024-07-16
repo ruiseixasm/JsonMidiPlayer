@@ -141,86 +141,24 @@ private:
     const unsigned char midi_message[3];
 
 public:
-    MidiPin(double time_milliseconds, unsigned char command, unsigned char param_1, unsigned char param_2)
-        : time_ms(time_milliseconds), midi_message{command, param_1, param_2} { }
+    MidiPin(double time_milliseconds, MidiDevice *midi_device, unsigned char command, unsigned char param_1, unsigned char param_2)
+        : time_ms(time_milliseconds), midi_device(midi_device), midi_message{command, param_1, param_2} { }
 
     double getTime() const {
         return time_ms;
     }
 
     void pluckTooth() {
-        if (midi_device != nullptr) {
-            // Send the MIDI message
+        if (midi_device != nullptr)
             midi_device->sendMessage(midi_message, 3);
-        }
-    }
-
-    const unsigned char* getMidiMessage() const {
-        return midi_message;
     }
 };
 
 
 int main() {
 
-    std::list<MidiPin> midiToProcess;
-    std::list<MidiPin> midiProcessed;
-    std::list<MidiPin> midiRejected;
-
-    // Open the JSON file
-    std::ifstream jsonFile("../midiSimpleNotes.json");
-    if (!jsonFile.is_open()) {
-        std::cerr << "Could not open the file!" << std::endl;
-        return 1;
-    }
-
-    // Parse the JSON files
-    nlohmann::json jsonData;
-    jsonFile >> jsonData;
-    // Close the JSON file
-    jsonFile.close();
-
-    double time_milliseconds;
-    unsigned char command;
-    unsigned char param_1;
-    unsigned char param_2;
-    
-    for (auto jsonElement : jsonData)
-    {
-        // Create an API with the default API
-        try
-        {
-            time_milliseconds = jsonElement["time_ms"];
-            command = jsonElement["midi_message"]["command"];
-            param_1 = jsonElement["midi_message"]["param_1"];
-            param_2 = jsonElement["midi_message"]["param_2"];
-        }
-        catch (nlohmann::json::parse_error& ex)
-        {
-            std::cerr << "parse error at byte " << ex.byte << std::endl;
-            continue;
-        }
-
-        // Access and print the JSON data
-        std::cout << "Time: " << time_milliseconds << " | ";
-        std::cout << "Command: " << (int)command << std::endl;
-
-
-
-        if (time_milliseconds >= 0 && command >= 128 && command <= 240
-            && param_1 < 128 && param_2 < 128) {
-
-            midiToProcess.push_back(MidiPin(time_milliseconds, command, param_1, param_2));
-
-        } else {
-
-            midiRejected.push_back(MidiPin(time_milliseconds, command, param_1, param_2));
-        }
-    }
- 
-    // Sort the list by time in ascendent order
-    midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) { return a.getTime() < b.getTime(); });
-
+    // List available MIDI output ports
+    std::vector<MidiDevice> midi_devices;
 
     RtMidiOut midiOut;
     RtMidiOut midiOut2;
@@ -229,8 +167,6 @@ int main() {
     
     try {
 
-        // List available MIDI output ports
-        std::vector<MidiDevice> midi_devices;
         unsigned int nPorts = midiOut.getPortCount();
         if (nPorts == 0) {
             std::cout << "No MIDI output ports available.\n";
@@ -262,7 +198,76 @@ int main() {
         return EXIT_FAILURE;
     }
 
+    std::list<MidiPin> midiToProcess;
+    std::list<MidiPin> midiProcessed;
+    std::list<MidiPin> midiRejected;
 
+    // Open the JSON file
+    std::ifstream jsonFile("../midiSimpleNotes.json");
+    if (!jsonFile.is_open()) {
+        std::cerr << "Could not open the file!" << std::endl;
+        return 1;
+    }
+
+    // Parse the JSON files
+    nlohmann::json jsonData;
+    jsonFile >> jsonData;
+    // Close the JSON file
+    jsonFile.close();
+
+    double time_milliseconds;
+    nlohmann::json jsonDeviceNames;
+    unsigned char command;
+    unsigned char param_1;
+    unsigned char param_2;
+    MidiDevice *midi_device;
+    
+    for (auto jsonElement : jsonData)
+    {
+        // Create an API with the default API
+        try
+        {
+            time_milliseconds = jsonElement["time_ms"];
+            jsonDeviceNames = jsonElement["midi_message"]["device"];
+            command = jsonElement["midi_message"]["command"];
+            param_1 = jsonElement["midi_message"]["param_1"];
+            param_2 = jsonElement["midi_message"]["param_2"];
+        }
+        catch (nlohmann::json::parse_error& ex)
+        {
+            std::cerr << "parse error at byte " << ex.byte << std::endl;
+            continue;
+        }
+
+        // Access and print the JSON data
+        std::cout << "Time: " << time_milliseconds << " | ";
+        std::cout << "Command: " << (int)command << std::endl;
+
+        midi_device = nullptr;
+        for (std::string deviceName : jsonDeviceNames) {
+            for (auto &device : midi_devices) {
+                if (device.getName().find(deviceName) != std::string::npos) {
+                    midi_device = &device;
+                    goto skip_to;
+                }
+            }
+        }
+
+    skip_to:
+
+        if (midi_device != nullptr && time_milliseconds >= 0 && command >= 128 && command <= 240
+            && param_1 < 128 && param_2 < 128) {
+
+            midi_device->openPort();
+            midiToProcess.push_back(MidiPin(time_milliseconds, midi_device, command, param_1, param_2));
+        } else {
+
+            midiRejected.push_back(MidiPin(time_milliseconds, nullptr, command, param_1, param_2));
+        }
+    }
+ 
+    // Sort the list by time in ascendent order
+    midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) { return a.getTime() < b.getTime(); });
 
     auto start = std::chrono::high_resolution_clock::now();
 
@@ -275,8 +280,7 @@ int main() {
         std::this_thread::sleep_for(std::chrono::microseconds(sleep_time_us));
 
         // Send the MIDI message
-        midiOut.sendMessage(midiToProcess.front().getMidiMessage(), 3);
-
+        midiToProcess.front().pluckTooth();
         midiProcessed.push_back(midiToProcess.front());
         midiToProcess.pop_front();
 

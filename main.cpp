@@ -1,5 +1,6 @@
 #include <iostream>
 #include <fstream>
+#include <array>
 #include <list>
 #include <algorithm>
 #include <cstdlib>
@@ -45,8 +46,29 @@ void midiCallback(double deltaTime, std::vector<unsigned char> *message, void *u
         std::cout << "stamp = " << deltaTime << std::endl;
 }
 
+
+// Define the Item class
+class MidiPoint {
+
+private:
+    const double time_ms;
+    const unsigned char midi_message[3];
+
+public:
+    MidiPoint(double time_milliseconds, unsigned char command, unsigned char param_1, unsigned char param_2)
+        : time_ms(time_milliseconds), midi_message{command, param_1, param_2} { }
+
+    double getTime() const {
+        return time_ms;
+    }
+
+    const unsigned char* getMidiMessage() const {
+        return midi_message;
+    }
+};
+
+
 void print_list_example();
-int list_midi_in(bool &retFlag);
 void print_json_example();
 int json_file_example();
 int list_midi_in();
@@ -57,12 +79,146 @@ int main() {
     // print_json_example();
     // json_file_example();
     // return list_midi_in();
+    // return list_midi_out();
 
-    return list_midi_out();
+    std::array<unsigned char, 256> keyboards = {0};
 
+    std::list<MidiPoint> midiToProcess;
+    std::list<MidiPoint> midiProcessed;
+    std::list<MidiPoint> midiRejected;
+
+    // Open the JSON file
+    std::ifstream jsonFile("../midiSimpleNotes.json");
+    if (!jsonFile.is_open()) {
+        std::cerr << "Could not open the file!" << std::endl;
+        return 1;
+    }
+
+    // Parse the JSON files
+    json jsonData;
+    jsonFile >> jsonData;
+    // Close the JSON file
+    jsonFile.close();
+
+    double time_milliseconds;
+    unsigned char command;
+    unsigned char param_1;
+    unsigned char param_2;
+    
+    for (auto jsonElement : jsonData)
+    {
+        // Create an API with the default API
+        try
+        {
+            time_milliseconds = jsonElement["time_ms"];
+            command = jsonElement["midi_message"]["command"];
+            param_1 = jsonElement["midi_message"]["param_1"];
+            param_2 = jsonElement["midi_message"]["param_2"];
+        }
+        catch (json::parse_error& ex)
+        {
+            std::cerr << "parse error at byte " << ex.byte << std::endl;
+            continue;
+        }
+
+        // Access and print the JSON data
+        std::cout << "Time: " << time_milliseconds << " | ";
+        std::cout << "Command: " << (int)command << std::endl;
+
+
+
+        if (time_milliseconds >= 0 && command >= 128 && command <= 240
+            && param_1 < 128 && param_2 < 128) {
+
+            midiToProcess.push_back(MidiPoint(time_milliseconds, command, param_1, param_2));
+
+        } else {
+
+            midiRejected.push_back(MidiPoint(time_milliseconds, command, param_1, param_2));
+        }
+    }
+ 
+    // Sort the list by time in ascendent order
+    midiToProcess.sort([]( const MidiPoint &a, const MidiPoint &b ) { return a.getTime() < b.getTime(); });
+
+
+    RtMidiOut midiOut;
+    
+    try {
+
+        // List available MIDI output ports
+        unsigned int nPorts = midiOut.getPortCount();
+        if (nPorts == 0) {
+            std::cout << "No MIDI output ports available.\n";
+            return 0;
+        }
+        std::cout << "Available MIDI output ports:\n";
+        for (unsigned int i = 0; i < nPorts; i++) {
+            try {
+                std::string portName = midiOut.getPortName(i);
+                std::cout << "  Output Port #" << i << ": " << portName << '\n';
+            } catch (RtMidiError &error) {
+                error.printMessage();
+            }
+        }
+
+        // Open the first available MIDI output port
+        if (midiOut.getPortCount() > 0) {
+            midiOut.openPort(0);
+        } else {
+            std::cerr << "No MIDI output ports available.\n";
+            return EXIT_FAILURE;
+        }
+
+    } catch (RtMidiError &error) {
+        error.printMessage();
+        return EXIT_FAILURE;
+    }
+
+
+
+    auto start = std::chrono::high_resolution_clock::now();
+
+    while (midiToProcess.size() > 0) {
+        auto next_point_us = std::chrono::microseconds(static_cast<long long>(midiToProcess.front().getTime() * 1000));
+        auto present = std::chrono::high_resolution_clock::now();
+        auto elapsed_time_us = std::chrono::duration_cast<std::chrono::microseconds>(present - start);
+        auto sleep_time_us = next_point_us - elapsed_time_us;
+
+        std::this_thread::sleep_for(std::chrono::microseconds(sleep_time_us));
+
+        // Send the MIDI message
+        midiOut.sendMessage(midiToProcess.front().getMidiMessage(), 3);
+
+        midiProcessed.push_back(midiToProcess.front());
+        midiToProcess.pop_front();
+
+        auto finish = std::chrono::high_resolution_clock::now();
+        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(finish-start).count() << "us\n";
+
+        double passed_milliseconds = (double)(std::chrono::duration_cast<std::chrono::microseconds>(finish-start).count()) / 1000;
+        std::cout << passed_milliseconds << "ms\n";
+    }
+    
+
+
+    
+    while (midiProcessed.size() > 0) {
+        midiProcessed.pop_front();
+    }
+
+    while (midiRejected.size() > 0) {
+        midiRejected.pop_front();
+    }
 
     return 0;
 }
+
+
+
+
+
+// ChatGPT generated functions used as ressource
 
 int list_midi_out()
 {

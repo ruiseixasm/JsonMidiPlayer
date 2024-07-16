@@ -2,7 +2,7 @@
     {
         "time_ms": 500,
         "midi_message": {
-            "device": ["Microsoft GS Wavetable Synth"],
+            "device": ["Sonyvox", "FluidSynth", "GS Wavetable Synth"],
             "command": 144,
             "param_1": 60,
             "param_2": 100
@@ -11,7 +11,7 @@
     {
         "time_ms": 1000,
         "midi_message": {
-            "device": ["Microsoft GS Wavetable Synth"],
+            "device": ["Sonyvox", "FluidSynth", "GS Wavetable Synth"],
             "command": 128,
             "param_1": 60,
             "param_2": 0

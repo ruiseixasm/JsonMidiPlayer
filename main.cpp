@@ -2,6 +2,9 @@
 #include <fstream>
 #include <list>
 #include <algorithm>
+#include <cstdlib>
+#include <thread>               // Include for std::this_thread::sleep_for
+#include <chrono>               // Include for std::chrono::seconds
 #include <nlohmann/json.hpp>    // Include the JSON library
 #include "RtMidi.h"             // Includes the necessary MIDI library
 
@@ -43,29 +46,98 @@ void midiCallback(double deltaTime, std::vector<unsigned char> *message, void *u
 }
 
 void print_list_example();
+int list_midi_in(bool &retFlag);
 void print_json_example();
 int json_file_example();
+int list_midi_in();
+int list_midi_out();
 
 int main() {
     // print_list_example();
     // print_json_example();
     // json_file_example();
+    // return list_midi_in();
+
+    return list_midi_out();
 
 
+    return 0;
+}
+
+int list_midi_out()
+{
+    try {
+        RtMidiOut midiOut;
+
+        // List available MIDI output ports
+        unsigned int nPorts = midiOut.getPortCount();
+        if (nPorts == 0) {
+            std::cout << "No MIDI output ports available.\n";
+            return 0;
+        }
+        std::cout << "Available MIDI output ports:\n";
+        for (unsigned int i = 0; i < nPorts; i++) {
+            try {
+                std::string portName = midiOut.getPortName(i);
+                std::cout << "  Output Port #" << i << ": " << portName << '\n';
+            } catch (RtMidiError &error) {
+                error.printMessage();
+            }
+        }
+
+        // Open the first available MIDI output port
+        if (midiOut.getPortCount() > 0) {
+            midiOut.openPort(0);
+        } else {
+            std::cerr << "No MIDI output ports available.\n";
+            return EXIT_FAILURE;
+        }
+
+        // Create a vector to hold the MIDI message (note on)
+        std::vector<unsigned char> message;
+        message.push_back(144); // Note on message (144 = 0x90)
+        message.push_back(60);  // Note number (60 = Middle C)
+        message.push_back(90);  // Velocity
+
+        // Send the MIDI message
+        midiOut.sendMessage(&message);
+
+        // Wait for a bit (1 second)
+        std::this_thread::sleep_for(std::chrono::seconds(1));
+
+        // Create a vector to hold the MIDI message (note off)
+        message[2] = 0; // Velocity = 0 for note off
+        midiOut.sendMessage(&message);
+
+        std::cout << "MIDI message sent successfully.\n";
+
+    } catch (RtMidiError &error) {
+        error.printMessage();
+        return EXIT_FAILURE;
+    }
+
+    return EXIT_SUCCESS;
+}
+
+int list_midi_in()
+{
     RtMidiIn *midiin = nullptr;
 
     // Create an API with the default API
-    try {
+    try
+    {
         midiin = new RtMidiIn();
     }
-    catch (RtMidiError &error) {
+    catch (RtMidiError &error)
+    {
         error.printMessage();
         exit(EXIT_FAILURE);
     }
 
     // Check available ports
     unsigned int nPorts = midiin->getPortCount();
-    if (nPorts == 0) {
+    if (nPorts == 0)
+    {
         std::cout << "No MIDI input ports available!" << std::endl;
         delete midiin;
         return 0;
@@ -73,21 +145,26 @@ int main() {
 
     // List available ports
     std::cout << "Available MIDI input ports:" << std::endl;
-    for (unsigned int i = 0; i < nPorts; i++) {
-        try {
+    for (unsigned int i = 0; i < nPorts; i++)
+    {
+        try
+        {
             std::string portName = midiin->getPortName(i);
             std::cout << i << ": " << portName << std::endl;
         }
-        catch (RtMidiError &error) {
+        catch (RtMidiError &error)
+        {
             error.printMessage();
         }
     }
 
     // Open the first available port (for demonstration purposes)
-    try {
+    try
+    {
         midiin->openPort(0);
     }
-    catch (RtMidiError &error) {
+    catch (RtMidiError &error)
+    {
         error.printMessage();
         delete midiin;
         exit(EXIT_FAILURE);
@@ -106,8 +183,7 @@ int main() {
 
     // Clean up
     delete midiin;
-
-
+    
     return 0;
 }
 

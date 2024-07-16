@@ -1,6 +1,8 @@
 #include <iostream>
 #include <fstream>
+#include <string>
 #include <array>
+#include <vector>
 #include <list>
 #include <algorithm>
 #include <cstdlib>
@@ -47,11 +49,63 @@ void midiCallback(double deltaTime, std::vector<unsigned char> *message, void *u
 }
 
 
+class MidiDevicePort {
+private:
+    RtMidiOut midiOut;
+    unsigned int opened_port = -1;
+    const std::string name;
+    std::array<unsigned char, 256> keyboards = {0};
+public:
+    MidiDevicePort(std::string device_name) : name(device_name) { }
+    ~MidiDevicePort() {
+        midiOut.closePort();
+    }
+
+    void openPort(unsigned int port_number) {
+        midiOut.openPort(port_number);
+        opened_port = port_number;
+    }
+
+    unsigned int getOpenedPort() const {
+        return opened_port;
+    }
+
+    const std::string& getName() const {
+        return name;
+    }
+
+    bool isKeyPressed(unsigned char channel, unsigned char key_note) const {
+        unsigned char keyboards_key = channel * 128 + key_note;
+        unsigned char keyboards_byte = keyboards_key / 8;
+        unsigned char byte_key = keyboards_key % 8;
+
+        return keyboards[keyboards_byte] & 0b10000000 >> byte_key;
+    }
+
+    void pressKey(unsigned char channel, unsigned char key_note) {
+        unsigned char keyboards_key = channel * 128 + key_note;
+        unsigned char keyboards_byte = keyboards_key / 8;
+        unsigned char byte_key = keyboards_key % 8;
+
+        keyboards[keyboards_byte] |= 0b10000000 >> byte_key;
+    }
+
+    void releaseKey(unsigned char channel, unsigned char key_note) {
+        unsigned char keyboards_key = channel * 128 + key_note;
+        unsigned char keyboards_byte = keyboards_key / 8;
+        unsigned char byte_key = keyboards_key % 8;
+
+        keyboards[keyboards_byte] &= ~0b10000000 >> byte_key;
+    }
+
+};
+
 // Define the Item class
 class MidiPoint {
 
 private:
     const double time_ms;
+    const MidiDevicePort *midi_device;
     const unsigned char midi_message[3];
 
 public:
@@ -80,8 +134,6 @@ int main() {
     // json_file_example();
     // return list_midi_in();
     // return list_midi_out();
-
-    std::array<unsigned char, 256> keyboards = {0};
 
     std::list<MidiPoint> midiToProcess;
     std::list<MidiPoint> midiProcessed;
@@ -143,10 +195,12 @@ int main() {
 
 
     RtMidiOut midiOut;
+    RtMidiOut midiOut2;
     
     try {
 
         // List available MIDI output ports
+        std::vector<MidiDevicePort> midi_port_names;
         unsigned int nPorts = midiOut.getPortCount();
         if (nPorts == 0) {
             std::cout << "No MIDI output ports available.\n";
@@ -157,6 +211,7 @@ int main() {
             try {
                 std::string portName = midiOut.getPortName(i);
                 std::cout << "  Output Port #" << i << ": " << portName << '\n';
+                //midi_port_names.push_back(MidiDevicePort(portName));
             } catch (RtMidiError &error) {
                 error.printMessage();
             }
@@ -165,6 +220,8 @@ int main() {
         // Open the first available MIDI output port
         if (midiOut.getPortCount() > 0) {
             midiOut.openPort(0);
+            if (midiOut2.getPortCount() > 1)
+                midiOut2.openPort(1);
         } else {
             std::cerr << "No MIDI output ports available.\n";
             return EXIT_FAILURE;

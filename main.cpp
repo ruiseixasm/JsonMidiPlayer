@@ -174,16 +174,12 @@ public:
 
 int main() {
 
-    // List available MIDI output ports
+    // Vector of available MIDI output devices
     std::vector<MidiDevice> midi_devices;
 
-    RtMidiOut midiOut;
-    RtMidiOut midiOut2;
-
-    MidiDevice someDevicePort("Dummy midi outport", 0);
-    
     try {
 
+        RtMidiOut midiOut;  // Temporary MidiOut manipulator
         unsigned int nPorts = midiOut.getPortCount();
         if (nPorts == 0) {
             std::cout << "No MIDI output ports available.\n";
@@ -198,16 +194,6 @@ int main() {
             } catch (RtMidiError &error) {
                 error.printMessage();
             }
-        }
-
-        // Open the first available MIDI output port
-        if (midiOut.getPortCount() > 0) {
-            midiOut.openPort(0);
-            if (midiOut2.getPortCount() > 1)
-                midiOut2.openPort(1);
-        } else {
-            std::cerr << "No MIDI output ports available.\n";
-            return EXIT_FAILURE;
         }
 
     } catch (RtMidiError &error) {

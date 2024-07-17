@@ -88,5 +88,13 @@ add_custom_target(RunWithArgs
     COMMAND ${EXECUTABLE_NAME} ../midiSimpleNotes.json
     DEPENDS ${EXECUTABLE_NAME}
     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Running ${EXECUTABLE_NAME} with arguments"
+    COMMENT "Running ${EXECUTABLE_NAME} with ../your_input_filename.json"
+)
+
+# Print the project directory during configuration
+message("CMAKE_PROJECT_DIR: ${CMAKE_PROJECT_DIR}")
+
+# Print CMAKE_SOURCE_DIR during the build
+add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
+  COMMAND ${CMAKE_COMMAND} -E echo "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}"
 )

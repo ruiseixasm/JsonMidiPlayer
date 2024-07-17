@@ -41,6 +41,9 @@ endif()
 # Add the executable target
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
 
+set_target_properties(${EXECUTABLE_NAME} PROPERTIES
+	VS_DEBUGGER_COMMAND_ARGUMENTS "../midiSimpleNotes.json")
+
 # Set the build type to "Debug"
 set(CMAKE_BUILD_TYPE Debug)
 
@@ -83,18 +86,19 @@ else()
     # target_link_libraries(${EXECUTABLE_NAME} rtmidi)
 endif()
 
-# Add a custom target to run the executable with arguments
-add_custom_target(RunWithArgs
-    COMMAND ${EXECUTABLE_NAME} ../midiSimpleNotes.json
-    DEPENDS ${EXECUTABLE_NAME}
-    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-    COMMENT "Running ${EXECUTABLE_NAME} with ../your_input_filename.json"
-)
+# # Add a custom target to run the executable with arguments
+# add_custom_target(RunWithArgs
+#     COMMAND ${EXECUTABLE_NAME} ../midiSimpleNotes.json
+#     DEPENDS ${EXECUTABLE_NAME}
+#     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+#     COMMENT "Running ${EXECUTABLE_NAME} with ../midiSimpleNotes.json"
+# )
 
 # Print the project directory during configuration
-message("CMAKE_PROJECT_DIR: ${CMAKE_PROJECT_DIR}")
+message("CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
 
-# Print CMAKE_SOURCE_DIR during the build
-add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
-  COMMAND ${CMAKE_COMMAND} -E echo "CMAKE_SOURCE_DIR: ${CMAKE_SOURCE_DIR}"
-)
+# # Print CMAKE_CURRENT_BINARY_DIR during the build
+# add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
+#   COMMAND ${CMAKE_COMMAND} -E echo "CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}"
+# )
+

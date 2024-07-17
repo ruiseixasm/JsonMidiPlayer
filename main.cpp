@@ -5,6 +5,7 @@
 #include <vector>
 #include <list>
 #include <algorithm>
+#include <getopt.h>
 #include <cstdlib>
 #include <thread>               // Include for std::this_thread::sleep_for
 #include <chrono>               // Include for std::chrono::seconds
@@ -171,8 +172,85 @@ public:
     }
 };
 
+void printUsage(const char *programName) {
+    std::cout << "Usage: " << programName << " [options] input_file output_file\n"
+              << "Options:\n"
+              << "  -h, --help       Show this help message and exit\n"
+              << "  -v, --verbose    Enable verbose mode\n";
+}
 
-int main() {
+int main(int argc, char *argv[]) {
+
+    int verbose = 0;
+    int option_index = 0;
+
+    struct option long_options[] = {
+        {"help",    no_argument,       nullptr, 'h'},
+        {"verbose", no_argument,       nullptr, 'v'},
+        {nullptr,   0,                 nullptr,  0 }
+    };
+
+    while (true) {
+        int c = getopt_long(argc, argv, "hv", long_options, &option_index);
+        if (c == -1) break;
+
+        switch (c) {
+            case 'h':
+                printUsage(argv[0]);
+                return 0;
+            case 'v':
+                verbose = 1;
+                break;
+            case '?':
+                // getopt_long already printed an error message.
+                return 1;
+            default:
+                abort();
+        }
+    }
+
+    if (optind + 2 > argc) {
+        std::cerr << "Error: Missing input or output file\n";
+        printUsage(argv[0]);
+        return 1;
+    }
+
+    const char* inputFileName = argv[optind];
+    const char* outputFileName = argv[optind + 1];
+
+    if (verbose) {
+        std::cout << "Verbose mode enabled\n";
+        std::cout << "Input file: " << inputFileName << "\n";
+        std::cout << "Output file: " << outputFileName << "\n";
+    }
+
+    std::ifstream inputFile(inputFileName);
+    std::ofstream outputFile(outputFileName);
+
+    if (!inputFile.is_open()) {
+        std::cerr << "Error: Could not open input file " << inputFileName << "\n";
+        return 1;
+    }
+
+    if (!outputFile.is_open()) {
+        std::cerr << "Error: Could not open output file " << outputFileName << "\n";
+        return 1;
+    }
+
+    std::string line;
+    while (std::getline(inputFile, line)) {
+        outputFile << line << "\n";
+        if (verbose) {
+            std::cout << "Processing line: " << line << "\n";
+        }
+    }
+
+    inputFile.close();
+    outputFile.close();
+
+    if (verbose) {
+        std::cout << "File processing completed\n";
+    }
 
     // Vector of available MIDI output devices
     std::vector<MidiDevice> midi_devices;

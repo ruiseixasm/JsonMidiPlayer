@@ -14,4 +14,18 @@ Open command line sa Administrator and run the commands:
 Include the following line in CMakeLists.txt:
     1. add_compile_definitions(__WINDOWS_MM__)
 
+
+# Start the fluidsynth on Linux
+    1. sudo apt install fluidsynth fluid-soundfont-gm
+    2. fluidsynth -v -a alsa /usr/share/sounds/sf2/FluidR3_GM.sf2
+
+# Extra commands to check midi connection
+    1. aconnect -o
+    2. aconnect 14:0 128:0
+    3. aconnect -i -o
+    4. aconnect 14:0 128:0
+    5. aconnect -l
+
+
+
     

@@ -82,3 +82,11 @@ else()
     # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/path/to/rtaudio/include)
     # target_link_libraries(${EXECUTABLE_NAME} rtmidi)
 endif()
+
+# Add a custom target to run the executable with arguments
+add_custom_target(RunWithArgs
+    COMMAND ${EXECUTABLE_NAME} ../midiSimpleNotes.json
+    DEPENDS ${EXECUTABLE_NAME}
+    WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
+    COMMENT "Running ${EXECUTABLE_NAME} with arguments"
+)

@@ -26,6 +26,9 @@ Include the following line in CMakeLists.txt:
     4. aconnect 14:0 128:0
     5. aconnect -l
 
-
+# How to add Debugger configuration .json file on VSCode
+    1. Run->Add Configuration...
+    2. Press the corner button "Add Configuration..." on the launch.json file
+    3. Choose the "launch" version of the c++ debugger
 
     

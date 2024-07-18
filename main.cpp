@@ -181,6 +181,10 @@ void printUsage(const char *programName) {
 
 int main(int argc, char *argv[]) {
 
+    for (size_t argi = 0; argi < argc; argi++) {
+        std::cout << argv[argi] << std::endl;
+    }
+
     int verbose = 0;
     int option_index = 0;
 

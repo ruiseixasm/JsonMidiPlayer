@@ -12,6 +12,8 @@
 #include <nlohmann/json.hpp>    // Include the JSON library
 #include "RtMidi.h"             // Includes the necessary MIDI library
 
+#define FILE_TYPE "Midi Json Player"
+
 class MidiDevice {
 private:
     RtMidiOut midiOut;
@@ -46,6 +48,7 @@ public:
 
             midiOut.closePort();
             opened_port = false;
+            std::cout << "Midi device disconnected: " << name << std::endl;
         }
     }
 
@@ -55,9 +58,7 @@ public:
 
     // Move constructor
     MidiDevice(MidiDevice &&other) noexcept : midiOut(std::move(other.midiOut)),
-            name(std::move(other.name)), port(other.port), opened_port(other.opened_port), keyboards(std::move(other.keyboards)) {
-        std::cout << "Move constructed: " << name << std::endl;
-    }
+            name(std::move(other.name)), port(other.port), opened_port(other.opened_port), keyboards(std::move(other.keyboards)) { }
 
     // Delete the copy constructor and copy assignment operator
     MidiDevice(const MidiDevice &) = delete;
@@ -80,6 +81,7 @@ public:
         if (!opened_port) {
             midiOut.openPort(port);
             opened_port = true;
+            std::cout << "Midi device connected: " << name << std::endl;
         }
     }
 
@@ -87,6 +89,7 @@ public:
         if (opened_port) {
             midiOut.closePort();
             opened_port = false;
+            std::cout << "Midi device disconnected: " << name << std::endl;
         }
     }
 
@@ -150,7 +153,6 @@ public:
 
 };
 
-// Define the MidiPin class
 class MidiPin {
 
 private:
@@ -172,6 +174,19 @@ public:
     }
 };
 
+struct Configuration
+{
+    std::vector<std::string> file_names;
+    std::vector<MidiDevice> midi_devices;
+};
+
+struct MidiLists
+{
+    std::list<MidiPin> midiToProcess;
+    std::list<MidiPin> midiProcessed;
+    std::list<MidiPin> midiRejected;
+};
+
 void printUsage(const char *programName) {
     std::cout << "Usage: " << programName << " [options] input_file output_file\n"
               << "Options:\n"
@@ -179,7 +194,7 @@ void printUsage(const char *programName) {
               << "  -v, --verbose    Enable verbose mode\n";
 }
 
-int main(int argc, char *argv[]) {
+int processArguments(int argc, char *argv[], Configuration &configuration) {
 
     for (size_t argi = 0; argi < argc; argi++) {
         std::cout << argv[argi] << std::endl;
@@ -201,7 +216,7 @@ int main(int argc, char *argv[]) {
         switch (c) {
             case 'h':
                 printUsage(argv[0]);
-                return 0;
+                return 2;   // avoids the execution of any file
             case 'v':
                 verbose = 1;
                 break;
@@ -213,25 +228,28 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (optind + 1 > argc) {    // optind points to the first non-option argument
+    if (optind + 1 > argc) {    // optind points to the first non-option argument (at least 1 file)
         std::cerr << "Error: Missing input or output file\n";
         printUsage(argv[0]);
         return 1;
     }
 
-    const char* inputFileName = argv[optind];
+    for (size_t file_name_position = optind; file_name_position < argc; file_name_position++) {
+            
+        const char* inputFileName = argv[file_name_position];
 
-    std::ifstream inputFile(inputFileName);
+        std::ifstream inputFile(inputFileName);
 
-    if (!inputFile.is_open()) {
-        std::cerr << "Error: Could not open input file " << inputFileName << "\n";
-        return 1;
+        if (!inputFile.is_open()) {
+            std::cerr << "Could not open input file " << inputFileName << "\n";
+        } else {
+            configuration.file_names.push_back(inputFileName);
+            inputFile.close();
+        }
     }
 
-    inputFile.close();
-    
-    // Vector of available MIDI output devices
-    std::vector<MidiDevice> midi_devices;
+    if (configuration.file_names.size() == 0)
+        return 1;
 
     try {
 
@@ -239,14 +257,14 @@ int main(int argc, char *argv[]) {
         unsigned int nPorts = midiOut.getPortCount();
         if (nPorts == 0) {
             std::cout << "No MIDI output ports available.\n";
-            return 0;
+            return 1;
         }
         std::cout << "Available MIDI output ports:\n";
         for (unsigned int i = 0; i < nPorts; i++) {
             try {
                 std::string portName = midiOut.getPortName(i);
                 std::cout << "  Output Port #" << i << ": " << portName << '\n';
-                midi_devices.push_back(MidiDevice(portName, i));
+                configuration.midi_devices.push_back(MidiDevice(portName, i));
             } catch (RtMidiError &error) {
                 error.printMessage();
             }
@@ -257,81 +275,110 @@ int main(int argc, char *argv[]) {
         return EXIT_FAILURE;
     }
 
-    std::list<MidiPin> midiToProcess;
-    std::list<MidiPin> midiProcessed;
-    std::list<MidiPin> midiRejected;
+    return 0;
+}
 
-    // Open the JSON file
-    std::ifstream jsonFile(inputFileName);
-    if (!jsonFile.is_open()) {
-        std::cerr << "Could not open the file!" << std::endl;
-        return 1;
-    }
+int generateLists(Configuration &configuration, MidiLists &midi_lists) {
 
-    // Parse the JSON files
-    nlohmann::json jsonData;
-    jsonFile >> jsonData;
-    // Close the JSON file
-    jsonFile.close();
+    for (std::string input_file_name : configuration.file_names) {
 
-    double time_milliseconds;
-    nlohmann::json jsonDeviceNames;
-    unsigned char command;
-    unsigned char param_1;
-    unsigned char param_2;
-    MidiDevice *midi_device;
-    
-    for (auto jsonElement : jsonData)
-    {
-        // Create an API with the default API
-        try
-        {
-            time_milliseconds = jsonElement["time_ms"];
-            jsonDeviceNames = jsonElement["midi_message"]["device"];
-            command = jsonElement["midi_message"]["command"];
-            param_1 = jsonElement["midi_message"]["param_1"];
-            param_2 = jsonElement["midi_message"]["param_2"];
-        }
-        catch (nlohmann::json::parse_error& ex)
-        {
-            std::cerr << "parse error at byte " << ex.byte << std::endl;
+        // Open the JSON file
+        std::ifstream jsonFile(input_file_name);
+        if (!jsonFile.is_open()) {
+            std::cerr << "Could not open the file: " << input_file_name << std::endl;
             continue;
         }
 
-        // Access and print the JSON data
-        std::cout << "Time: " << time_milliseconds << " | ";
-        std::cout << "Command: " << (int)command << std::endl;
+        // Parse the JSON files
+        nlohmann::json jsonData;
+        jsonFile >> jsonData;
+        // Close the JSON file
+        jsonFile.close();
 
-        midi_device = nullptr;
-        for (std::string deviceName : jsonDeviceNames) {
-            for (auto &device : midi_devices) {
-                if (device.getName().find(deviceName) != std::string::npos) {
-                    midi_device = &device;
-                    goto skip_to;
+        nlohmann::json jsonFileType;
+        nlohmann::json jsonFileContent;
+
+        try
+        {
+            jsonFileType = jsonData["filetype"];
+            jsonFileContent = jsonData["content"];
+        }
+        catch (nlohmann::json::parse_error& ex)
+        {
+            std::cerr << "Unable to extract json data: " << ex.byte << std::endl;
+            continue;
+        }
+        
+        if (jsonFileType != FILE_TYPE)
+            continue;
+
+        {
+            // temporary/buffer variables
+            double time_milliseconds;
+            nlohmann::json jsonDeviceNames;
+            unsigned char command;
+            unsigned char param_1;
+            unsigned char param_2;
+            MidiDevice *midi_device;
+            
+            for (auto jsonElement : jsonFileContent)
+            {
+                // Create an API with the default API
+                try
+                {
+                    time_milliseconds = jsonElement["time_ms"];
+                    jsonDeviceNames = jsonElement["midi_message"]["device"];
+                    command = jsonElement["midi_message"]["command"];
+                    param_1 = jsonElement["midi_message"]["param_1"];
+                    param_2 = jsonElement["midi_message"]["param_2"];
+                }
+                catch (nlohmann::json::parse_error& ex)
+                {
+                    std::cerr << "parse error at byte " << ex.byte << std::endl;
+                    continue;
+                }
+
+                // Access and print the JSON data
+                std::cout << "Time: " << time_milliseconds << " | ";
+                std::cout << "Command: " << (int)command << std::endl;
+
+                midi_device = nullptr;
+                for (std::string deviceName : jsonDeviceNames) {
+                    for (auto &device : configuration.midi_devices) {
+                        if (device.getName().find(deviceName) != std::string::npos) {
+                            midi_device = &device;
+                            goto skip_to;
+                        }
+                    }
+                }
+
+            skip_to:
+
+                if (midi_device != nullptr && time_milliseconds >= 0 && command >= 128 && command <= 240
+                    && param_1 < 128 && param_2 < 128) {
+
+                    midi_device->openPort();
+                    midi_lists.midiToProcess.push_back(MidiPin(time_milliseconds, midi_device, command, param_1, param_2));
+                } else {
+
+                    midi_lists.midiRejected.push_back(MidiPin(time_milliseconds, nullptr, command, param_1, param_2));
                 }
             }
         }
-
-    skip_to:
-
-        if (midi_device != nullptr && time_milliseconds >= 0 && command >= 128 && command <= 240
-            && param_1 < 128 && param_2 < 128) {
-
-            midi_device->openPort();
-            midiToProcess.push_back(MidiPin(time_milliseconds, midi_device, command, param_1, param_2));
-        } else {
-
-            midiRejected.push_back(MidiPin(time_milliseconds, nullptr, command, param_1, param_2));
-        }
     }
- 
+
     // Sort the list by time in ascendent order
-    midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) { return a.getTime() < b.getTime(); });
+    midi_lists.midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) { return a.getTime() < b.getTime(); });
+
+    return 0;
+}
+
+int playLists(MidiLists &midi_lists) {
 
     auto start = std::chrono::high_resolution_clock::now();
 
-    while (midiToProcess.size() > 0) {
-        auto next_point_us = std::chrono::microseconds(static_cast<long long>(midiToProcess.front().getTime() * 1000));
+    while (midi_lists.midiToProcess.size() > 0) {
+        auto next_point_us = std::chrono::microseconds(static_cast<long long>(midi_lists.midiToProcess.front().getTime() * 1000));
         auto present = std::chrono::high_resolution_clock::now();
         auto elapsed_time_us = std::chrono::duration_cast<std::chrono::microseconds>(present - start);
         auto sleep_time_us = next_point_us - elapsed_time_us;
@@ -339,9 +386,9 @@ int main(int argc, char *argv[]) {
         std::this_thread::sleep_for(std::chrono::microseconds(sleep_time_us));
 
         // Send the MIDI message
-        midiToProcess.front().pluckTooth();
-        midiProcessed.push_back(midiToProcess.front());
-        midiToProcess.pop_front();
+        midi_lists.midiToProcess.front().pluckTooth();
+        midi_lists.midiProcessed.push_back(midi_lists.midiToProcess.front());
+        midi_lists.midiToProcess.pop_front();
 
         auto finish = std::chrono::high_resolution_clock::now();
         std::cout << std::chrono::duration_cast<std::chrono::microseconds>(finish-start).count() << "us\n";
@@ -350,17 +397,30 @@ int main(int argc, char *argv[]) {
         std::cout << passed_milliseconds << "ms\n";
     }
     
-
-
-    
-    while (midiProcessed.size() > 0) {
-        midiProcessed.pop_front();
+    while (midi_lists.midiProcessed.size() > 0) {
+        midi_lists.midiProcessed.pop_front();
     }
 
-    while (midiRejected.size() > 0) {
-        midiRejected.pop_front();
+    while (midi_lists.midiRejected.size() > 0) {
+        midi_lists.midiRejected.pop_front();
     }
 
     return 0;
+}
+
+
+int main(int argc, char *argv[]) {
+
+    Configuration configuration;
+    int configuration_result;
+    if ((configuration_result = processArguments(argc, argv, configuration)) > 0)
+        return configuration_result;
+
+    MidiLists midi_lists;
+    int lists_result;
+    if ((lists_result = generateLists(configuration, midi_lists)) > 0)
+        return lists_result;
+
+    return playLists(midi_lists);
 }
 

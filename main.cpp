@@ -5,7 +5,7 @@
 #include <vector>
 #include <list>
 #include <algorithm>
-#include <getopt.h>
+#include <getopt.h>             // Used to process inputed arguments from the command line
 #include <cstdlib>
 #include <thread>               // Include for std::this_thread::sleep_for
 #include <chrono>               // Include for std::chrono::seconds
@@ -213,49 +213,23 @@ int main(int argc, char *argv[]) {
         }
     }
 
-    if (optind + 2 > argc) {
+    if (optind + 1 > argc) {    // optind points to the first non-option argument
         std::cerr << "Error: Missing input or output file\n";
         printUsage(argv[0]);
         return 1;
     }
 
     const char* inputFileName = argv[optind];
-    const char* outputFileName = argv[optind + 1];
-
-    if (verbose) {
-        std::cout << "Verbose mode enabled\n";
-        std::cout << "Input file: " << inputFileName << "\n";
-        std::cout << "Output file: " << outputFileName << "\n";
-    }
 
     std::ifstream inputFile(inputFileName);
-    std::ofstream outputFile(outputFileName);
 
     if (!inputFile.is_open()) {
         std::cerr << "Error: Could not open input file " << inputFileName << "\n";
         return 1;
     }
 
-    if (!outputFile.is_open()) {
-        std::cerr << "Error: Could not open output file " << outputFileName << "\n";
-        return 1;
-    }
-
-    std::string line;
-    while (std::getline(inputFile, line)) {
-        outputFile << line << "\n";
-        if (verbose) {
-            std::cout << "Processing line: " << line << "\n";
-        }
-    }
-
     inputFile.close();
-    outputFile.close();
-
-    if (verbose) {
-        std::cout << "File processing completed\n";
-    }
-
+    
     // Vector of available MIDI output devices
     std::vector<MidiDevice> midi_devices;
 
@@ -288,7 +262,7 @@ int main(int argc, char *argv[]) {
     std::list<MidiPin> midiRejected;
 
     // Open the JSON file
-    std::ifstream jsonFile("../midiSimpleNotes.json");
+    std::ifstream jsonFile(inputFileName);
     if (!jsonFile.is_open()) {
         std::cerr << "Could not open the file!" << std::endl;
         return 1;

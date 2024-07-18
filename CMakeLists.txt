@@ -2,7 +2,7 @@
 # Run cmake with a specific generator selected: cmake -g "MinGW Makefiles" ..
 cmake_minimum_required(VERSION 3.15)
 project(MidiJsonPlayer
-        VERSION 0.0.2
+        VERSION 0.1.0
         DESCRIPTION "Very simple MIDI Player of JSON files"
         HOMEPAGE_URL "https://github.com/ruiseixasm/MidiJsonPlayer"
         LANGUAGES CXX)

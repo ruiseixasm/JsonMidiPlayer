@@ -52,10 +52,6 @@ public:
         }
     }
 
-    // // Delete the move constructor and move assignment operator
-    // MidiDevice(MidiDevice &&) = delete;
-    // MidiDevice &operator=(MidiDevice &&) = delete;
-
     // Move constructor
     MidiDevice(MidiDevice &&other) noexcept : midiOut(std::move(other.midiOut)),
             name(std::move(other.name)), port(other.port), opened_port(other.opened_port), keyboards(std::move(other.keyboards)) { }

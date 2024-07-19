@@ -177,7 +177,7 @@ public:
 
 struct Configuration
 {
-    std::vector<std::string> filenames;
+    std::vector<std::string> file_names;
     std::vector<MidiDevice> midi_devices;
 };
 
@@ -236,10 +236,10 @@ int processArguments(int argc, char *argv[], Configuration &configuration) {
 
     for (size_t filename_position = optind; filename_position < argc; filename_position++) {
             
-        configuration.filenames.push_back(argv[filename_position]);
+        configuration.file_names.push_back(argv[filename_position]);
     }
 
-    if (configuration.filenames.size() == 0)
+    if (configuration.file_names.size() == 0)
         return 1;
 
     try {
@@ -271,7 +271,7 @@ int processArguments(int argc, char *argv[], Configuration &configuration) {
 
 int generateLists(Configuration &configuration, MidiLists &midi_lists) {
 
-    for (std::string input_filename : configuration.filenames) {
+    for (std::string input_filename : configuration.file_names) {
 
         // Open the JSON file
         std::ifstream jsonFile(input_filename);
@@ -354,9 +354,14 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
                         }
                     }
                 }
-                catch (nlohmann::json::parse_error& ex)
-                {
-                    std::cerr << "JSON parse error at byte " << ex.byte << std::endl;
+                catch (const nlohmann::json::exception& e) {
+                    std::cerr << "JSON error: " << e.what() << std::endl;
+                    continue;
+                } catch (const std::exception& e) {
+                    std::cerr << "Error: " << e.what() << std::endl;
+                    continue;
+                } catch (...) {
+                    std::cerr << "Unknown error occurred." << std::endl;
                     continue;
                 }
 

@@ -338,7 +338,7 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
                         param_2 = 0;
                     } else if (command == 0xF1 || command == 0xF3) {    // System common messages
                         midi_message_size = 2;
-                        param_1 = jsonElement["midi_message"]["param_1"];
+                        param_1 = jsonElement["midi_message"]["param"];
                         param_2 = 0;
 
                     } else {

@@ -327,6 +327,9 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
                         param_1 = jsonElement["midi_message"]["param_1"];
                         param_2 = jsonElement["midi_message"]["param_2"];
 
+                        if (command != 0xF2 && (param_1 & 0x80 | param_2 & 0x80) != 0)
+                            continue;
+
                     } else if (command == 0xF6 ||           // Tune Request
                                command == 0xF8 || command == 0xFA || command == 0xFB || // System real-time messages
                                command == 0xFC || command == 0xFE || command == 0xFF) {
@@ -337,6 +340,7 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
                         midi_message_size = 2;
                         param_1 = jsonElement["midi_message"]["param_1"];
                         param_2 = 0;
+
                     } else {
                         continue;
                     }

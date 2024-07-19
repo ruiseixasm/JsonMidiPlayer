@@ -32,14 +32,14 @@ public:
             for (size_t byte_position = 0; byte_position < 256; byte_position++) {
                 if (keyboards[byte_position] > 0) {
                     unsigned char byte_channel = byte_position / 16;    // 16 bytes for each keyboard
-                    midi_message[0] = 0x80 | byte_channel;  // Note Off command
+                    midi_message[0] = 0x80 | byte_channel;              // Note Off status_byte
                     unsigned char keyboard_byte = keyboards[byte_position];
 
                     for (size_t bit_position = 0; bit_position < 8; bit_position++) {
 
                         if (keyboard_byte & 0b10000000 >> bit_position) {
 
-                            midi_message[1] = byte_position % 16 * 8 + bit_position;    // param_1
+                            midi_message[1] = byte_position % 16 * 8 + bit_position;    // data_byte_1
                             midiOut.sendMessage(midi_message, 3);
                         }
                     }
@@ -162,8 +162,8 @@ private:
     const unsigned char midi_message[3];    // Status byte and 2 Data bytes
     // https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
 public:
-    MidiPin(double time_milliseconds, MidiDevice *midi_device, size_t message_size, unsigned char command, unsigned char param_1, unsigned char param_2)
-        : time_ms(time_milliseconds), midi_device(midi_device), message_size(message_size), midi_message{command, param_1, param_2} { }
+    MidiPin(double time_milliseconds, MidiDevice *midi_device, size_t message_size, unsigned char status_byte, unsigned char data_byte_1, unsigned char data_byte_2)
+        : time_ms(time_milliseconds), midi_device(midi_device), message_size(message_size), midi_message{status_byte, data_byte_1, data_byte_2} { }
 
     double getTime() const {
         return time_ms;
@@ -177,7 +177,7 @@ public:
 
 struct Configuration
 {
-    std::vector<std::string> file_names;
+    std::vector<std::string> filenames;
     std::vector<MidiDevice> midi_devices;
 };
 
@@ -234,12 +234,12 @@ int processArguments(int argc, char *argv[], Configuration &configuration) {
         return 1;
     }
 
-    for (size_t file_name_position = optind; file_name_position < argc; file_name_position++) {
+    for (size_t filename_position = optind; filename_position < argc; filename_position++) {
             
-        configuration.file_names.push_back(argv[file_name_position]);
+        configuration.filenames.push_back(argv[filename_position]);
     }
 
-    if (configuration.file_names.size() == 0)
+    if (configuration.filenames.size() == 0)
         return 1;
 
     try {
@@ -271,12 +271,12 @@ int processArguments(int argc, char *argv[], Configuration &configuration) {
 
 int generateLists(Configuration &configuration, MidiLists &midi_lists) {
 
-    for (std::string input_file_name : configuration.file_names) {
+    for (std::string input_filename : configuration.filenames) {
 
         // Open the JSON file
-        std::ifstream jsonFile(input_file_name);
+        std::ifstream jsonFile(input_filename);
         if (!jsonFile.is_open()) {
-            std::cerr << "Could not open the file: " << input_file_name << std::endl;
+            std::cerr << "Could not open the file: " << input_filename << std::endl;
             continue;
         }
 
@@ -308,9 +308,9 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
             double time_milliseconds;
             nlohmann::json jsonDeviceNames;
             size_t midi_message_size;
-            unsigned char command;
-            unsigned char param_1;
-            unsigned char param_2;
+            unsigned char status_byte;
+            unsigned char data_byte_1;
+            unsigned char data_byte_2;
             MidiDevice *midi_device;
             
             for (auto jsonElement : jsonFileContent)
@@ -320,29 +320,38 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
                 {
                     time_milliseconds = jsonElement["time_ms"];
                     jsonDeviceNames = jsonElement["midi_message"]["device"];
-                    command = jsonElement["midi_message"]["command"];
+                    status_byte = jsonElement["midi_message"]["status_byte"];
 
-                    if (command >= 128 && command < 240 || command == 0xF2) {   // Channel messages or Song Position Pointer
+                    if (status_byte >= 0x80 && status_byte < 0xF0) {    // Channel messages (most significant bit = 1)
                         midi_message_size = 3;
-                        param_1 = jsonElement["midi_message"]["param_1"];
-                        param_2 = jsonElement["midi_message"]["param_2"];
+                        data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                        data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
 
-                        if (command != 0xF2 && (param_1 & 0x80 | param_2 & 0x80) != 0)
+                        if (data_byte_1 & 0x80 | data_byte_2 & 0x80)    // Makes sure most significant bit is equal to 0
                             continue;
 
-                    } else if (command == 0xF6 ||           // Tune Request
-                               command == 0xF8 || command == 0xFA || command == 0xFB || // System real-time messages
-                               command == 0xFC || command == 0xFE || command == 0xFF) {
+                    } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
+                               status_byte == 0xFC || status_byte == 0xFE || status_byte == 0xFF) { // System real-time messages
                         midi_message_size = 1;
-                        param_1 = 0;
-                        param_2 = 0;
-                    } else if (command == 0xF1 || command == 0xF3) {    // System common messages
+                        data_byte_1 = 0;
+                        data_byte_2 = 0;
+                    } else if (status_byte == 0xF1 || status_byte == 0xF3) {    // System common messages
                         midi_message_size = 2;
-                        param_1 = jsonElement["midi_message"]["param"];
-                        param_2 = 0;
+                        data_byte_1 = jsonElement["midi_message"]["data_byte"];
+                        data_byte_2 = 0;
 
                     } else {
-                        continue;
+                        if (status_byte == 0xF2) {      // Song Position Pointer
+                            midi_message_size = 3;
+                            data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                            data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                        } else if (status_byte == 0xF6) {   // Tune Request
+                            midi_message_size = 1;
+                            data_byte_1 = 0;
+                            data_byte_2 = 0;
+                        } else {
+                            continue;
+                        }
                     }
                 }
                 catch (nlohmann::json::parse_error& ex)
@@ -365,7 +374,7 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
 
                 if (midi_device != nullptr) {
                     midi_device->openPort();
-                    midi_lists.midiToProcess.push_back(MidiPin(time_milliseconds, midi_device, midi_message_size, command, param_1, param_2));
+                    midi_lists.midiToProcess.push_back(MidiPin(time_milliseconds, midi_device, midi_message_size, status_byte, data_byte_1, data_byte_2));
                 }
             }
         }
@@ -405,7 +414,7 @@ int playLists(MidiLists &midi_lists) {
         midi_lists.midiProcessed.pop_front();
     }
 
-    std::this_thread::sleep_for(std::chrono::seconds(1));   // avoids abrupt closure
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));    // avoids abrupt closure
 
     return 0;
 }
@@ -413,16 +422,23 @@ int playLists(MidiLists &midi_lists) {
 
 int main(int argc, char *argv[]) {
 
-    Configuration configuration;
-    int configuration_result;
-    if ((configuration_result = processArguments(argc, argv, configuration)) > 0)
-        return configuration_result;
+    {
+        Configuration configuration;
+        int configuration_result;
+        if ((configuration_result = processArguments(argc, argv, configuration)) > 0)
+            return configuration_result;
 
-    MidiLists midi_lists;
-    int lists_result;
-    if ((lists_result = generateLists(configuration, midi_lists)) > 0)
-        return lists_result;
+        MidiLists midi_lists;
+        int lists_result;
+        if ((lists_result = generateLists(configuration, midi_lists)) > 0)
+            return lists_result;
 
-    return playLists(midi_lists);
+        if ((lists_result = playLists(midi_lists)) > 0)
+            return lists_result;
+    }
+    
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));    // avoids abrupt closure
+
+    return 0;
 }
 

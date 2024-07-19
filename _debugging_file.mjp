@@ -5,36 +5,36 @@
             "time_ms": 500,
             "midi_message": {
                 "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
-                "command": 144,
-                "param_1": 60,
-                "param_2": 100
+                "status_byte": 144,
+                "data_byte_1": 60,
+                "data_byte_2": 100
             }
         },
         {
             "time_ms": 1500,
             "midi_message": {
                 "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
-                "command": 144,
-                "param_1": 70,
-                "param_2": 100
+                "status_byte": 144,
+                "data_byte_1": 70,
+                "data_byte_2": 100
             }
         },
         {
             "time_ms": 1000,
             "midi_message": {
                 "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
-                "command": 128,
-                "param_1": 60,
-                "param_2": 0
+                "status_byte": 128,
+                "data_byte_1": 60,
+                "data_byte_2": 0
             }
         },
         {
             "time_ms": 2000,
             "midi_message": {
                 "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
-                "command": 128,
-                "param_1": 71,
-                "param_2": 0
+                "status_byte": 128,
+                "data_byte_1": 71,
+                "data_byte_2": 0
             }
         }
     ]

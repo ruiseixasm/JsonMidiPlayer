@@ -328,8 +328,8 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
                             data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
                             data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
 
-                            if (data_byte_1 < 0x00 || data_byte_1 > 0x7F ||
-                                data_byte_2 < 0x00 || data_byte_2 > 0x7F)  // Makes sure it's inside the processing window
+                            if (data_byte_1 < 0 || data_byte_1 > 127 ||
+                                data_byte_2 < 0 || data_byte_2 > 127)   // Makes sure it's inside the processing window
                                 continue;
 
                         } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||

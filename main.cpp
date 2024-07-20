@@ -309,8 +309,8 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
             nlohmann::json jsonDeviceNames;
             size_t midi_message_size;
             unsigned char status_byte;
-            unsigned char data_byte_1;
-            unsigned char data_byte_2;
+            int data_byte_1;
+            int data_byte_2;
             MidiDevice *midi_device;
             
             for (auto jsonElement : jsonFileContent)
@@ -328,7 +328,8 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
                             data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
                             data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
 
-                            if (data_byte_1 & 0x80 | data_byte_2 & 0x80)    // Makes sure most significant bit is equal to 0
+                            if (data_byte_1 < 0x00 || data_byte_1 > 0x7F ||
+                                data_byte_2 < 0x00 || data_byte_2 > 0x7F)  // Makes sure it's inside the processing window
                                 continue;
 
                         } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
@@ -341,11 +342,18 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
                             data_byte_1 = jsonElement["midi_message"]["data_byte"];
                             data_byte_2 = 0;
 
+                            if (data_byte_1 < 0x00 || data_byte_1 > 0xFF) // Makes sure it's inside the processing window
+                                continue;
                         } else {
                             if (status_byte == 0xF2) {      // Song Position Pointer
                                 midi_message_size = 3;
                                 data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
                                 data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+
+                                if (data_byte_1 < 0x00 || data_byte_1 > 0xFF ||
+                                    data_byte_2 < 0x00 || data_byte_2 > 0xFF)  // Makes sure it's inside the processing window
+                                    continue;
+
                             } else if (status_byte == 0xF6) {   // Tune Request
                                 midi_message_size = 1;
                                 data_byte_1 = 0;

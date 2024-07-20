@@ -419,20 +419,18 @@ int playLists(MidiLists &midi_lists) {
         midi_lists.midiProcessed.pop_front();
     }
 
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));    // avoids abrupt closure
-
     return 0;
 }
 
 
 int main(int argc, char *argv[]) {
 
-    {
-        Configuration configuration;
-        int configuration_result;
-        if ((configuration_result = processArguments(argc, argv, configuration)) > 0)
-            return configuration_result;
+    Configuration configuration;
+    int configuration_result;
+    if ((configuration_result = processArguments(argc, argv, configuration)) > 0)
+        return configuration_result;
 
+    {
         MidiLists midi_lists;
         int lists_result;
         if ((lists_result = generateLists(configuration, midi_lists)) > 0)
@@ -442,7 +440,7 @@ int main(int argc, char *argv[]) {
             return lists_result;
     }
     
-    std::this_thread::sleep_for(std::chrono::milliseconds(500));    // avoids abrupt closure
+    std::this_thread::sleep_for(std::chrono::milliseconds(500));    // avoids abrupt port disconnection
 
     return 0;
 }

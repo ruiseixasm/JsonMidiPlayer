@@ -319,39 +319,43 @@ int generateLists(Configuration &configuration, MidiLists &midi_lists) {
                 try
                 {
                     time_milliseconds = jsonElement["time_ms"];
-                    jsonDeviceNames = jsonElement["midi_message"]["device"];
-                    status_byte = jsonElement["midi_message"]["status_byte"];
+                    if (time_milliseconds >= 0) {
+                        jsonDeviceNames = jsonElement["midi_message"]["device"];
+                        status_byte = jsonElement["midi_message"]["status_byte"];
 
-                    if (status_byte >= 0x80 && status_byte < 0xF0) {    // Channel messages (most significant bit = 1)
-                        midi_message_size = 3;
-                        data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                        data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-
-                        if (data_byte_1 & 0x80 | data_byte_2 & 0x80)    // Makes sure most significant bit is equal to 0
-                            continue;
-
-                    } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
-                               status_byte == 0xFC || status_byte == 0xFE || status_byte == 0xFF) { // System real-time messages
-                        midi_message_size = 1;
-                        data_byte_1 = 0;
-                        data_byte_2 = 0;
-                    } else if (status_byte == 0xF1 || status_byte == 0xF3) {    // System common messages
-                        midi_message_size = 2;
-                        data_byte_1 = jsonElement["midi_message"]["data_byte"];
-                        data_byte_2 = 0;
-
-                    } else {
-                        if (status_byte == 0xF2) {      // Song Position Pointer
+                        if (status_byte >= 0x80 && status_byte < 0xF0) {    // Channel messages (most significant bit = 1)
                             midi_message_size = 3;
                             data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
                             data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                        } else if (status_byte == 0xF6) {   // Tune Request
+
+                            if (data_byte_1 & 0x80 | data_byte_2 & 0x80)    // Makes sure most significant bit is equal to 0
+                                continue;
+
+                        } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
+                                status_byte == 0xFC || status_byte == 0xFE || status_byte == 0xFF) { // System real-time messages
                             midi_message_size = 1;
                             data_byte_1 = 0;
                             data_byte_2 = 0;
+                        } else if (status_byte == 0xF1 || status_byte == 0xF3) {    // System common messages
+                            midi_message_size = 2;
+                            data_byte_1 = jsonElement["midi_message"]["data_byte"];
+                            data_byte_2 = 0;
+
                         } else {
-                            continue;
+                            if (status_byte == 0xF2) {      // Song Position Pointer
+                                midi_message_size = 3;
+                                data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                            } else if (status_byte == 0xF6) {   // Tune Request
+                                midi_message_size = 1;
+                                data_byte_1 = 0;
+                                data_byte_2 = 0;
+                            } else {
+                                continue;
+                            }
                         }
+                    } else {
+                        continue;
                     }
                 }
                 catch (const nlohmann::json::exception& e) {

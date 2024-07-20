@@ -408,11 +408,11 @@ int playLists(MidiLists &midi_lists) {
         midi_lists.midiProcessed.push_back(midi_lists.midiToProcess.front());
         midi_lists.midiToProcess.pop_front();
 
-        auto finish = std::chrono::high_resolution_clock::now();
-        std::cout << std::chrono::duration_cast<std::chrono::microseconds>(finish-start).count() << "us\n";
+        // auto finish = std::chrono::high_resolution_clock::now();
+        // std::cout << std::chrono::duration_cast<std::chrono::microseconds>(finish-start).count() << "us\n";
 
-        double passed_milliseconds = (double)(std::chrono::duration_cast<std::chrono::microseconds>(finish-start).count()) / 1000;
-        std::cout << passed_milliseconds << "ms\n";
+        // double passed_milliseconds = (double)(std::chrono::duration_cast<std::chrono::microseconds>(finish-start).count()) / 1000;
+        // std::cout << passed_milliseconds << "ms\n";
     }
     
     while (midi_lists.midiProcessed.size() > 0) {

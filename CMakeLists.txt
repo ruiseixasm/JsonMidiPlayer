@@ -41,17 +41,21 @@ endif()
 # Add the executable target
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
 
-set_target_properties(${EXECUTABLE_NAME} PROPERTIES
-	VS_DEBUGGER_COMMAND_ARGUMENTS "../midiSimpleNotes.json")
+set_property(TARGET ${EXECUTABLE_NAME}
+             PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG TRUE)
 
-# Set the build type to "Debug"
-set(CMAKE_BUILD_TYPE Debug)
 
-# Add compiler flags for debugging
-target_compile_options(${EXECUTABLE_NAME} PRIVATE -g)
+# set_target_properties(${EXECUTABLE_NAME} PROPERTIES
+# 	VS_DEBUGGER_COMMAND_ARGUMENTS "../midiSimpleNotes.json")
 
-# Disable optimization for debug builds
-target_compile_options(${EXECUTABLE_NAME} PRIVATE -O0)
+# # Set the build type to "Debug"
+# set(CMAKE_BUILD_TYPE Debug)
+
+# # Add compiler flags for debugging
+# target_compile_options(${EXECUTABLE_NAME} PRIVATE -g)
+
+# # Disable optimization for debug builds
+# target_compile_options(${EXECUTABLE_NAME} PRIVATE -O0)
 
 # Check if we are on Windows
 if (WIN32)  # Try to load ASIO SDK

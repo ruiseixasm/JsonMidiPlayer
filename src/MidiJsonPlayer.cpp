@@ -1,6 +1,32 @@
 #include "MidiJsonPlayer.hpp"
 
+    MidiDevice::~MidiDevice() {
+        if (opened_port) {
 
+            // Release all still pressed key_notes before disconnecting
+            unsigned char midi_message[3] = {0};
+            for (size_t byte_position = 0; byte_position < 256; byte_position++) {
+                if (keyboards[byte_position] > 0) {
+                    unsigned char byte_channel = byte_position / 16;    // 16 bytes for each keyboard
+                    midi_message[0] = 0x80 | byte_channel;              // Note Off status_byte
+                    unsigned char keyboard_byte = keyboards[byte_position];
+
+                    for (size_t bit_position = 0; bit_position < 8; bit_position++) {
+
+                        if (keyboard_byte & 0b10000000 >> bit_position) {
+
+                            midi_message[1] = byte_position % 16 * 8 + bit_position;    // data_byte_1
+                            midiOut.sendMessage(midi_message, 3);
+                        }
+                    }
+                }
+            }
+
+            midiOut.closePort();
+            opened_port = false;
+            std::cout << "Midi device disconnected: " << name << std::endl;
+        }
+    }
 
 
 bool canOpenMidiPort(RtMidiOut& midiOut, unsigned int portNumber) {

@@ -20,12 +20,6 @@ include_directories(include single_include)
 # Add main.cpp explicitly
 set(SOURCES main.cpp)
 
-# # Add main.cpp explicitly
-# set(SOURCES_LIB include/MidiJsonPlayer.cpp)
-
-# # Create the shared library
-# add_library(json_processor SHARED ${SOURCES_LIB})
-
 #
 # NEED TO REBUILD THE ENTIRE BUILD EACH TIME A NEW .CPP FILE IS ADDED!!!
 #
@@ -43,6 +37,10 @@ if (WIN32) # LINUX is new for CMake VERSION 3.25
 else()
     set(EXECUTABLE_NAME "MidiJsonPlayer.out")
 endif()
+
+# Create the shared library
+add_library(MidiJsonPlayer_lib SHARED ${SRC_SOURCES})
+#target_compile_definitions(MidiJsonPlayer_lib PUBLIC RtMidi)
 
 # Add the executable target
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
@@ -74,6 +72,13 @@ if (WIN32)  # Try to load ASIO SDK
     # For example, winmm.lib must come before kernel32.lib (if linked)
     # or older 32-bit windows versions will have linking issues for
     # certain entry points
+    target_link_libraries(MidiJsonPlayer_lib PRIVATE
+            winmm.lib
+            ws2_32.lib
+            wininet.lib
+            version.lib
+            Shlwapi.dll
+        )
     target_link_libraries(${EXECUTABLE_NAME} PRIVATE
             winmm.lib
             ws2_32.lib
@@ -86,6 +91,7 @@ else()
     find_package(ALSA REQUIRED)
     if (ALSA_FOUND)
         include_directories(${ALSA_INCLUDE_DIRS})
+        target_link_libraries(MidiJsonPlayer_lib ${ALSA_LIBRARIES})
         target_link_libraries(${EXECUTABLE_NAME} ${ALSA_LIBRARIES})
         add_definitions(-D__LINUX_ALSA__)
     endif()

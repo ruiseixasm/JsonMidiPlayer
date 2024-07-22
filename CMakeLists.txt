@@ -2,7 +2,7 @@
 # Run cmake with a specific generator selected: cmake -g "MinGW Makefiles" ..
 cmake_minimum_required(VERSION 3.15)
 project(MidiJsonPlayer
-        VERSION 0.2.0
+        VERSION 0.2.1
         DESCRIPTION "Very simple MIDI Player of JSON files"
         HOMEPAGE_URL "https://github.com/ruiseixasm/MidiJsonPlayer"
         LANGUAGES CXX)
@@ -19,6 +19,12 @@ include_directories(include single_include)
 
 # Add main.cpp explicitly
 set(SOURCES main.cpp)
+
+# # Add main.cpp explicitly
+# set(SOURCES_LIB include/MidiJsonPlayer.cpp)
+
+# # Create the shared library
+# add_library(json_processor SHARED ${SOURCES_LIB})
 
 #
 # NEED TO REBUILD THE ENTIRE BUILD EACH TIME A NEW .CPP FILE IS ADDED!!!

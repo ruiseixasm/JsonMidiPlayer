@@ -37,12 +37,12 @@ extern "C" {    // Needed for Python ctypes
             for (unsigned int i = 0; i < nPorts; i++) {
                 if (canOpenMidiPort(midiOut, i)) {
                     std::string portName = midiOut.getPortName(i);
-                    std::cout << "Available output Port #" << i << ": " << portName << '\n';
+                    std::cout << "\tOutput Port #" << i << ": " << portName << '\n';
                     midi_devices.push_back(MidiDevice(portName, i));
                 }
             }
             if (midi_devices.size() == 0) {
-                std::cout << "No MIDI output ports available.\n";
+                std::cout << "\tNo MIDI output ports available.\n";
                 return 1;
             }
 
@@ -166,8 +166,6 @@ extern "C" {    // Needed for Python ctypes
                     }
                 }
             }
-
-            std::cout << "Processed JSON: " << json_files_data.dump(4) << std::endl;
         } catch (const nlohmann::json::parse_error& e) {
             std::cerr << "JSON parse error: " << e.what() << std::endl;
         }
@@ -189,12 +187,6 @@ extern "C" {    // Needed for Python ctypes
             midiToProcess.front().pluckTooth();
             midiProcessed.push_back(midiToProcess.front());
             midiToProcess.pop_front();
-
-            // auto finish = std::chrono::high_resolution_clock::now();
-            // std::cout << std::chrono::duration_cast<std::chrono::microseconds>(finish-start).count() << "us\n";
-
-            // double passed_milliseconds = (double)(std::chrono::duration_cast<std::chrono::microseconds>(finish-start).count()) / 1000;
-            // std::cout << passed_milliseconds << "ms\n";
         }
         
         while (midiProcessed.size() > 0) {

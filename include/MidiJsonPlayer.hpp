@@ -154,9 +154,17 @@ public:
 
 bool canOpenMidiPort(RtMidiOut& midiOut, unsigned int portNumber);
 
-extern "C" {    // Needed for Python ctypes
+int PlayList(const char* json_str);
 
-    int PlayList(const char* json_str);
+#ifdef _WIN32
+    #define DLL_EXPORT __declspec(dllexport)
+#else
+    #define DLL_EXPORT
+#endif
+
+extern "C" {    // Needed for Python ctypes
+    DLL_EXPORT int PlayList_ctypes(const char* json_str);
+    DLL_EXPORT int add(int a, int b);
 }
 
 #endif // MIDI_JSON_PLAYER_HPP

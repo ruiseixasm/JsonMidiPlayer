@@ -39,15 +39,18 @@ else()
 endif()
 
 # Create the shared library
-add_library(MidiJsonPlayer_lib SHARED ${SRC_SOURCES})
-#target_compile_definitions(MidiJsonPlayer_lib PUBLIC RtMidi)
+add_library(MidiJsonPlayer_ctypes SHARED ${SRC_SOURCES})
+#target_compile_definitions(MidiJsonPlayer_ctypes PUBLIC RtMidi)
+# Set properties for Windows DLL export
+if(WIN32)
+    target_compile_definitions(MidiJsonPlayer_ctypes PRIVATE -DBUILDING_DLL)
+endif()
 
 # Add the executable target
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
 
 set_property(TARGET ${EXECUTABLE_NAME}
              PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG TRUE)
-
 
 # set_target_properties(${EXECUTABLE_NAME} PROPERTIES
 # 	VS_DEBUGGER_COMMAND_ARGUMENTS "../midiSimpleNotes.json")
@@ -72,7 +75,7 @@ if (WIN32)  # Try to load ASIO SDK
     # For example, winmm.lib must come before kernel32.lib (if linked)
     # or older 32-bit windows versions will have linking issues for
     # certain entry points
-    target_link_libraries(MidiJsonPlayer_lib PRIVATE
+    target_link_libraries(MidiJsonPlayer_ctypes PRIVATE
             winmm.lib
             ws2_32.lib
             wininet.lib
@@ -91,7 +94,7 @@ else()
     find_package(ALSA REQUIRED)
     if (ALSA_FOUND)
         include_directories(${ALSA_INCLUDE_DIRS})
-        target_link_libraries(MidiJsonPlayer_lib ${ALSA_LIBRARIES})
+        target_link_libraries(MidiJsonPlayer_ctypes ${ALSA_LIBRARIES})
         target_link_libraries(${EXECUTABLE_NAME} ${ALSA_LIBRARIES})
         add_definitions(-D__LINUX_ALSA__)
     endif()

@@ -21,7 +21,7 @@ print(f"Library path: {lib_path}")
 
 # Check if the library file exists
 if not os.path.isfile(lib_path):
-    raise FileNotFoundError(f"Could not find the library file: {lib_path}")
+    raise FileNotFoundError(f"COULD NOT FIND THE LIBRARY FILE: {lib_path}")
 
 # Load the shared library
 lib = ctypes.CDLL(lib_path)

@@ -7,53 +7,41 @@ project(MidiJsonPlayer
         HOMEPAGE_URL "https://github.com/ruiseixasm/MidiJsonPlayer"
         LANGUAGES CXX)
 
-# # API Options
-# option(RTMIDI_API_JACK "Compile with JACK support." ${HAVE_JACK})
-# option(RTMIDI_API_WINMM "Compile with WINMM support." ${WIN32})
-# option(RTMIDI_API_CORE "Compile with CoreMIDI support." ${APPLE})
-# option(RTMIDI_API_ALSA "Compile with ALSA support." ${ALSA})
-# option(RTMIDI_API_AMIDI "Compile with Android support." ${ANDROID})
-
 # Include directories
 include_directories(include single_include)
 
-# Add main.cpp explicitly
-set(SOURCES main.cpp)
-
-#
-# NEED TO REBUILD THE ENTIRE BUILD EACH TIME A NEW .CPP FILE IS ADDED!!!
-#
+# Set properties for Windows DLL export
+if(WIN32)
+    add_compile_definitions(__WINDOWS_MM__)
+endif()
 
 # Add all source files from the src directory
 file(GLOB SRC_SOURCES "src/*.cpp")
 
-# Combine all sources
-list(APPEND SOURCES ${SRC_SOURCES})
+set(LIBRARY_NAME "MidiJsonPlayer_ctypes")
+# Create the shared library
+add_library(${LIBRARY_NAME} SHARED ${SRC_SOURCES})
 
 # Specify the executable name
 if (WIN32) # LINUX is new for CMake VERSION 3.25
+    target_compile_definitions(${LIBRARY_NAME} PRIVATE -DBUILDING_DLL)
+endif()
+
+# Add main.cpp explicitly
+set(SOURCES main.cpp)
+
+# Combine all sources
+list(APPEND SOURCES ${SRC_SOURCES})
+
+# Set properties for Windows DLL export
+if(WIN32)
     set(EXECUTABLE_NAME "MidiJsonPlayer")
-    add_compile_definitions(__WINDOWS_MM__)
 else()
     set(EXECUTABLE_NAME "MidiJsonPlayer.out")
 endif()
 
-# Create the shared library
-add_library(MidiJsonPlayer_ctypes SHARED ${SRC_SOURCES})
-#target_compile_definitions(MidiJsonPlayer_ctypes PUBLIC RtMidi)
-# Set properties for Windows DLL export
-if(WIN32)
-    target_compile_definitions(MidiJsonPlayer_ctypes PRIVATE -DBUILDING_DLL)
-endif()
-
 # Add the executable target
 add_executable(${EXECUTABLE_NAME} ${SOURCES})
-
-set_property(TARGET ${EXECUTABLE_NAME}
-             PROPERTY EXCLUDE_FROM_DEFAULT_BUILD_DEBUG TRUE)
-
-# set_target_properties(${EXECUTABLE_NAME} PROPERTIES
-# 	VS_DEBUGGER_COMMAND_ARGUMENTS "../midiSimpleNotes.json")
 
 # # Set the build type to "Debug"
 # set(CMAKE_BUILD_TYPE Debug)
@@ -66,16 +54,7 @@ set_property(TARGET ${EXECUTABLE_NAME}
 
 # Check if we are on Windows
 if (WIN32)  # Try to load ASIO SDK
-    # find_package(ASIO)
-    # if(TARGET ASIO::SDK)
-    #     target_link_libraries(openshot-audio PRIVATE ASIO::SDK)
-    #     set(NEED_ASIO TRUE)
-    # endif()
-    # Order here can be important!
-    # For example, winmm.lib must come before kernel32.lib (if linked)
-    # or older 32-bit windows versions will have linking issues for
-    # certain entry points
-    target_link_libraries(MidiJsonPlayer_ctypes PRIVATE
+    target_link_libraries(${LIBRARY_NAME} PRIVATE
             winmm.lib
             ws2_32.lib
             wininet.lib
@@ -98,26 +77,7 @@ else()
         target_link_libraries(${EXECUTABLE_NAME} ${ALSA_LIBRARIES})
         add_definitions(-D__LINUX_ALSA__)
     endif()
-
-    # # Find and link RtMidi library
-    # add_subdirectory(${CMAKE_CURRENT_SOURCE_DIR}/path/to/rtaudio)
-    # include_directories(${CMAKE_CURRENT_SOURCE_DIR}/path/to/rtaudio/include)
-    # target_link_libraries(${EXECUTABLE_NAME} rtmidi)
 endif()
-
-# # Add a custom target to run the executable with arguments
-# add_custom_target(RunWithArgs
-#     COMMAND ${EXECUTABLE_NAME} ../midiSimpleNotes.json
-#     DEPENDS ${EXECUTABLE_NAME}
-#     WORKING_DIRECTORY ${CMAKE_CURRENT_BINARY_DIR}
-#     COMMENT "Running ${EXECUTABLE_NAME} with ../midiSimpleNotes.json"
-# )
 
 # Print the project directory during configuration
 message("CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")
-
-# # Print CMAKE_CURRENT_BINARY_DIR during the build
-# add_custom_command(TARGET ${EXECUTABLE_NAME} POST_BUILD
-#   COMMAND ${CMAKE_COMMAND} -E echo "CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}"
-# )
-

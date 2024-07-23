@@ -48,6 +48,7 @@ int PlayList(const char* json_str) {
     std::vector<MidiDevice> midi_devices;
     std::list<MidiPin> midiToProcess;
     std::list<MidiPin> midiProcessed;
+    std::list<MidiPin> midiRedundant;
 
     try {
 
@@ -196,6 +197,125 @@ int PlayList(const char* json_str) {
 
     // Sort the list by time in ascendent order
     midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) { return a.getTime() < b.getTime(); });
+
+    // Clean up redundant midi messages
+    {
+        auto getType = []( const MidiPin &midi_pin ) {
+                return midi_pin.getMidiMessage()[0] & 0xF0;
+            };
+        auto getChannel = []( const MidiPin &midi_pin ) {
+                return midi_pin.getMidiMessage()[0] & 0x0F;
+            };
+        auto get_data_byte_1 = []( const MidiPin &midi_pin ) {
+                return midi_pin.getMidiMessage()[1];
+            };
+        auto get_data_byte_2 = []( const MidiPin &midi_pin ) {
+                return midi_pin.getMidiMessage()[2];
+            };
+
+        struct MidiNoteOn {
+            const unsigned char channel;
+            const unsigned char data_byte_1;
+            unsigned char data_byte_2;  // To accept Note On 0 as off (pass through)
+
+            MidiNoteOn(unsigned char channel,
+                unsigned char data_byte_1,
+                unsigned char data_byte_2):
+                    channel(channel),
+                    data_byte_1(data_byte_1),
+                    data_byte_2(data_byte_2) { }
+        };
+        std::list<MidiNoteOn> midi_note_on_list;
+
+        struct MidiCC {
+            const unsigned char channel;
+            const unsigned char data_byte_1;
+            const unsigned char data_byte_2;
+            
+            MidiCC(unsigned char channel,
+                unsigned char data_byte_1,
+                unsigned char data_byte_2):
+                    channel(channel),
+                    data_byte_1(data_byte_1),
+                    data_byte_2(data_byte_2) { }
+        };
+        std::list<MidiNoteOn> midi_cc_list;
+        
+        const unsigned char type_note_on = 0x90;
+        const unsigned char type_note_off = 0x80;
+        const unsigned char type_cc = 0xB0;
+
+        unsigned char midi_message_type;
+        unsigned char midi_message_channel;
+        unsigned char midi_message_data_byte_1;
+        unsigned char midi_message_data_byte_2;
+
+        // Loop through the list and remove elements
+        for (auto it = midiToProcess.begin(); it != midiToProcess.end(); ) {
+
+            auto &midi_pin = *it;
+            midi_message_type = getType(midi_pin);
+            midi_message_channel = getChannel(midi_pin);
+            midi_message_data_byte_1 = get_data_byte_1(midi_pin);
+            midi_message_data_byte_2 = get_data_byte_2(midi_pin);
+
+            if (midi_message_type == type_note_on) {
+
+                for (auto &midi_note_on : midi_note_on_list) {
+                    if (midi_note_on.channel == midi_message_channel &&
+                        midi_note_on.data_byte_1 == midi_message_data_byte_1) {
+
+                        if (midi_message_data_byte_2 == 0 && midi_note_on.data_byte_2 > 0 ||
+                            midi_message_data_byte_2 > 0 && midi_note_on.data_byte_2 == 0) {
+
+                            midi_note_on.data_byte_2 = midi_message_data_byte_2;
+                            goto skip_to_2;
+                        } else {
+
+                            midiRedundant.push_back(midi_pin);
+                            it = midiToProcess.erase(it);
+                            goto skip_to_2;
+                        }
+                    }
+                }
+
+                // First timer Note On
+                midi_note_on_list.push_back(
+                    MidiNoteOn(midi_message_channel, midi_message_data_byte_1, midi_message_data_byte_2)
+                );
+
+                ++it; // Only increment if no removal
+
+            } else if (midi_message_type == type_note_off) {
+
+                // Loop through the list and remove elements
+                for (auto mn = midi_note_on_list.begin(); mn != midi_note_on_list.end(); ++mn) {
+
+                    auto &midi_note_on = *mn;
+                    if (midi_note_on.channel == midi_message_channel &&
+                        midi_note_on.data_byte_1 == midi_message_data_byte_1) {
+
+                        midiRedundant.push_back(midi_pin);
+                        mn = midi_note_on_list.erase(mn);
+                        goto skip_to_2;
+                    }
+                }
+                midiRedundant.push_back(midi_pin);
+                it = midiToProcess.erase(it);
+
+            } else if (midi_message_type == type_cc) {
+
+            } else {
+                ++it; // Only increment if no removal
+            }
+
+        skip_to_2: continue;
+
+        }
+
+        // Add the needed note off for all those still on at the end!
+        
+    }
 
     auto start = std::chrono::high_resolution_clock::now();
 

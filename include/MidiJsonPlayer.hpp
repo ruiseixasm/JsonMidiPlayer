@@ -145,6 +145,10 @@ public:
         return time_ms;
     }
 
+    const unsigned char* getMidiMessage() const {
+        return midi_message;
+    }
+
     void pluckTooth() {
         if (midi_device != nullptr)
             midi_device->sendMessage(midi_message, message_size);

@@ -339,11 +339,3 @@ int PlayList(const char* json_str) {
 
     return 0;
 }
-
-int PlayList_ctypes(const char* json_str) {
-    return PlayList(json_str);
-}
-
-int add(int a, int b) {
-    return a + b;
-}

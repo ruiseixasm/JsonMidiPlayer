@@ -10,28 +10,40 @@ project(MidiJsonPlayer
 # Include directories
 include_directories(include single_include)
 
-# Set properties for Windows DLL export
-if(WIN32)
-    add_compile_definitions(__WINDOWS_MM__)
-endif()
+# Add main.cpp explicitly
+set(STATIC_SOURCES src/MidiJsonPlayer.cpp src/RtMidi.cpp)
 
-# Add all source files from the src directory
-file(GLOB SRC_SOURCES "src/*.cpp")
-
-set(LIBRARY_NAME "MidiJsonPlayer_ctypes")
 # Create the shared library
-add_library(${LIBRARY_NAME} SHARED ${SRC_SOURCES})
+add_library(MidiJsonPlayer_library STATIC ${STATIC_SOURCES})
+# Add the -fPIC option for position-independent code
+set_target_properties(MidiJsonPlayer_library PROPERTIES POSITION_INDEPENDENT_CODE ON)
 
-# Specify the executable name
-if (WIN32) # LINUX is new for CMake VERSION 3.25
-    target_compile_definitions(${LIBRARY_NAME} PRIVATE -DBUILDING_DLL)
-endif()
+# Specify output directories
+set_target_properties(MidiJsonPlayer_library PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+)
 
 # Add main.cpp explicitly
-set(SOURCES main.cpp)
+set(CTYPES_SOURCES src/MidiJsonPlayer_ctypes.cpp)
 
-# Combine all sources
-list(APPEND SOURCES ${SRC_SOURCES})
+# Create the shared library
+add_library(MidiJsonPlayer_ctypes SHARED ${CTYPES_SOURCES})
+# Link to MyLibrary
+target_link_libraries(MidiJsonPlayer_ctypes PRIVATE MidiJsonPlayer_library)
+# Add the -fPIC option for position-independent code
+set_target_properties(MidiJsonPlayer_ctypes PROPERTIES POSITION_INDEPENDENT_CODE ON)
+
+# Specify output directories
+set_target_properties(MidiJsonPlayer_ctypes PROPERTIES
+    RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+    ARCHIVE_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/lib
+)
+
+# Add main.cpp explicitly
+set(EXECUTABLE_SOURCES main.cpp src/MidiJsonPlayer.cpp)
 
 # Set properties for Windows DLL export
 if(WIN32)
@@ -41,7 +53,9 @@ else()
 endif()
 
 # Add the executable target
-add_executable(${EXECUTABLE_NAME} ${SOURCES})
+add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SOURCES})
+# Link to MyLibrary
+target_link_libraries(${EXECUTABLE_NAME} PRIVATE MidiJsonPlayer_library)
 
 # # Set the build type to "Debug"
 # set(CMAKE_BUILD_TYPE Debug)
@@ -54,14 +68,8 @@ add_executable(${EXECUTABLE_NAME} ${SOURCES})
 
 # Check if we are on Windows
 if (WIN32)  # Try to load ASIO SDK
-    target_link_libraries(${LIBRARY_NAME} PRIVATE
-            winmm.lib
-            ws2_32.lib
-            wininet.lib
-            version.lib
-            Shlwapi.dll
-        )
-    target_link_libraries(${EXECUTABLE_NAME} PRIVATE
+    add_compile_definitions(__WINDOWS_MM__)
+    target_link_libraries(MidiJsonPlayer_library PRIVATE
             winmm.lib
             ws2_32.lib
             wininet.lib
@@ -73,8 +81,7 @@ else()
     find_package(ALSA REQUIRED)
     if (ALSA_FOUND)
         include_directories(${ALSA_INCLUDE_DIRS})
-        target_link_libraries(MidiJsonPlayer_ctypes ${ALSA_LIBRARIES})
-        target_link_libraries(${EXECUTABLE_NAME} ${ALSA_LIBRARIES})
+        target_link_libraries(MidiJsonPlayer_library ${ALSA_LIBRARIES})
         add_definitions(-D__LINUX_ALSA__)
     endif()
 endif()

@@ -3,12 +3,6 @@
 #ifndef MIDI_JSON_PLAYER_HPP
 #define MIDI_JSON_PLAYER_HPP
 
-#ifdef _WIN32
-    #define DLL_EXPORT __declspec(dllexport)
-#else
-    #define DLL_EXPORT
-#endif
-
 #include <iostream>
 #include <string>
 #include <array>
@@ -133,7 +127,6 @@ public:
             }
         }
     }
-
 };
 
 class MidiPin {
@@ -161,10 +154,5 @@ public:
 bool canOpenMidiPort(RtMidiOut& midiOut, unsigned int portNumber);
 
 int PlayList(const char* json_str);
-
-extern "C" {    // Needed for Python ctypes
-    DLL_EXPORT int PlayList_ctypes(const char* json_str);
-    DLL_EXPORT int add(int a, int b);
-}
 
 #endif // MIDI_JSON_PLAYER_HPP

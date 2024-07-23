@@ -14,7 +14,7 @@ else:  # Assume Linux/Unix
     lib_name = 'libMidiJsonPlayer_ctypes.so'
 
 # Get the absolute path to the library
-lib_path = os.path.abspath(f'./build/{lib_name}')
+lib_path = os.path.abspath(f'./build/lib/{lib_name}')
 
 # Print the library path for debugging
 print(f"Library path: {lib_path}")
@@ -27,9 +27,9 @@ if not os.path.isfile(lib_path):
 lib = ctypes.CDLL(lib_path)
 
 # Define the argument and return types for the C function
-lib.add.argtypes = [ctypes.c_int, ctypes.c_int]
-lib.add.restype = ctypes.c_int
+lib.add_ctypes.argtypes = [ctypes.c_int, ctypes.c_int]
+lib.add_ctypes.restype = ctypes.c_int
 
 # Call the C++ function from Python
-result = lib.add(3, 4)
+result = lib.add_ctypes(3, 4)
 print(f"3 + 4 = {result}")

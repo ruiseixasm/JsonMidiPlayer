@@ -23,7 +23,6 @@ private:
     const std::string name;
     const unsigned int port;
     bool opened_port = false;
-    std::array<unsigned char, 256> keyboards = {0};
 public:
     MidiDevice(std::string device_name, unsigned int device_port) : name(device_name), port(device_port) { }
 
@@ -31,7 +30,7 @@ public:
 
     // Move constructor
     MidiDevice(MidiDevice &&other) noexcept : midiOut(std::move(other.midiOut)),
-            name(std::move(other.name)), port(other.port), opened_port(other.opened_port), keyboards(std::move(other.keyboards)) { }
+            name(std::move(other.name)), port(other.port), opened_port(other.opened_port) { }
 
     // Delete the copy constructor and copy assignment operator
     MidiDevice(const MidiDevice &) = delete;
@@ -42,7 +41,6 @@ public:
         if (this != &other) {
             // Since name and port are const, they cannot be assigned.
             opened_port = other.opened_port;
-            keyboards = std::move(other.keyboards);
             // midiOut can't be assigned using the = assignment operator because has none.
             // midiOut = std::move(other.midiOut);
         }
@@ -66,7 +64,7 @@ public:
         }
     }
 
-    unsigned int getOpenedPort() const {
+    bool isPortOpened() const {
         return opened_port;
     }
 
@@ -74,58 +72,13 @@ public:
         return name;
     }
 
-    bool isKeyPressed(unsigned char channel, unsigned char key_note) const {
-        unsigned char keyboards_key = channel * 128 + key_note;
-        unsigned char keyboards_byte = keyboards_key / 8;
-        unsigned char byte_key = keyboards_key % 8;
-
-        return keyboards[keyboards_byte] & 0b10000000 >> byte_key;
-    }
-
-    void pressKey(unsigned char channel, unsigned char key_note) {
-        unsigned char keyboards_key = channel * 128 + key_note;
-        unsigned char keyboards_byte = keyboards_key / 8;
-        unsigned char byte_key = keyboards_key % 8;
-
-        keyboards[keyboards_byte] |= 0b10000000 >> byte_key;
-    }
-
-    void releaseKey(unsigned char channel, unsigned char key_note) {
-        unsigned char keyboards_key = channel * 128 + key_note;
-        unsigned char keyboards_byte = keyboards_key / 8;
-        unsigned char byte_key = keyboards_key % 8;
-
-        keyboards[keyboards_byte] &= ~0b10000000 >> byte_key;
+    unsigned int getDevicePort() const {
+        return port;
     }
 
     void sendMessage(const unsigned char *midi_message, size_t message_size) {
 
-        if (message_size <= 3) {
-            bool validated = false;
-
-            if (message_size == 3) {
-                if (midi_message[1] & 0xF0 == 0x80) {          // 0x80 - Note Off
-                    if (isKeyPressed(midi_message[1] & 0x0F, midi_message[2])) {
-                        releaseKey(midi_message[1] & 0x0F, midi_message[2]);
-                        validated = true;
-                    }
-                } else if (midi_message[1] & 0xF0 == 0x90) {   // 0x90 - Note On
-                    if (!isKeyPressed(midi_message[1] & 0x0F, midi_message[2])) {
-                        pressKey(midi_message[1] & 0x0F, midi_message[2]);
-                        validated = true;
-                    }
-                } else {
-                    validated = true;
-                }
-            } else {
-                validated = true;
-            }
-
-            if (validated) {
-                // Send the MIDI message
-                midiOut.sendMessage(midi_message, message_size);
-            }
-        }
+        midiOut.sendMessage(midi_message, message_size);
     }
 };
 
@@ -138,11 +91,19 @@ private:
     const unsigned char midi_message[3];    // Status byte and 2 Data bytes
     // https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
 public:
-    MidiPin(double time_milliseconds, MidiDevice *midi_device, size_t message_size, unsigned char status_byte, unsigned char data_byte_1, unsigned char data_byte_2)
+    MidiPin(double time_milliseconds, MidiDevice *midi_device, size_t message_size, unsigned char status_byte, unsigned char data_byte_1 = 0, unsigned char data_byte_2 = 0)
         : time_ms(time_milliseconds), midi_device(midi_device), message_size(message_size), midi_message{status_byte, data_byte_1, data_byte_2} { }
 
     double getTime() const {
         return time_ms;
+    }
+
+    MidiDevice *getMidiDevice() const {
+        return midi_device;
+    }
+
+    unsigned int getDevicePort() const {
+        return midi_device->getDevicePort();
     }
 
     const unsigned char* getMidiMessage() const {

@@ -45,6 +45,24 @@
                 "data_byte_1": 71,
                 "data_byte_2": 0
             }
+        },
+        {
+            "time_ms": 1500,
+            "midi_message": {
+                "device": ["Sonyvox", "FLUID Synth", "loopMIDI", "GS Wavetable Synth"],
+                "status_byte": 144,
+                "data_byte_1": 70,
+                "data_byte_2": 100
+            }
+        },
+        {
+            "time_ms": 3000,
+            "midi_message": {
+                "device": ["Sonyvox", "FLUID Synth", "loopMIDI", "GS Wavetable Synth"],
+                "status_byte": 128,
+                "data_byte_1": 70,
+                "data_byte_2": 0
+            }
         }
     ]
 }

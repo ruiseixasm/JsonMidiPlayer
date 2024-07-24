@@ -230,12 +230,12 @@ int PlayList(const char* json_str) {
         std::list<MidiLastMessage> last_midi_cc_list;
         std::list<MidiLastMessage> last_midi_cp_list;
         std::list<MidiLastMessage> last_midi_pb_list;
-        const unsigned char type_note_off = 0x80;   // Note off
-        const unsigned char type_note_on = 0x90;    // Note on
-        const unsigned char type_kp = 0xA0;         // Polyphonic Key Pressure
-        const unsigned char type_cc = 0xB0;         // Control Change
-        const unsigned char type_cp = 0xD0;         // Channel Pressure
-        const unsigned char type_pb = 0xE0;         // Pitch Bend
+        const unsigned char type_note_off = 0x80;           // Note off
+        const unsigned char type_note_on = 0x90;            // Note on
+        const unsigned char type_key_pressure = 0xA0;       // Polyphonic Key Pressure
+        const unsigned char type_control_change = 0xB0;     // Control Change
+        const unsigned char type_channel_pressure = 0xD0;   // Channel Pressure
+        const unsigned char type_pitch_bend = 0xE0;         // Pitch Bend
 
         // Loop through the list and remove elements
         for (auto pin_it = midiToProcess.begin(); pin_it != midiToProcess.end(); ) {
@@ -247,8 +247,23 @@ int PlayList(const char* json_str) {
 
                 const unsigned char pin_midi_message_type = pin_midi_message[0] & 0xF0;
 
-                if (pin_midi_message_type == type_note_on) {
+                switch (pin_midi_message_type) {
+                case type_note_off:
+                    // Loop through the list and remove elements
+                    for (auto note_on = last_midi_note_on_list.begin(); note_on != last_midi_note_on_list.end(); ++note_on) {
 
+                        auto &last_midi_note_on = *note_on;
+                        if (last_midi_note_on == midi_pin) {
+
+                            note_on = last_midi_note_on_list.erase(note_on);
+                            ++pin_it; // Only increment if no removal
+                            goto skip_to_2;
+                        }
+                    }
+                    midiRedundant.push_back(midi_pin);
+                    pin_it = midiToProcess.erase(pin_it);
+                    break;
+                case type_note_on:
                     for (auto &last_midi_note_on : last_midi_note_on_list) {
                         if (last_midi_note_on == midi_pin) {
 
@@ -265,31 +280,13 @@ int PlayList(const char* json_str) {
                             goto skip_to_2;
                         }
                     }
-
                     // First timer Note On
                     last_midi_note_on_list.push_back(
                         MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
                     );
                     ++pin_it; // Only increment if no removal
-
-                } else if (pin_midi_message_type == type_note_off) {
-
-                    // Loop through the list and remove elements
-                    for (auto note_on = last_midi_note_on_list.begin(); note_on != last_midi_note_on_list.end(); ++note_on) {
-
-                        auto &last_midi_note_on = *note_on;
-                        if (last_midi_note_on == midi_pin) {
-
-                            note_on = last_midi_note_on_list.erase(note_on);
-                            ++pin_it; // Only increment if no removal
-                            goto skip_to_2;
-                        }
-                    }
-                    midiRedundant.push_back(midi_pin);
-                    pin_it = midiToProcess.erase(pin_it);
-
-                } else if (pin_midi_message_type == type_kp) {
-
+                    break;
+                case type_key_pressure:
                     for (auto &last_midi_kp : last_midi_kp_list) {
                         if (last_midi_kp == midi_pin) {
 
@@ -305,15 +302,13 @@ int PlayList(const char* json_str) {
                             goto skip_to_2;
                         }
                     }
-
                     // First timer Note On
                     last_midi_kp_list.push_back(
                         MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
                     );
                     ++pin_it; // Only increment if no removal
-
-                } else if (pin_midi_message_type == type_cc) {
-
+                    break;
+                case type_control_change:
                     for (auto &last_midi_cc : last_midi_cc_list) {
                         if (last_midi_cc == midi_pin) {
 
@@ -329,15 +324,13 @@ int PlayList(const char* json_str) {
                             goto skip_to_2;
                         }
                     }
-
                     // First timer Note On
                     last_midi_cc_list.push_back(
                         MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
                     );
                     ++pin_it; // Only increment if no removal
-
-                } else if (pin_midi_message_type == type_cp) {
-
+                    break;
+                case type_channel_pressure:
                     for (auto &last_midi_cp : last_midi_cp_list) {
                         if (last_midi_cp == midi_pin) {
 
@@ -353,15 +346,13 @@ int PlayList(const char* json_str) {
                             goto skip_to_2;
                         }
                     }
-
                     // First timer Note On
                     last_midi_cp_list.push_back(
                         MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
                     );
                     ++pin_it; // Only increment if no removal
-
-                } else if (pin_midi_message_type == type_pb) {
-
+                    break;
+                case type_pitch_bend:
                     for (auto &last_midi_pb : last_midi_pb_list) {
                         if (last_midi_pb == midi_pin) {
 
@@ -379,22 +370,23 @@ int PlayList(const char* json_str) {
                             goto skip_to_2;
                         }
                     }
-
                     // First timer Note On
                     last_midi_pb_list.push_back(
                         MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
                     );
                     ++pin_it; // Only increment if no removal
-
-                } else {
+                    break;
+                
+                default:
                     ++pin_it; // Only increment if no removal
+                    break;
                 }
+
             } else {
                 ++pin_it; // Only increment if no removal
             }
 
         skip_to_2: continue;
-
         }
 
         // Get time_ms of last message

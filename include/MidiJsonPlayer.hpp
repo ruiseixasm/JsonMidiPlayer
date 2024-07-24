@@ -1,5 +1,3 @@
-// Compile as: g++ -shared -fPIC -o MidiJsonPlayer.so src/MidiJsonPlayer.cpp -I/single_include/nlohmann -I/include -I/src
-
 #ifndef MIDI_JSON_PLAYER_HPP
 #define MIDI_JSON_PLAYER_HPP
 
@@ -25,8 +23,7 @@ private:
     bool opened_port = false;
 public:
     MidiDevice(std::string device_name, unsigned int device_port) : name(device_name), port(device_port) { }
-
-    ~MidiDevice();
+    ~MidiDevice() { closePort(); }
 
     // Move constructor
     MidiDevice(MidiDevice &&other) noexcept : midiOut(std::move(other.midiOut)),
@@ -48,38 +45,12 @@ public:
         return *this;
     }
 
-    void openPort() {
-        if (!opened_port) {
-            midiOut.openPort(port);
-            opened_port = true;
-            std::cout << "Midi device connected: " << name << std::endl;
-        }
-    }
-
-    void closePort() {
-        if (opened_port) {
-            midiOut.closePort();
-            opened_port = false;
-            std::cout << "Midi device disconnected: " << name << std::endl;
-        }
-    }
-
-    bool isPortOpened() const {
-        return opened_port;
-    }
-
-    const std::string& getName() const {
-        return name;
-    }
-
-    unsigned int getDevicePort() const {
-        return port;
-    }
-
-    void sendMessage(const unsigned char *midi_message, size_t message_size) {
-
-        midiOut.sendMessage(midi_message, message_size);
-    }
+    void openPort();
+    void closePort();
+    bool isPortOpened() const;
+    const std::string& getName() const;
+    unsigned int getDevicePort() const;
+    void sendMessage(const unsigned char *midi_message, size_t message_size);
 };
 
 class MidiPin {
@@ -111,8 +82,7 @@ public:
     }
 
     void pluckTooth() {
-        if (midi_device != nullptr)
-            midi_device->sendMessage(midi_message, message_size);
+        if (midi_device != nullptr) midi_device->sendMessage(midi_message, message_size);
     }
 };
 

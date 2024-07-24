@@ -1,7 +1,35 @@
 #include "MidiJsonPlayer.hpp"
 
-MidiDevice::~MidiDevice() {
-    closePort();
+void MidiDevice::openPort() {
+    if (!opened_port) {
+        midiOut.openPort(port);
+        opened_port = true;
+        std::cout << "Midi device connected: " << name << std::endl;
+    }
+}
+
+void MidiDevice::closePort() {
+    if (opened_port) {
+        midiOut.closePort();
+        opened_port = false;
+        std::cout << "Midi device disconnected: " << name << std::endl;
+    }
+}
+
+bool MidiDevice::isPortOpened() const {
+    return opened_port;
+}
+
+const std::string& MidiDevice::getName() const {
+    return name;
+}
+
+unsigned int MidiDevice::getDevicePort() const {
+    return port;
+}
+
+void MidiDevice::sendMessage(const unsigned char *midi_message, size_t message_size) {
+    midiOut.sendMessage(midi_message, message_size);
 }
 
 bool canOpenMidiPort(RtMidiOut& midiOut, unsigned int portNumber) {
@@ -186,7 +214,6 @@ int PlayList(const char* json_str) {
                     midi_device(midi_device), status_byte(status_byte), data_byte_1(data_byte_1), data_byte_2(data_byte_2) { }
 
             bool operator == (const MidiPin &midi_pin) {
-
                 if (midi_device == midi_pin.getMidiDevice() && (status_byte & 0x0F) == (midi_pin.getMidiMessage()[0] & 0x0F)) {
                     if (status_byte >= 0x80 && status_byte < 0xC0)
                         if (data_byte_1 == midi_pin.getMidiMessage()[1])

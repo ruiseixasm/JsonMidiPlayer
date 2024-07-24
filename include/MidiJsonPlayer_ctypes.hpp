@@ -1,3 +1,4 @@
+// Compile as: g++ -shared -fPIC -o MidiJsonPlayer.so src/MidiJsonPlayer.cpp -I/single_include/nlohmann -I/include -I/src
 #ifndef MIDI_JSON_PLAYER_CTYPES_HPP
 #define MIDI_JSON_PLAYER_CTYPES_HPP
 

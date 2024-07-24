@@ -416,7 +416,7 @@ int PlayList(const char* json_str) {
         midiToProcess.pop_front();
     }
 
-    std::cout << "\tTotal processed Midi Messages (sent): " << midiProcessed.size() << std::endl;
+    std::cout << "\tTotal processed Midi Messages (sent):     " << midiProcessed.size() << std::endl;
     std::cout << "\tTotal redundant Midi Messages (not sent): " << midiRedundant.size() << std::endl;
     
     while (midiProcessed.size() > 0) {

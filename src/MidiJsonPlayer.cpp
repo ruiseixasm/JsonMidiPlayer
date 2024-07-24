@@ -179,8 +179,8 @@ int PlayList(const char* json_str) {
         public:
             MidiDevice * const midi_device;
             const unsigned char status_byte;
-            const unsigned char data_byte_1;
-            unsigned char data_byte_2;  // To accept Note On 0 as off (pass through)
+            unsigned char data_byte_1;
+            unsigned char data_byte_2;
 
             MidiLastMessage(MidiDevice * const midi_device, unsigned char status_byte, unsigned char data_byte_1, unsigned char data_byte_2):
                     midi_device(midi_device), status_byte(status_byte), data_byte_1(data_byte_1), data_byte_2(data_byte_2) { }
@@ -198,16 +198,22 @@ int PlayList(const char* json_str) {
             }
         };
 
-        std::list<MidiLastMessage> midi_note_on_list;
-        std::list<MidiLastMessage> midi_cc_list;
-        const unsigned char type_note_on = 0x90;
-        const unsigned char type_note_off = 0x80;
-        const unsigned char type_cc = 0xB0;
+        std::list<MidiLastMessage> last_midi_note_on_list;
+        std::list<MidiLastMessage> last_midi_kp_list;
+        std::list<MidiLastMessage> last_midi_cc_list;
+        std::list<MidiLastMessage> last_midi_cp_list;
+        std::list<MidiLastMessage> last_midi_pb_list;
+        const unsigned char type_note_off = 0x80;   // Note off
+        const unsigned char type_note_on = 0x90;    // Note on
+        const unsigned char type_kp = 0xA0;         // Polyphonic Key Pressure
+        const unsigned char type_cc = 0xB0;         // Control Change
+        const unsigned char type_cp = 0xD0;         // Channel Pressure
+        const unsigned char type_pb = 0xE0;         // Pitch Bend
 
         // Loop through the list and remove elements
-        for (auto it = midiToProcess.begin(); it != midiToProcess.end(); ) {
+        for (auto pin_it = midiToProcess.begin(); pin_it != midiToProcess.end(); ) {
 
-            auto &midi_pin = *it;
+            auto &midi_pin = *pin_it;
             const unsigned char *pin_midi_message = midi_pin.getMidiMessage();
 
             if (pin_midi_message[0] >= 0x80 && pin_midi_message[0] < 0xF0) {
@@ -216,74 +222,148 @@ int PlayList(const char* json_str) {
 
                 if (pin_midi_message_type == type_note_on) {
 
-                    for (auto &midi_note_on : midi_note_on_list) {
-                        if (midi_note_on == midi_pin) {
+                    for (auto &last_midi_note_on : last_midi_note_on_list) {
+                        if (last_midi_note_on == midi_pin) {
 
-                            if (midi_note_on.data_byte_2 == 0 && pin_midi_message[2] > 0 ||
-                                midi_note_on.data_byte_2 > 0 && pin_midi_message[2] == 0) {
+                            if (last_midi_note_on.data_byte_2 == 0 && pin_midi_message[2] > 0 ||
+                                last_midi_note_on.data_byte_2 > 0 && pin_midi_message[2] == 0) {
 
-                                midi_note_on.data_byte_2 = pin_midi_message[2];
-                                ++it; // Only increment if no removal
+                                last_midi_note_on.data_byte_2 = pin_midi_message[2];
+                                ++pin_it; // Only increment if no removal
                             } else {
 
                                 midiRedundant.push_back(midi_pin);
-                                it = midiToProcess.erase(it);
+                                pin_it = midiToProcess.erase(pin_it);
                             }
                             goto skip_to_2;
                         }
                     }
 
                     // First timer Note On
-                    midi_note_on_list.push_back(
+                    last_midi_note_on_list.push_back(
                         MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
                     );
-                    ++it; // Only increment if no removal
+                    ++pin_it; // Only increment if no removal
 
                 } else if (pin_midi_message_type == type_note_off) {
 
                     // Loop through the list and remove elements
-                    for (auto mn = midi_note_on_list.begin(); mn != midi_note_on_list.end(); ++mn) {
+                    for (auto note_on = last_midi_note_on_list.begin(); note_on != last_midi_note_on_list.end(); ++note_on) {
 
-                        auto &midi_note_on = *mn;
-                        if (midi_note_on == midi_pin) {
+                        auto &last_midi_note_on = *note_on;
+                        if (last_midi_note_on == midi_pin) {
 
-                            mn = midi_note_on_list.erase(mn);
-                            ++it; // Only increment if no removal
+                            note_on = last_midi_note_on_list.erase(note_on);
+                            ++pin_it; // Only increment if no removal
                             goto skip_to_2;
                         }
                     }
                     midiRedundant.push_back(midi_pin);
-                    it = midiToProcess.erase(it);
+                    pin_it = midiToProcess.erase(pin_it);
 
-                } else if (pin_midi_message_type == type_cc) {
+                } else if (pin_midi_message_type == type_kp) {
 
-                    for (auto &midi_cc : midi_cc_list) {
-                        if (midi_cc == midi_pin) {
+                    for (auto &last_midi_kp : last_midi_kp_list) {
+                        if (last_midi_kp == midi_pin) {
 
-                            if (midi_cc.data_byte_2 != pin_midi_message[2]) {
+                            if (last_midi_kp.data_byte_2 != pin_midi_message[2]) {
 
-                                midi_cc.data_byte_2 = pin_midi_message[2];
-                                ++it; // Only increment if no removal
+                                last_midi_kp.data_byte_2 = pin_midi_message[2];
+                                ++pin_it; // Only increment if no removal
                             } else {
 
                                 midiRedundant.push_back(midi_pin);
-                                it = midiToProcess.erase(it);
+                                pin_it = midiToProcess.erase(pin_it);
                             }
                             goto skip_to_2;
                         }
                     }
 
                     // First timer Note On
-                    midi_cc_list.push_back(
+                    last_midi_kp_list.push_back(
                         MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
                     );
-                    ++it; // Only increment if no removal
+                    ++pin_it; // Only increment if no removal
+
+                } else if (pin_midi_message_type == type_cc) {
+
+                    for (auto &last_midi_cc : last_midi_cc_list) {
+                        if (last_midi_cc == midi_pin) {
+
+                            if (last_midi_cc.data_byte_2 != pin_midi_message[2]) {
+
+                                last_midi_cc.data_byte_2 = pin_midi_message[2];
+                                ++pin_it; // Only increment if no removal
+                            } else {
+
+                                midiRedundant.push_back(midi_pin);
+                                pin_it = midiToProcess.erase(pin_it);
+                            }
+                            goto skip_to_2;
+                        }
+                    }
+
+                    // First timer Note On
+                    last_midi_cc_list.push_back(
+                        MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
+                    );
+                    ++pin_it; // Only increment if no removal
+
+                } else if (pin_midi_message_type == type_cp) {
+
+                    for (auto &last_midi_cp : last_midi_cp_list) {
+                        if (last_midi_cp == midi_pin) {
+
+                            if (last_midi_cp.data_byte_1 != pin_midi_message[1]) {
+
+                                last_midi_cp.data_byte_1 = pin_midi_message[1];
+                                ++pin_it; // Only increment if no removal
+                            } else {
+
+                                midiRedundant.push_back(midi_pin);
+                                pin_it = midiToProcess.erase(pin_it);
+                            }
+                            goto skip_to_2;
+                        }
+                    }
+
+                    // First timer Note On
+                    last_midi_cp_list.push_back(
+                        MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
+                    );
+                    ++pin_it; // Only increment if no removal
+
+                } else if (pin_midi_message_type == type_pb) {
+
+                    for (auto &last_midi_pb : last_midi_pb_list) {
+                        if (last_midi_pb == midi_pin) {
+
+                            if (last_midi_pb.data_byte_1 != pin_midi_message[1] ||
+                                last_midi_pb.data_byte_2 != pin_midi_message[2]) {
+
+                                last_midi_pb.data_byte_1 = pin_midi_message[1];
+                                last_midi_pb.data_byte_2 = pin_midi_message[2];
+                                ++pin_it; // Only increment if no removal
+                            } else {
+
+                                midiRedundant.push_back(midi_pin);
+                                pin_it = midiToProcess.erase(pin_it);
+                            }
+                            goto skip_to_2;
+                        }
+                    }
+
+                    // First timer Note On
+                    last_midi_pb_list.push_back(
+                        MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
+                    );
+                    ++pin_it; // Only increment if no removal
 
                 } else {
-                    ++it; // Only increment if no removal
+                    ++pin_it; // Only increment if no removal
                 }
             } else {
-                ++it; // Only increment if no removal
+                ++pin_it; // Only increment if no removal
             }
 
         skip_to_2: continue;
@@ -293,10 +373,11 @@ int PlayList(const char* json_str) {
         // Get time_ms of last message
         auto last_message_time_ms = midiToProcess.back().getTime();
         // Add the needed note off for all those still on at the end!
-        for (auto &midi_note_on : midi_note_on_list) {
+        for (auto &last_midi_note_on : last_midi_note_on_list) {
             // Transform midi on in midi off
-            const unsigned char note_off_status_byte = midi_note_on.status_byte & 0x0F | 0x80;
-            midiToProcess.push_back(MidiPin(last_message_time_ms, midi_note_on.midi_device, 3, note_off_status_byte, midi_note_on.data_byte_1));
+            const unsigned char note_off_status_byte = last_midi_note_on.status_byte & 0x0F | 0x80;
+            midiToProcess.push_back(MidiPin(last_message_time_ms, last_midi_note_on.midi_device,
+                    3, note_off_status_byte, last_midi_note_on.data_byte_1));
         }
     }
 

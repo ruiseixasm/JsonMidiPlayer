@@ -186,9 +186,14 @@ int PlayList(const char* json_str) {
                     midi_device(midi_device), status_byte(status_byte), data_byte_1(data_byte_1), data_byte_2(data_byte_2) { }
 
             bool operator == (const MidiPin &midi_pin) {
-                if (midi_device == midi_pin.getMidiDevice() &&
-                        (status_byte & 0x0F) == (midi_pin.getMidiMessage()[0] & 0x0F) && data_byte_1 == midi_pin.getMidiMessage()[1]) 
-                    return true;
+
+                if (midi_device == midi_pin.getMidiDevice() && (status_byte & 0x0F) == (midi_pin.getMidiMessage()[0] & 0x0F)) {
+                    if (status_byte >= 0x80 && status_byte < 0xC0)
+                        if (data_byte_1 == midi_pin.getMidiMessage()[1])
+                            return true;
+                    if (status_byte >= 0xC0 && status_byte < 0xF0)
+                        return true;
+                }
                 return false;
             }
         };

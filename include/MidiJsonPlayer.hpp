@@ -45,7 +45,7 @@ public:
         return *this;
     }
 
-    void openPort();
+    bool openPort();
     void closePort();
     bool isPortOpened() const;
     const std::string& getName() const;

@@ -1,11 +1,17 @@
 #include "MidiJsonPlayer.hpp"
 
-void MidiDevice::openPort() {
+bool MidiDevice::openPort() {
     if (!opened_port) {
-        midiOut.openPort(port);
-        opened_port = true;
-        std::cout << "Midi device connected: " << name << std::endl;
+        try {
+            midiOut.openPort(port);
+            opened_port = true;
+            std::cout << "Midi device connected: " << name << std::endl;
+        } catch (RtMidiError &error) {
+            // Handle the error if needed
+            error.printMessage();
+        }
     }
+    return opened_port;
 }
 
 void MidiDevice::closePort() {
@@ -175,22 +181,17 @@ int PlayList(const char* json_str) {
                         continue;
                     }
 
-                    midi_device = nullptr;
                     for (std::string deviceName : jsonDeviceNames) {
                         for (auto &device : midi_devices) {
                             if (device.getName().find(deviceName) != std::string::npos) {
-                                midi_device = &device;
+                                if (device.openPort())
+                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
                                 goto skip_to;
                             }
                         }
                     }
 
-                skip_to:
-
-                    if (midi_device != nullptr) {
-                        midi_device->openPort();
-                        midiToProcess.push_back(MidiPin(time_milliseconds, midi_device, midi_message_size, status_byte, data_byte_1, data_byte_2));
-                    }
+                skip_to: continue;
                 }
             }
         }

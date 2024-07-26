@@ -10,14 +10,14 @@ current_os = platform.system()
 
 # Define the name of the shared library based on the operating system
 if current_os == "Windows":
-    lib_name = 'libMidiJsonPlayer_ctypes.dll'
+    lib_name = 'MidiJsonPlayer_ctypes.dll'
 elif current_os == "Darwin":  # macOS
     lib_name = 'libMidiJsonPlayer_ctypes.dylib'
 else:  # Assume Linux/Unix
     lib_name = 'libMidiJsonPlayer_ctypes.so'
 
 # Construct the full path to the library
-lib_path = os.path.join(script_dir, 'build/lib', lib_name)
+lib_path = os.path.join(script_dir, 'lib', lib_name)
 
 # Check if the library file exists
 if not os.path.isfile(lib_path):

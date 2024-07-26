@@ -7,6 +7,9 @@ project(MidiJsonPlayer
         HOMEPAGE_URL "https://github.com/ruiseixasm/MidiJsonPlayer"
         LANGUAGES CXX)
 
+# CTYPES DLL LIBRARIES ON WINDOWS HAVE TO BE COMPILED BY VISUAL STUDIO XX
+# IF COMPILED BY GCC THOSE FILES WON'T BE RECOGNIZED BY CTYPES AND WILL RESULT IN ERROR
+
 # Include directories
 include_directories(include single_include)
 

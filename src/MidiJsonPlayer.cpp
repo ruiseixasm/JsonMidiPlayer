@@ -7,8 +7,12 @@ bool MidiDevice::openPort() {
             opened_port = true;
             std::cout << "Midi device connected: " << name << std::endl;
         } catch (RtMidiError &error) {
-            // Handle the error if needed
-            error.printMessage();
+            static bool first_time_error = true;
+            if (first_time_error) {
+                // Handle the error if needed
+                error.printMessage();
+                first_time_error = false;
+            }
         }
     }
     return opened_port;
@@ -46,8 +50,12 @@ bool canOpenMidiPort(RtMidiOut& midiOut, unsigned int portNumber) {
             return true;
         }
     } catch (RtMidiError &error) {
-        // Handle the error if needed
-        // error.printMessage();
+        static bool first_time_error = true;
+        if (first_time_error) {
+            // Handle the error if needed
+            error.printMessage();
+            first_time_error = false;
+        }
     }
     return false;
 }

@@ -2,7 +2,13 @@
 #include <fstream>
 #include <sstream>
 #include <string>
-#include <getopt.h>             // Used to process inputed arguments from the command line
+
+#ifdef _WIN32
+    #include <third_party/getopt.h> // Used to process inputed arguments from the command line
+#else
+    #include <getopt.h>             // Used to process inputed arguments from the command line
+#endif
+
 #include "JsonMidiPlayer.hpp"
 
 void printUsage(const char *programName) {

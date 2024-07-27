@@ -1,4 +1,4 @@
-#include "MidiJsonPlayer.hpp"
+#include "JsonMidiPlayer.hpp"
 
 bool MidiDevice::openPort() {
     if (!opened_port) {

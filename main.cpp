@@ -3,7 +3,7 @@
 #include <sstream>
 #include <string>
 #include <getopt.h>             // Used to process inputed arguments from the command line
-#include "MidiJsonPlayer.hpp"
+#include "JsonMidiPlayer.hpp"
 
 void printUsage(const char *programName) {
     std::cout << "Usage: " << programName << " [options] input_file output_file\n"

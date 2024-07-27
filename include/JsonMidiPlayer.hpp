@@ -13,7 +13,7 @@
 #include <nlohmann/json.hpp>    // Include the JSON library
 #include "RtMidi.h"             // Includes the necessary MIDI library
 
-#define FILE_TYPE "Midi Json Player"
+#define FILE_TYPE "Json Midi Player"
 
 class MidiDevice {
 private:

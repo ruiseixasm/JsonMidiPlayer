@@ -1,4 +1,4 @@
-#include "MidiJsonPlayer_ctypes.hpp"
+#include "JsonMidiPlayer_ctypes.hpp"
 
 int PlayList_ctypes(const char* json_str) {
     return PlayList(json_str);

@@ -1,4 +1,4 @@
-# MidiJsonPlayer
+# JsonMidiPlayer
 Very simple MIDI Player of JSON files
 
 # Prerequisites on Linux

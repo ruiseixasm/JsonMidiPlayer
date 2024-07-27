@@ -1,8 +1,8 @@
-// Compile as: g++ -shared -fPIC -o MidiJsonPlayer.so src/MidiJsonPlayer.cpp -I/single_include/nlohmann -I/include -I/src
+// Compile as: g++ -shared -fPIC -o JsonMidiPlayer.so src/JsonMidiPlayer.cpp -I/single_include/nlohmann -I/include -I/src
 #ifndef MIDI_JSON_PLAYER_CTYPES_HPP
 #define MIDI_JSON_PLAYER_CTYPES_HPP
 
-#include "MidiJsonPlayer.hpp"
+#include "JsonMidiPlayer.hpp"
 
 #ifdef _WIN32
     #define DLL_EXPORT __declspec(dllexport)

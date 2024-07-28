@@ -412,25 +412,44 @@ int PlayList(const char* json_str) {
     auto start = std::chrono::high_resolution_clock::now();
 
     while (midiToProcess.size() > 0) {
-        auto next_point_us = std::chrono::microseconds(static_cast<long long>(midiToProcess.front().getTime() * 1000));
+        double next_pin_us = midiToProcess.front().getTime() * 1000;
+        auto next_pin_time = std::chrono::microseconds(static_cast<long long>(next_pin_us));
         auto present = std::chrono::high_resolution_clock::now();
         auto elapsed_time_us = std::chrono::duration_cast<std::chrono::microseconds>(present - start);
-        auto sleep_time_us = next_point_us - elapsed_time_us;
+        auto sleep_time_us = next_pin_time - elapsed_time_us;
 
         std::this_thread::sleep_for(std::chrono::microseconds(sleep_time_us));
 
         // Send the MIDI message
-        midiToProcess.front().pluckTooth();
-        midiProcessed.push_back(midiToProcess.front());
+        MidiPin &midi_pin = midiToProcess.front();
+
+        auto actual_time = std::chrono::high_resolution_clock::now() - start;
+
+        midi_pin.pluckTooth();  // As soon as possible!
+
+        auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(actual_time);
+        double delay_time_ms = (static_cast<double>(microseconds.count()) - next_pin_us) / 1000;
+        midi_pin.setDelayTime(delay_time_ms);
+        midiProcessed.push_back(midi_pin);
         midiToProcess.pop_front();
     }
 
     std::cout << "\tTotal processed Midi Messages (sent):     " << midiProcessed.size() << std::endl;
     std::cout << "\tTotal redundant Midi Messages (not sent): " << midiRedundant.size() << std::endl;
     
-    while (midiProcessed.size() > 0) {
-        midiProcessed.pop_front();
+    double max_delay_ms = 0;
+    double total_delay_ms = 0;
+    for (auto &midi_pin : midiProcessed) {
+
+        auto delay_time_ms = midi_pin.getDelayTime();
+        max_delay_ms = std::max(max_delay_ms, delay_time_ms);
+        total_delay_ms += delay_time_ms;
     }
+
+    std::cout << "\tAccumulated delay (ms): " << total_delay_ms << std::endl;
+    std::cout << "\tMaximum delay (ms):     " << max_delay_ms << std::endl;
+    std::cout << "\tAverage delay (ms):     " << total_delay_ms / midiProcessed.size() << std::endl;
+    
 
     return 0;
 }

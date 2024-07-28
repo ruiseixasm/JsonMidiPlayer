@@ -61,6 +61,7 @@ private:
     const size_t message_size;
     const unsigned char midi_message[3];    // Status byte and 2 Data bytes
     // https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
+    double delay_time_ms = -1;
 public:
     MidiPin(double time_milliseconds, MidiDevice *midi_device, size_t message_size, unsigned char status_byte, unsigned char data_byte_1 = 0, unsigned char data_byte_2 = 0)
         : time_ms(time_milliseconds), midi_device(midi_device), message_size(message_size), midi_message{status_byte, data_byte_1, data_byte_2} { }
@@ -83,6 +84,14 @@ public:
 
     void pluckTooth() {
         if (midi_device != nullptr) midi_device->sendMessage(midi_message, message_size);
+    }
+
+    void setDelayTime(double delay_time_ms) {
+        this->delay_time_ms = delay_time_ms;
+    }
+
+    double getDelayTime() const {
+        return this->delay_time_ms;
     }
 };
 

@@ -451,7 +451,7 @@ int PlayList(const char* json_str) {
     std::cout << "\tTotal delay (ms):   " << total_delay_ms << std::endl;
     std::cout << "\tMaximum delay (ms): " << max_delay_ms << std::endl;
     std::cout << "\tMinimum delay (ms): " << min_delay_ms << std::endl;
-    std::cout << "\tAverage delay (ms): " << total_delay_ms / midiProcessed.size() << std::endl;
+    std::cout << "\tAverage delay (ms): " << (total_delay_ms / std::max(1.0, (1.0 * midiProcessed.size()))) << std::endl;
     
 
     return 0;

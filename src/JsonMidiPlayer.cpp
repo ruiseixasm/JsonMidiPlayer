@@ -437,18 +437,21 @@ int PlayList(const char* json_str) {
     std::cout << "\tTotal processed Midi Messages (sent):     " << midiProcessed.size() << std::endl;
     std::cout << "\tTotal redundant Midi Messages (not sent): " << midiRedundant.size() << std::endl;
     
-    double max_delay_ms = 0;
     double total_delay_ms = 0;
+    double max_delay_ms = 0;
+    double min_delay_ms = midiProcessed.front().getDelayTime();
     for (auto &midi_pin : midiProcessed) {
 
         auto delay_time_ms = midi_pin.getDelayTime();
-        max_delay_ms = std::max(max_delay_ms, delay_time_ms);
         total_delay_ms += delay_time_ms;
+        max_delay_ms = std::max(max_delay_ms, delay_time_ms);
+        min_delay_ms = std::min(min_delay_ms, delay_time_ms);
     }
 
-    std::cout << "\tAccumulated delay (ms): " << total_delay_ms << std::endl;
-    std::cout << "\tMaximum delay (ms):     " << max_delay_ms << std::endl;
-    std::cout << "\tAverage delay (ms):     " << total_delay_ms / midiProcessed.size() << std::endl;
+    std::cout << "\tTotal delay (ms):   " << total_delay_ms << std::endl;
+    std::cout << "\tMaximum delay (ms): " << max_delay_ms << std::endl;
+    std::cout << "\tMinimum delay (ms): " << min_delay_ms << std::endl;
+    std::cout << "\tAverage delay (ms): " << total_delay_ms / midiProcessed.size() << std::endl;
     
 
     return 0;

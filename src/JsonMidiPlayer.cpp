@@ -66,6 +66,7 @@ int PlayList(const char* json_str) {
     std::list<MidiPin> midiToProcess;
     std::list<MidiPin> midiProcessed;
     std::list<MidiPin> midiRedundant;
+    unsigned long int midi_excluded = 0;
 
     try {
 
@@ -127,6 +128,7 @@ int PlayList(const char* json_str) {
                 
                 for (auto jsonElement : jsonFileContent)
                 {
+                    midi_excluded++;
                     // Create an API with the default API
                     try
                     {
@@ -194,6 +196,7 @@ int PlayList(const char* json_str) {
                             if (device.getName().find(deviceName) != std::string::npos) {
                                 if (device.openPort())
                                     midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
+                                    midi_excluded--;
                                 goto skip_to;
                             }
                         }
@@ -434,8 +437,9 @@ int PlayList(const char* json_str) {
         midiToProcess.pop_front();
     }
 
-    std::cout << "\tTotal processed Midi Messages (sent):     " << midiProcessed.size() << std::endl;
-    std::cout << "\tTotal redundant Midi Messages (not sent): " << midiRedundant.size() << std::endl;
+    std::cout << "\tTotal processed Midi Messages (sent):     " << std::setw(10) << midiProcessed.size() << std::endl;
+    std::cout << "\tTotal redundant Midi Messages (not sent): " << std::setw(10) << midiRedundant.size() << std::endl;
+    std::cout << "\tTotal excluded Midi Messages (not sent):  " << std::setw(10) << midi_excluded << std::endl;
     
     double total_delay_ms = 0;
     double max_delay_ms = 0;
@@ -451,10 +455,10 @@ int PlayList(const char* json_str) {
     // Set fixed floating-point notation and precision
     std::cout << std::fixed << std::setprecision(3);
 
-    std::cout << "\tTotal delay (ms):   " << std::setw(10) << total_delay_ms << std::endl;
-    std::cout << "\tMaximum delay (ms): " << std::setw(10) << max_delay_ms << std::endl;
-    std::cout << "\tMinimum delay (ms): " << std::setw(10) << min_delay_ms << std::endl;
-    std::cout << "\tAverage delay (ms): " << std::setw(10) << (total_delay_ms / 
+    std::cout << "\tTotal delay (ms):   " << std::setw(36) << total_delay_ms << std::endl;
+    std::cout << "\tMaximum delay (ms): " << std::setw(36) << max_delay_ms << std::endl;
+    std::cout << "\tMinimum delay (ms): " << std::setw(36) << min_delay_ms << std::endl;
+    std::cout << "\tAverage delay (ms): " << std::setw(36) << (total_delay_ms / 
                                 std::max(1.0, (1.0 * midiProcessed.size()))) << std::endl;
     
 

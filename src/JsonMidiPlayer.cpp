@@ -448,10 +448,14 @@ int PlayList(const char* json_str) {
         min_delay_ms = std::min(min_delay_ms, delay_time_ms);
     }
 
-    std::cout << "\tTotal delay (ms):   " << total_delay_ms << std::endl;
-    std::cout << "\tMaximum delay (ms): " << max_delay_ms << std::endl;
-    std::cout << "\tMinimum delay (ms): " << min_delay_ms << std::endl;
-    std::cout << "\tAverage delay (ms): " << (total_delay_ms / std::max(1.0, (1.0 * midiProcessed.size()))) << std::endl;
+    // Set fixed floating-point notation and precision
+    std::cout << std::fixed << std::setprecision(3);
+
+    std::cout << "\tTotal delay (ms):   " << std::setw(6) << total_delay_ms << std::endl;
+    std::cout << "\tMaximum delay (ms): " << std::setw(6) << max_delay_ms << std::endl;
+    std::cout << "\tMinimum delay (ms): " << std::setw(6) << min_delay_ms << std::endl;
+    std::cout << "\tAverage delay (ms): " << std::setw(6) << (total_delay_ms / 
+                                std::max(1.0, (1.0 * midiProcessed.size()))) << std::endl;
     
 
     return 0;

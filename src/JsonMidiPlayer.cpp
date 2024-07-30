@@ -412,11 +412,12 @@ int PlayList(const char* json_str) {
         }
     }
 
+    double total_drag_ms = 0;
     auto start = std::chrono::high_resolution_clock::now();
 
     while (midiToProcess.size() > 0) {
-        double next_pin_us = midiToProcess.front().getTime() * 1000;
-        auto next_pin_time = std::chrono::microseconds(static_cast<long long>(next_pin_us));
+        double pin_time_us = (midiToProcess.front().getTime() + total_drag_ms) * 1000;
+        auto next_pin_time = std::chrono::microseconds(static_cast<long long>(pin_time_us));
         auto present = std::chrono::high_resolution_clock::now();
         auto elapsed_time_us = std::chrono::duration_cast<std::chrono::microseconds>(present - start);
         auto sleep_time_us = next_pin_time - elapsed_time_us;
@@ -426,15 +427,21 @@ int PlayList(const char* json_str) {
         // Send the MIDI message
         MidiPin &midi_pin = midiToProcess.front();
 
-        auto actual_time = std::chrono::high_resolution_clock::now() - start;
+        auto pluck_time = std::chrono::high_resolution_clock::now() - start;
 
-        midi_pin.pluckTooth();  // As soon as possible!
+        midi_pin.pluckTooth();  // As soon as possible! <----- Midi Send
 
-        auto microseconds = std::chrono::duration_cast<std::chrono::microseconds>(actual_time);
-        double delay_time_ms = (static_cast<double>(microseconds.count()) - next_pin_us) / 1000;
+        auto pluck_time_us = static_cast<double>(
+            std::chrono::duration_cast<std::chrono::microseconds>(pluck_time).count()
+        );
+        double delay_time_ms = (pluck_time_us - pin_time_us) / 1000;
         midi_pin.setDelayTime(delay_time_ms);
         midiProcessed.push_back(midi_pin);
         midiToProcess.pop_front();
+
+        // Process drag if existent
+        if (delay_time_ms > DRAG_DURATION_MS)
+            total_drag_ms += delay_time_ms;
     }
 
     std::cout << "\tTotal processed Midi Messages (sent):     " << std::setw(10) << midiProcessed.size() << std::endl;
@@ -455,6 +462,7 @@ int PlayList(const char* json_str) {
     // Set fixed floating-point notation and precision
     std::cout << std::fixed << std::setprecision(3);
 
+    std::cout << "\tTotal drag (ms):    " << std::setw(36) << total_drag_ms << std::endl;
     std::cout << "\tTotal delay (ms):   " << std::setw(36) << total_delay_ms << std::endl;
     std::cout << "\tMaximum delay (ms): " << std::setw(36) << max_delay_ms << std::endl;
     std::cout << "\tMinimum delay (ms): " << std::setw(36) << min_delay_ms << std::endl;

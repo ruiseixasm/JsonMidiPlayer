@@ -73,19 +73,19 @@ int PlayList(const char* json_str) {
         RtMidiOut midiOut;  // Temporary MidiOut manipulator
         unsigned int nPorts = midiOut.getPortCount();
         if (nPorts == 0) {
-            std::cout << "No MIDI output ports available.\n";
+            std::cout << "No output Midi devices available.\n";
             return 1;
         }
-        std::cout << "Available MIDI output ports:\n";
+        std::cout << "Available output Midi devices:\n";
         for (unsigned int i = 0; i < nPorts; i++) {
             if (canOpenMidiPort(midiOut, i)) {
                 std::string portName = midiOut.getPortName(i);
-                std::cout << "\tOutput Port #" << i << ": " << portName << '\n';
+                std::cout << "\tMidi device #" << i << ": " << portName << '\n';
                 midi_devices.push_back(MidiDevice(portName, i));
             }
         }
         if (midi_devices.size() == 0) {
-            std::cout << "\tNo MIDI output ports available.\n";
+            std::cout << "\tNo output Midi devices available.\n";
             return 1;
         }
 

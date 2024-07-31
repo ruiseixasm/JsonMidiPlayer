@@ -412,7 +412,7 @@ int PlayList(const char* json_str) {
         }
     }
 
-    double total_drag_ms = 0;
+    double total_drag_ms = 0.0;
     auto start = std::chrono::high_resolution_clock::now();
 
     while (midiToProcess.size() > 0) {
@@ -441,7 +441,7 @@ int PlayList(const char* json_str) {
 
         // Process drag if existent
         if (delay_time_ms > DRAG_DURATION_MS)
-            total_drag_ms += delay_time_ms;
+            total_drag_ms += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
     }
 
     std::cout << "\tTotal processed Midi Messages (sent):     " << std::setw(10) << midiProcessed.size() << std::endl;

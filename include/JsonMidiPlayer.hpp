@@ -14,7 +14,7 @@
 #include "RtMidi.h"             // Includes the necessary MIDI library
 
 #define FILE_TYPE "Json Midi Player"
-#define DRAG_DURATION_MS 100.0
+#define DRAG_DURATION_MS (1000.0/((120/60)*24))
 
 class MidiDevice {
 private:

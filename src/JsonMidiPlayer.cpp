@@ -416,19 +416,17 @@ int PlayList(const char* json_str) {
     auto start = std::chrono::high_resolution_clock::now();
 
     while (midiToProcess.size() > 0) {
-        double pin_time_us = (midiToProcess.front().getTime() + total_drag_ms) * 1000;
+        // Pin MIDI message
+        MidiPin &midi_pin = midiToProcess.front();
+
+        double pin_time_us = (midi_pin.getTime() + total_drag_ms) * 1000;
         auto next_pin_time = std::chrono::microseconds(static_cast<long long>(pin_time_us));
         auto present = std::chrono::high_resolution_clock::now();
         auto elapsed_time_us = std::chrono::duration_cast<std::chrono::microseconds>(present - start);
         auto sleep_time_us = next_pin_time - elapsed_time_us;
 
         std::this_thread::sleep_for(std::chrono::microseconds(sleep_time_us));
-
-        // Send the MIDI message
-        MidiPin &midi_pin = midiToProcess.front();
-
         auto pluck_time = std::chrono::high_resolution_clock::now() - start;
-
         midi_pin.pluckTooth();  // As soon as possible! <----- Midi Send
 
         auto pluck_time_us = static_cast<double>(

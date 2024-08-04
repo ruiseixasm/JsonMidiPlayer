@@ -1,3 +1,18 @@
+/*
+JsonMidiPlayer - Json Midi Player is intended to be used
+in conjugation with the Json Midi Creator to Play its composed Elements
+Original Copyright (c) 2024 Rui Seixas Monteiro. All right reserved.
+This library is free software; you can redistribute it and/or
+modify it under the terms of the GNU Lesser General Public
+License as published by the Free Software Foundation; either
+version 2.1 of the License, or (at your option) any later version.
+This library is distributed in the hope that it will be useful,
+but WITHOUT ANY WARRANTY; without even the implied warranty of
+MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
+Lesser General Public License for more details.
+https://github.com/ruiseixasm/JsonMidiCreator
+https://github.com/ruiseixasm/JsonMidiPlayer
+*/
 #include "JsonMidiPlayer.hpp"
 
 bool MidiDevice::openPort() {
@@ -5,7 +20,7 @@ bool MidiDevice::openPort() {
         try {
             midiOut.openPort(port);
             opened_port = true;
-            std::cout << "Midi device connected: " << name << std::endl;
+            if (verbose) std::cout << "Midi device connected: " << name << std::endl;
         } catch (RtMidiError &error) {
             static bool first_time_error = true;
             if (first_time_error) {
@@ -22,7 +37,7 @@ void MidiDevice::closePort() {
     if (opened_port) {
         midiOut.closePort();
         opened_port = false;
-        std::cout << "Midi device disconnected: " << name << std::endl;
+        if (verbose) std::cout << "Midi device disconnected: " << name << std::endl;
     }
 }
 
@@ -60,7 +75,7 @@ bool canOpenMidiPort(RtMidiOut& midiOut, unsigned int portNumber) {
     return false;
 }
 
-int PlayList(const char* json_str) {
+int PlayList(const char* json_str, bool verbose) {
     
     std::vector<MidiDevice> midi_devices;
     std::list<MidiPin> midiToProcess;
@@ -73,19 +88,19 @@ int PlayList(const char* json_str) {
         RtMidiOut midiOut;  // Temporary MidiOut manipulator
         unsigned int nPorts = midiOut.getPortCount();
         if (nPorts == 0) {
-            std::cout << "No output Midi devices available.\n";
+            if (verbose) std::cout << "No output Midi devices available.\n";
             return 1;
         }
-        std::cout << "Available output Midi devices:\n";
+        if (verbose) std::cout << "Available output Midi devices:\n";
         for (unsigned int i = 0; i < nPorts; i++) {
             if (canOpenMidiPort(midiOut, i)) {
                 std::string portName = midiOut.getPortName(i);
-                std::cout << "\tMidi device #" << i << ": " << portName << '\n';
-                midi_devices.push_back(MidiDevice(portName, i));
+                if (verbose) std::cout << "\tMidi device #" << i << ": " << portName << '\n';
+                midi_devices.push_back(MidiDevice(portName, i, verbose));
             }
         }
         if (midi_devices.size() == 0) {
-            std::cout << "\tNo output Midi devices available.\n";
+            if (verbose) std::cout << "\tNo output Midi devices available.\n";
             return 1;
         }
 
@@ -100,21 +115,25 @@ int PlayList(const char* json_str) {
         for (nlohmann::json jsonData : json_files_data) {
 
             nlohmann::json jsonFileType;
+            nlohmann::json jsonFileUrl;
             nlohmann::json jsonFileContent;
 
             try
             {
                 jsonFileType = jsonData["filetype"];
+                jsonFileUrl = jsonData["url"];
                 jsonFileContent = jsonData["content"];
             }
             catch (nlohmann::json::parse_error& ex)
             {
-                std::cerr << "Unable to extract json data: " << ex.byte << std::endl;
+                if (verbose) std::cerr << "Unable to extract json data: " << ex.byte << std::endl;
                 continue;
             }
             
-            if (jsonFileType != FILE_TYPE)
+            if (jsonFileType != FILE_TYPE || jsonFileUrl != FILE_URL) {
+                if (verbose) std::cerr << "Wrong type of file!" << std::endl;
                 continue;
+            }
 
             {
                 // temporary/buffer variables
@@ -181,13 +200,13 @@ int PlayList(const char* json_str) {
                         }
                     }
                     catch (const nlohmann::json::exception& e) {
-                        std::cerr << "JSON error: " << e.what() << std::endl;
+                        if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
                         continue;
                     } catch (const std::exception& e) {
-                        std::cerr << "Error: " << e.what() << std::endl;
+                        if (verbose) std::cerr << "Error: " << e.what() << std::endl;
                         continue;
                     } catch (...) {
-                        std::cerr << "Unknown error occurred." << std::endl;
+                        if (verbose) std::cerr << "Unknown error occurred." << std::endl;
                         continue;
                     }
 
@@ -207,7 +226,7 @@ int PlayList(const char* json_str) {
             }
         }
     } catch (const nlohmann::json::parse_error& e) {
-        std::cerr << "JSON parse error: " << e.what() << std::endl;
+        if (verbose) std::cerr << "JSON parse error: " << e.what() << std::endl;
     }
 
     // Sort the list by time in ascendent order
@@ -442,9 +461,9 @@ int PlayList(const char* json_str) {
             total_drag_ms += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
     }
 
-    std::cout << "\tTotal processed Midi Messages (sent):     " << std::setw(10) << midiProcessed.size() << std::endl;
-    std::cout << "\tTotal redundant Midi Messages (not sent): " << std::setw(10) << midiRedundant.size() << std::endl;
-    std::cout << "\tTotal excluded Midi Messages (not sent):  " << std::setw(10) << midi_excluded << std::endl;
+    if (verbose) std::cout << "\tTotal processed Midi Messages (sent):     " << std::setw(10) << midiProcessed.size() << std::endl;
+    if (verbose) std::cout << "\tTotal redundant Midi Messages (not sent): " << std::setw(10) << midiRedundant.size() << std::endl;
+    if (verbose) std::cout << "\tTotal excluded Midi Messages (not sent):  " << std::setw(10) << midi_excluded << std::endl;
     
     double total_delay_ms = 0;
     double max_delay_ms = 0;
@@ -460,11 +479,11 @@ int PlayList(const char* json_str) {
     // Set fixed floating-point notation and precision
     std::cout << std::fixed << std::setprecision(3);
 
-    std::cout << "\tTotal drag (ms):    " << std::setw(36) << total_drag_ms << std::endl;
-    std::cout << "\tTotal delay (ms):   " << std::setw(36) << total_delay_ms << std::endl;
-    std::cout << "\tMaximum delay (ms): " << std::setw(36) << max_delay_ms << std::endl;
-    std::cout << "\tMinimum delay (ms): " << std::setw(36) << min_delay_ms << std::endl;
-    std::cout << "\tAverage delay (ms): " << std::setw(36) << (total_delay_ms / 
+    if (verbose) std::cout << "\tTotal drag (ms):    " << std::setw(36) << total_drag_ms << std::endl;
+    if (verbose) std::cout << "\tTotal delay (ms):   " << std::setw(36) << total_delay_ms << std::endl;
+    if (verbose) std::cout << "\tMaximum delay (ms): " << std::setw(36) << max_delay_ms << std::endl;
+    if (verbose) std::cout << "\tMinimum delay (ms): " << std::setw(36) << min_delay_ms << std::endl;
+    if (verbose) std::cout << "\tAverage delay (ms): " << std::setw(36) << (total_delay_ms / 
                                 std::max(1.0, (1.0 * midiProcessed.size()))) << std::endl;
     
 

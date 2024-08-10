@@ -57,7 +57,7 @@ Maximum delay (ms):                               16.754
 Minimum delay (ms):                                0.000
 Average delay (ms):                                8.475
 ```
-## On Linus
+## On Linux
 Linux is pretty slim, so very slow delays will be experienced, this means that Linux is the best choice for final production. The average delay is arround 0.22 milliseconds per midi message.
 ```
 Total processed Midi Messages (sent):            611

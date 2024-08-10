@@ -1,0 +1,20 @@
+
+!!! WHILE INSIDE THE ./BUILD FOLDER !!!
+    cd build
+
+CMake .. (equivalent)
+
+    Original Visual Studio cmake Command:
+        cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -S .. -B . -G "Visual Studio 17 2022" -T host=x64 -A x64
+        cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -S .. -B . -T host=x64 -A x64
+
+    Equivalent MinGW cmake Command:
+        cmake -G "MinGW Makefiles" -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -S .. -B .
+
+cmake --build . (equivalent)
+
+    Original Visual Studio cmake Command:
+        cmake --build . --config Release --target ALL_BUILD -j 6 --
+
+    Equivalent MinGW cmake Command:
+        cmake --build . --config Release -- -j 6

@@ -18,7 +18,8 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #include <sstream>
 #include <string>
 
-#ifdef _WIN32
+// #ifdef _WIN32    // Check if it's a Windows machine
+#ifdef _MSC_VER     // Check if using Microsoft compiler (Visual Studio 2019 or later) (#if _MSC_VER >= 1920)
     #include <third_party/getopt.h> // Used to process inputed arguments from the command line
 #else
     #include <getopt.h>             // Used to process inputed arguments from the command line
@@ -95,5 +96,5 @@ int main(int argc, char *argv[]) {
     // Replace last "," with a "]"
     json_files_list.back() = ']';
 
-    return PlayList(json_files_list.c_str(), true);
+    return PlayList(json_files_list.c_str(), verbose);
 }

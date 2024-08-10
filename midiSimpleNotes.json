@@ -1,20 +1,24 @@
-[
-    {
-        "time_ms": 500,
-        "midi_message": {
-            "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
-            "command": 144,
-            "param_1": 60,
-            "param_2": 100
+{
+    "filetype": "Json Midi Player",
+    "url": "https://github.com/ruiseixasm/JsonMidiPlayer",
+    "content": [
+        {
+            "time_ms": 500,
+            "midi_message": {
+                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
+                "status_byte": 144,
+                "data_byte_1": 60,
+                "data_byte_2": 100
+            }
+        },
+        {
+            "time_ms": 3000,
+            "midi_message": {
+                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
+                "status_byte": 128,
+                "data_byte_1": 60,
+                "data_byte_2": 0
+            }
         }
-    },
-    {
-        "time_ms": 1000,
-        "midi_message": {
-            "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
-            "command": 128,
-            "param_1": 60,
-            "param_2": 0
-        }
-    }
-]
+    ]
+}

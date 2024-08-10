@@ -48,8 +48,8 @@ It is possible to run this program directly from the [JsonMidiCreator](https://g
 1. Create the folder `lib` inside the cloned [JsonMidiCreator](https://github.com/ruiseixasm/JsonMidiCreator) repository
 2. Copy the file `JsonMidiPlayer_ctypes.dll` inside the folder `.\build\lib\Release\` into the folder created above
 ## On Linux
-1. Create the folder `lib` inside the cloned [JsonMidiCreator](https://github.com/ruiseixasm/JsonMidiCreator) repository
-2. Copy the file `libJsonMidiPlayer_ctypes.so` inside the folder `./build/lib/` into the folder created above
+1. Create the directory `lib` inside the cloned [JsonMidiCreator](https://github.com/ruiseixasm/JsonMidiCreator) repository
+2. Copy the file `libJsonMidiPlayer_ctypes.so` inside the directory `./build/lib/` into the directory created above
 # Midi Drag and Delays
 The program is quite simple and light, it just loops a list so no much Drag or Delay shall be expected to happen.
 Drag is the amount of time the entire playing got out of sync while Delay is just the amount of time each single midi message played out of tempo.

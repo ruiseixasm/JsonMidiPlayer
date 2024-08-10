@@ -17,7 +17,7 @@ Very simple MIDI Player intended to be used to play JSON files created by [JsonM
 ## On Windows
 Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) only the Visual Studio 2017+ is capable of generating working `.dll` files, the MinGW compiler isn't!
 1. Create the folder `build` inside the repository folder
-2. Open the command line inside the folder created above
+2. Open the command line inside the folder created above by writing `cmd` in the windows folder path
 3. Inside the `build` folder type these commands:
     ```
     cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -S .. -B . -T host=x64 -A x64
@@ -77,5 +77,3 @@ Maximum delay (ms):                                2.863
 Minimum delay (ms):                                0.000
 Average delay (ms):                                0.224
 ```
-
-

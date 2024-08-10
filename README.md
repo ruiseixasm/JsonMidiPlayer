@@ -24,8 +24,13 @@ Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) o
 3. Inside the `build` folder type these commands:
     ```
     cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -S .. -B . -T host=x64 -A x64
-    cmake --build . --config Release --target ALL_BUILD -j 6 --
+    cmake --build . --config Release --target ALL_BUILD --
     ```
 ### On Linux
 1. Create the folder `build` inside the repository folder
-2. 
+2. Inside the folder created above, type the following commands:
+    ```
+    cmake -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -S.. -B.
+    cmake --build . --config Release --target all --
+
+    ```

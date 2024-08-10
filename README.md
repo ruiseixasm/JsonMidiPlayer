@@ -1,5 +1,24 @@
 # JsonMidiPlayer
-Very simple MIDI Player of JSON files
+Very simple MIDI Player intended to be used to play JSON files created by JsonMidiCreator or directly by the generated dynamic library.
+
+# How to compile it
+## Prerequisites:
+### On Windows
+    1. Download the Visual Studio 2017+ from https://visualstudio.microsoft.com/
+    2. While installing it, enable the C++ configuration
+    3. Download and install the cmake from https://cmake.org/download/
+    4. Download and install the Git software from https://git-scm.com/
+    5. Create a new folder like C:\GitHub
+    6. Open a command line and go to the folder created above
+    7. Type "git clone https://github.com/ruiseixasm/JsonMidiPlayer.git"
+### On Linux
+    1. Install the fluidsynth and their fonts
+        ```sudo apt install fluidsynth fluid-soundfont-gm```
+    2. Load the font into it
+        ```fluidsynth -v -a alsa /usr/share/sounds/sf2/FluidR3_GM.sf2```
+    3. Create a "GitHub" directory and clone the repository with
+        ```git clone https://github.com/ruiseixasm/JsonMidiPlayer.git```
+
 
 # Prerequisites on Linux
     sudo apt install libasound2-dev

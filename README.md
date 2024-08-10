@@ -7,7 +7,7 @@ Very simple MIDI Player intended to be used to play JSON files created by [JsonM
 3. Download and install the cmake from https://cmake.org/download/
 4. Download and install the Git software from https://git-scm.com/
 5. Create a new folder like `C:\GitHub`
-6. Open a command line in the folder created above by writing `cmd` in the windows folder path
+6. Open a command line in the folder created above by typing `cmd` in the windows folder path
 7. Type `git clone https://github.com/ruiseixasm/JsonMidiPlayer.git` in it to clone the repository
 ## On Linux
 1. Install the fluidsynth and their fonts with `sudo apt install fluidsynth fluid-soundfont-gm`
@@ -17,7 +17,7 @@ Very simple MIDI Player intended to be used to play JSON files created by [JsonM
 ## On Windows
 Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) only the Visual Studio 2017+ is capable of generating working `.dll` files, the MinGW compiler isn't!
 1. Create the folder `build` inside the repository folder
-2. Open the command line inside the folder created above by writing `cmd` in the windows folder path
+2. Open the command line inside the folder created above by typing `cmd` in the windows folder path
 3. Inside the `build` folder type these commands:
     ```
     cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -S .. -B . -T host=x64 -A x64
@@ -32,7 +32,7 @@ Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) o
     ```
 # Testing the build
 ## On Windows
-1. Open the command line in the repository folder `.\build\Release\` by writing `cmd` in the windows folder path
+1. Open the command line in the repository folder `.\build\Release\` by typing `cmd` in the windows folder path
 2. Type the following command:
     ```
     JsonMidiPlayer.exe ..\..\midiSimpleNotes.json --verbose
@@ -66,7 +66,7 @@ Minimum delay (ms):                                0.000
 Average delay (ms):                                8.475
 ```
 ## On Linux
-Linux is pretty slim, so very slow delays will be experienced, this means that Linux is the best choice for final production. The average delay is arround 0.22 milliseconds per midi message.
+Linux is pretty slim, so very slow delays will be experienced, this means that Linux is the best choice for final production. The average delay is around 0.22 milliseconds per midi message.
 ```
 Total processed Midi Messages (sent):            611
 Total redundant Midi Messages (not sent):          0

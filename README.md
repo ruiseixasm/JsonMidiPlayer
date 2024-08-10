@@ -1,5 +1,5 @@
 # JsonMidiPlayer
-Very simple MIDI Player intended to be used to play JSON files created by JsonMidiCreator or directly by the generated dynamic library.
+Very simple MIDI Player intended to be used to play JSON files created by [JsonMidiCreator](https://github.com/ruiseixasm/JsonMidiCreator) or directly by the generated dynamic library.
 # Prerequisites
 ## On Windows
 1. Download the Visual Studio 2017+ from https://visualstudio.microsoft.com/
@@ -42,6 +42,14 @@ Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) o
     ```
     ./JsonMidiPlayer.out ../midiSimpleNotes.json --verbose
     ```
+# Python library for JsonMidiCreator
+It is possible to run this program directly from the [JsonMidiCreator](https://github.com/ruiseixasm/JsonMidiCreator) with the `>> Play()` operation, you just need to do the following.
+## On Windows
+1. Create the folder `lib` inside the cloned [JsonMidiCreator](https://github.com/ruiseixasm/JsonMidiCreator) repository
+2. Copy the file `JsonMidiPlayer_ctypes.dll` inside the folder `.\build\lib\Release\` into the folder created above
+## On Linux
+1. Create the folder `lib` inside the cloned [JsonMidiCreator](https://github.com/ruiseixasm/JsonMidiCreator) repository
+2. Copy the file `libJsonMidiPlayer_ctypes.so` inside the folder `./build/lib/` into the folder created above
 # Midi Drag and Delays
 The program is quite simple and light, it just loops a list so no much Drag or Delay shall be expected to happen.
 Drag is the amount of time the entire playing got out of sync while Delay is just the amount of time each single midi message played out of tempo.

@@ -44,13 +44,13 @@ Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) o
 ### On Linux
 1. Type the following command in the directory `.\build\`:
     ```
-    JsonMidiPlayer.out ..\midiSimpleNotes.json --verbose
+    ./JsonMidiPlayer.out ../midiSimpleNotes.json --verbose
     ```
 ## Midi Drag and Delays
 The program is quite simple and light, it just loops a list so no much Drag or Delay shall be expected to happen.
 Drag is the amount of time the entire playing got out of sync while Delay is just the amount of time each single midi message played out of tempo.
 ### On Windows
-Windows being an extremely bloated OS, isn't suited for critical timed software like this, so you will experience high delays, with an average above 8 milliseconds per midi message!
+Windows being an extremely bloated OS, isn't suited for critical timed software like this, so you will experience high delays, with an average above 8.5 milliseconds per midi message!
 ```
 Total processed Midi Messages (sent):            611
 Total redundant Midi Messages (not sent):          0
@@ -62,10 +62,17 @@ Minimum delay (ms):                                0.000
 Average delay (ms):                                8.475
 ```
 ### On Linus
-Linux is pretty slim, so very slow delays will be experienced, this means that Linux is the best choice for final production. The average delay is arround 0.2 milliseconds per midi message.
+Linux is pretty slim, so very slow delays will be experienced, this means that Linux is the best choice for final production. The average delay is arround 0.22 milliseconds per midi message.
 
 ```
-
+Total processed Midi Messages (sent):            611
+Total redundant Midi Messages (not sent):          0
+Total excluded Midi Messages (not sent):           0
+Total drag (ms):                                   0.000
+Total delay (ms):                                136.890
+Maximum delay (ms):                                2.863
+Minimum delay (ms):                                0.000
+Average delay (ms):                                0.224
 
 ```
 

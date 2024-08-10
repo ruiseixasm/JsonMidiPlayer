@@ -7,7 +7,7 @@ Very simple MIDI Player intended to be used to play JSON files created by JsonMi
 3. Download and install the cmake from https://cmake.org/download/
 4. Download and install the Git software from https://git-scm.com/
 5. Create a new folder like `C:\GitHub`
-6. Open a command line in the folder created above by writing `cmd` in the window folder path
+6. Open a command line in the folder created above by writing `cmd` in the windows folder path
 7. Type `git clone https://github.com/ruiseixasm/JsonMidiPlayer.git` in it to clone the repository
 ## On Linux
 1. Install the fluidsynth and their fonts with `sudo apt install fluidsynth fluid-soundfont-gm`
@@ -32,13 +32,13 @@ Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) o
     ```
 # Testing the build
 ## On Windows
-1. Open the command line in the repository folder `.\build\Release\` by writing `cmd` in the window folder path
+1. Open the command line in the repository folder `.\build\Release\` by writing `cmd` in the windows folder path
 2. Type the following command:
     ```
     JsonMidiPlayer.exe ..\..\midiSimpleNotes.json --verbose
     ```
 ## On Linux
-1. Type the following command in the directory `.\build\`:
+1. Type the following command in the directory `./build/`:
     ```
     ./JsonMidiPlayer.out ../midiSimpleNotes.json --verbose
     ```

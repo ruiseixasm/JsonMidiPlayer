@@ -54,7 +54,7 @@ It is possible to run this program directly from the [JsonMidiCreator](https://g
 The program is quite simple and light, it just loops a list so no much Drag or Delay shall be expected to happen.
 Drag is the amount of time the entire playing got out of sync while Delay is just the amount of time each single midi message played out of tempo.
 ## On Windows
-Windows being an extremely bloated OS, isn't suited for critical timed software like this, so you will experience high delays, with an average above 8.5 milliseconds per midi message!
+Windows being an extremely bloated OS, isn't suited for critical timed software like this, so you will experience high delays, with an average around 8.5 milliseconds per midi message!
 ```
 Total processed Midi Messages (sent):            611
 Total redundant Midi Messages (not sent):          0

@@ -10,7 +10,7 @@ Very simple MIDI Player intended to be used to play JSON files created by [JsonM
 6. Open a command line in the folder created above by typing `cmd` in the windows folder path
 7. Type `git clone https://github.com/ruiseixasm/JsonMidiPlayer.git` in it to clone the repository
 ## On Linux
-1. Install the fluidsynth and their fonts with `sudo apt install fluidsynth fluid-soundfont-gm`
+1. Install the fluidsynth and its fonts with `sudo apt install fluidsynth fluid-soundfont-gm`
 2. Load the font into it `fluidsynth -v -a alsa /usr/share/sounds/sf2/FluidR3_GM.sf2`
 3. Create a `GitHub` directory and clone the repository into it with `git clone https://github.com/ruiseixasm/JsonMidiPlayer.git`
 # Compiling the repository
@@ -18,27 +18,31 @@ Very simple MIDI Player intended to be used to play JSON files created by [JsonM
 Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) only the Visual Studio 2017+ is capable of generating working `.dll` files, the MinGW compiler isn't!
 1. Create the folder `build` inside the repository folder
 2. Open the command line inside the folder created above by typing `cmd` in the windows folder path
-3. Inside the `build` folder type these commands:
+3. While in the `build` folder type these commands, one at a time:
     ```
     cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -S .. -B . -T host=x64 -A x64
+    ```
+    ```
     cmake --build . --config Release --target ALL_BUILD --
     ```
 ## On Linux
 1. Create the directory `build` inside the repository directory
-2. Inside the directory created above, type the following commands:
+2. Go to the directory created above and type the following commands, one at a time:
     ```
     cmake -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -S.. -B.
+    ```
+    ```
     cmake --build . --config Release --target all --
     ```
 # Testing the build
 ## On Windows
-1. Open the command line in the repository folder `.\build\Release\` by typing `cmd` in the windows folder path
+1. Go to the repository folder `.\build\Release\` and open the command line by typing `cmd` in the windows folder path
 2. Type the following command:
     ```
     JsonMidiPlayer.exe ..\..\midiSimpleNotes.json --verbose
     ```
 ## On Linux
-1. Type the following command in the directory `./build/`:
+1. go to the repository directory `./build/` and type the following command:
     ```
     ./JsonMidiPlayer.out ../midiSimpleNotes.json --verbose
     ```

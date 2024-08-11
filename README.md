@@ -20,7 +20,7 @@ Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) o
 2. Open the command line inside the folder created above by typing `cmd` in the windows folder path
 3. While in the `build` folder type these commands, one at a time:
     ```
-    cmake -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -S .. -B . -T host=x64 -A x64
+    cmake --no-warn-unused-cli -S .. -B . -T host=x64 -A x64
     ```
     ```
     cmake --build . --config Release --target ALL_BUILD --
@@ -29,7 +29,7 @@ Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) o
 1. Create the directory `build` inside the repository directory
 2. Go to the directory created above and type the following commands, one at a time:
     ```
-    cmake -DCMAKE_BUILD_TYPE:STRING=Release -DCMAKE_EXPORT_COMPILE_COMMANDS:BOOL=TRUE --no-warn-unused-cli -S.. -B.
+    cmake -DCMAKE_BUILD_TYPE:STRING=Release --no-warn-unused-cli -S.. -B.
     ```
     ```
     cmake --build . --config Release --target all --

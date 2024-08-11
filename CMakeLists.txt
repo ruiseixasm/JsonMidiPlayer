@@ -22,6 +22,9 @@ project(JsonMidiPlayer
         HOMEPAGE_URL "https://github.com/ruiseixasm/JsonMidiPlayer"
         LANGUAGES CXX)
 
+# Generates a compile_commands.json file containing the exact compiler calls for all translation units of the project in machine-readable form.
+set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
+
 # CTYPES DLL LIBRARIES ON WINDOWS HAVE TO BE COMPILED BY VISUAL STUDIO XX
 # IF COMPILED BY GCC THOSE FILES WON'T BE RECOGNIZED BY CTYPES AND WILL RESULT IN ERROR
 

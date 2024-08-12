@@ -240,6 +240,7 @@ int PlayList(const char* json_str, bool verbose) {
             const unsigned char status_byte;
             unsigned char data_byte_1;
             unsigned char data_byte_2;
+            size_t level = 1;
 
             MidiLastMessage(MidiDevice * const midi_device, unsigned char status_byte, unsigned char data_byte_1, unsigned char data_byte_2):
                     midi_device(midi_device), status_byte(status_byte), data_byte_1(data_byte_1), data_byte_2(data_byte_2) { }
@@ -253,6 +254,29 @@ int PlayList(const char* json_str, bool verbose) {
                         return true;
                 }
                 return false;
+            }
+
+            // Prefix increment
+            MidiLastMessage& operator++() {
+                ++level;
+                return *this;
+            }
+            // Postfix increment
+            MidiLastMessage operator++(int) {
+                MidiLastMessage temp = *this;
+                ++level;
+                return temp;
+            }
+            // Prefix decrement
+            MidiLastMessage& operator--() {
+                --level;
+                return *this;
+            }
+            // Postfix decrement
+            MidiLastMessage operator--(int) {
+                MidiLastMessage temp = *this;
+                --level;
+                return temp;
             }
         };
 
@@ -286,8 +310,14 @@ int PlayList(const char* json_str, bool verbose) {
                         auto &last_midi_note_on = *note_on;
                         if (last_midi_note_on == midi_pin) {
 
-                            note_on = last_midi_note_on_list.erase(note_on);
-                            ++pin_it; // Only increment if no removal
+                            if (last_midi_note_on.level == 1) {
+                                note_on = last_midi_note_on_list.erase(note_on);
+                                ++pin_it; // Only increment if no removal
+                            } else {
+                                last_midi_note_on--;    // Decrements level
+                                midiRedundant.push_back(midi_pin);
+                                pin_it = midiToProcess.erase(pin_it);
+                            }
                             goto skip_to_2;
                         }
                     }
@@ -298,6 +328,7 @@ int PlayList(const char* json_str, bool verbose) {
                     for (auto &last_midi_note_on : last_midi_note_on_list) {
                         if (last_midi_note_on == midi_pin) {
 
+                            // A special case for Note On with velocity 0!
                             if (last_midi_note_on.data_byte_2 == 0 && pin_midi_message[2] > 0 ||
                                 last_midi_note_on.data_byte_2 > 0 && pin_midi_message[2] == 0) {
 
@@ -305,6 +336,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 ++pin_it; // Only increment if no removal
                             } else {
 
+                                last_midi_note_on++;    // Increments level
                                 midiRedundant.push_back(midi_pin);
                                 pin_it = midiToProcess.erase(pin_it);
                             }

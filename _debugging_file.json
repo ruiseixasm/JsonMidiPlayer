@@ -5,7 +5,7 @@
         {
             "time_ms": 150,
             "midi_message": {
-                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
+                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port", "Apple"],
                 "status_byte_mistake": 144,
                 "data_byte_1": 60,
                 "data_byte_2": 100
@@ -14,7 +14,7 @@
         {
             "time_ms": 500,
             "midi_message": {
-                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
+                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port", "Apple"],
                 "status_byte": 144,
                 "data_byte_1": 60,
                 "data_byte_2": 100
@@ -23,7 +23,7 @@
         {
             "time_ms": 1500,
             "midi_message": {
-                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
+                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port", "Apple"],
                 "status_byte": 144,
                 "data_byte_1": 70,
                 "data_byte_2": 100
@@ -32,7 +32,7 @@
         {
             "time_ms": 1000,
             "midi_message": {
-                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
+                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port", "Apple"],
                 "status_byte": 128,
                 "data_byte_1": 60,
                 "data_byte_2": 0
@@ -41,7 +41,7 @@
         {
             "time_ms": 2000,
             "midi_message": {
-                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port"],
+                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port", "Apple"],
                 "status_byte": 128,
                 "data_byte_1": 71,
                 "data_byte_2": 0
@@ -50,16 +50,34 @@
         {
             "time_ms": 1500,
             "midi_message": {
-                "device": ["Sonyvox", "FLUID Synth", "loopMIDI", "GS Wavetable Synth"],
+                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port", "Apple"],
                 "status_byte": 144,
                 "data_byte_1": 70,
                 "data_byte_2": 100
             }
         },
         {
-            "time_ms": 3000,
+            "time_ms": 2100,
             "midi_message": {
-                "device": ["Sonyvox", "FLUID Synth", "loopMIDI", "GS Wavetable Synth"],
+                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port", "Apple"],
+                "status_byte": 128,
+                "data_byte_1": 70,
+                "data_byte_2": 0
+            }
+        },
+        {
+            "time_ms": 2000,
+            "midi_message": {
+                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port", "Apple"],
+                "status_byte": 144,
+                "data_byte_1": 70,
+                "data_byte_2": 100
+            }
+        },
+        {
+            "time_ms": 6000,
+            "midi_message": {
+                "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port", "Apple"],
                 "status_byte": 128,
                 "data_byte_1": 70,
                 "data_byte_2": 0

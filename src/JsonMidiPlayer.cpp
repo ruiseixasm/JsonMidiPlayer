@@ -314,7 +314,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 note_on = last_midi_note_on_list.erase(note_on);
                                 ++pin_it; // Only increment if no removal
                             } else {
-                                last_midi_note_on--;    // Decrements level
+                                --last_midi_note_on;    // Decrements level
                                 midiRedundant.push_back(midi_pin);
                                 pin_it = midiToProcess.erase(pin_it);
                             }
@@ -336,7 +336,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 ++pin_it; // Only increment if no removal
                             } else {
 
-                                last_midi_note_on++;    // Increments level
+                                ++last_midi_note_on;    // Increments level
                                 midiRedundant.push_back(midi_pin);
                                 pin_it = midiToProcess.erase(pin_it);
                             }

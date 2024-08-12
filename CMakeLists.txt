@@ -13,6 +13,7 @@ Lesser General Public License for more details.
 https://github.com/ruiseixasm/JsonMidiCreator
 https://github.com/ruiseixasm/JsonMidiPlayer
 ]===]
+
 # List all available generators command: cmake --help
 # Run cmake with a specific generator selected: cmake -g "MinGW Makefiles" ..
 cmake_minimum_required(VERSION 3.15)
@@ -24,18 +25,6 @@ project(JsonMidiPlayer
 
 # Generates a compile_commands.json file containing the exact compiler calls for all translation units of the project in machine-readable form.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
-
-# CTYPES DLL LIBRARIES ON WINDOWS HAVE TO BE COMPILED BY VISUAL STUDIO XX
-# IF COMPILED BY GCC THOSE FILES WON'T BE RECOGNIZED BY CTYPES AND WILL RESULT IN ERROR
-
-# # Set the build type to "Release" if not specified
-# if(NOT CMAKE_BUILD_TYPE)
-#     set(CMAKE_BUILD_TYPE Release)
-# endif()
-
-# FOR RELEASE CONFIGURATION GO TO CMAKE EXTENSION CONFIGURATION AND SELECT ON
-# CONFIGURE DIVIDER RELEASE INSTEAD OF DEBUG
-
 
 # Include directories
 include_directories(include single_include)
@@ -87,15 +76,6 @@ add_executable(${EXECUTABLE_NAME} ${EXECUTABLE_SOURCES})
 # Link to MyLibrary
 target_link_libraries(${EXECUTABLE_NAME} PRIVATE JsonMidiPlayer_library)
 
-# # Set the build type to "Debug"
-# set(CMAKE_BUILD_TYPE Debug)
-
-# # Add compiler flags for debugging
-# target_compile_options(${EXECUTABLE_NAME} PRIVATE -g)
-
-# # Disable optimization for debug builds
-# target_compile_options(${EXECUTABLE_NAME} PRIVATE -O0)
-
 # Check if we are on Windows
 if (WIN32)  # Try to load ASIO SDK
     add_compile_definitions(__WINDOWS_MM__)
@@ -115,6 +95,3 @@ else()
         add_definitions(-D__LINUX_ALSA__)
     endif()
 endif()
-
-# Print the project directory during configuration
-message("CMAKE_CURRENT_BINARY_DIR: ${CMAKE_CURRENT_BINARY_DIR}")

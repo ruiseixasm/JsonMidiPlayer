@@ -71,7 +71,7 @@
                 "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port", "Apple"],
                 "status_byte": 144,
                 "data_byte_1": 70,
-                "data_byte_2": 100
+                "data_byte_2": 111
             }
         },
         {

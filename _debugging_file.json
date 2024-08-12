@@ -25,7 +25,7 @@
             "midi_message": {
                 "device": ["Sonyvox", "FLUID Synth", "GS Wavetable Synth", "Midi Through Port", "Apple"],
                 "status_byte": 144,
-                "data_byte_1": 70,
+                "data_byte_1": 80,
                 "data_byte_2": 100
             }
         },

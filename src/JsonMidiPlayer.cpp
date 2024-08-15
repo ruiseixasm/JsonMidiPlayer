@@ -509,27 +509,22 @@ int PlayList(const char* json_str, bool verbose) {
     setRealTimeScheduling();
     
     double total_drag_ms = 0.0;
-    long long start_us = 0;
     auto start = std::chrono::high_resolution_clock::now();
 
     while (midiToProcess.size() > 0) {
-        // Pin MIDI message
-        MidiPin &midi_pin = midiToProcess.front();
+        
+        MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
 
         long long next_pin_time_us = round((midi_pin.getTime() + total_drag_ms) * 1000);
-        // auto next_pin_time = std::chrono::microseconds(static_cast<long long>(next_pin_time_us));
         auto present = std::chrono::high_resolution_clock::now();
         auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(present - start);
-        // auto sleep_time = next_pin_time - elapsed_time;
-        long long present_time_us = elapsed_time.count();
-        long long sleep_time_us = next_pin_time_us > present_time_us ?
-                    next_pin_time_us - present_time_us : 0;
+        long long elapsed_time_us = elapsed_time.count();
+        long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
 
-        // std::this_thread::sleep_for(std::chrono::microseconds(sleep_time));
         highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
 
         auto pluck_time = std::chrono::high_resolution_clock::now() - start;
-        midi_pin.pluckTooth();  // As soon as possible! <----- Midi Send
+        midi_pin.pluckTooth();  // as soon as possible! <----- Midi Send
 
         auto pluck_time_us = static_cast<double>(
             std::chrono::duration_cast<std::chrono::microseconds>(pluck_time).count()

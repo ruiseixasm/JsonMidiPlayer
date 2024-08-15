@@ -4,6 +4,12 @@
 
 #ifdef _WIN32
     #include <Windows.h>
+    #ifdef max
+        #undef max
+    #endif
+    #ifdef min
+        #undef min
+    #endif
 #else
     #include <pthread.h>
     #include <time.h>

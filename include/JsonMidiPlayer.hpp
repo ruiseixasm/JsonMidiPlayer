@@ -29,13 +29,8 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #include "RtMidi.h"             // Includes the necessary MIDI library
 
 #ifdef _WIN32
+    #define NOMINMAX    // disables the definition of min and max macros.
     #include <Windows.h>
-    #ifdef max
-        #undef max
-    #endif
-    #ifdef min
-        #undef min
-    #endif
 #else
     #include <pthread.h>
     #include <time.h>

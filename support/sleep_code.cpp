@@ -13,7 +13,19 @@
 void setRealTimeScheduling() {
 #ifdef _WIN32
     // Set the thread priority to highest for real-time scheduling on Windows
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+    // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setthreadpriority
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+    // THREAD_MODE_BACKGROUND_BEGIN        0x00010000
+    // THREAD_MODE_BACKGROUND_END          0x00020000
+    // THREAD_PRIORITY_ABOVE_NORMAL        1
+    // THREAD_PRIORITY_BELOW_NORMAL        -1
+    // THREAD_PRIORITY_HIGHEST             2
+    // THREAD_PRIORITY_IDLE                -15
+    // THREAD_PRIORITY_LOWEST              -2
+    // THREAD_PRIORITY_NORMAL              0
+    // THREAD_PRIORITY_TIME_CRITICAL       15
+    // https://learn.microsoft.com/en-us/windows/win32/procthread/scheduling-priorities
+
 #else
     // Set real-time scheduling on Linux
     struct sched_param param;

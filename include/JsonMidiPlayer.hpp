@@ -28,6 +28,13 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #include <nlohmann/json.hpp>    // Include the JSON library
 #include "RtMidi.h"             // Includes the necessary MIDI library
 
+#ifdef _WIN32
+    #include <Windows.h>
+#else
+    #include <pthread.h>
+    #include <time.h>
+#endif
+
 #define FILE_TYPE "Json Midi Player"
 #define FILE_URL  "https://github.com/ruiseixasm/JsonMidiPlayer"
 #define DRAG_DURATION_MS (1000.0/((120/60)*24))

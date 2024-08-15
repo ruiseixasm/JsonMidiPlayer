@@ -96,7 +96,7 @@ void highResolutionSleep(long long microseconds) {
     QueryPerformanceFrequency(&frequency);
     QueryPerformanceCounter(&start);
 
-    long long sleepInterval = microseconds > 2000 ? 1000 : 0;  // Sleep 1ms if the wait is longer than 2ms
+    long long sleepInterval = microseconds > 100*1000 ? microseconds - 100*1000 : 0;  // Sleep 1ms if the wait is longer than 100ms
     if (sleepInterval > 0) {
         // Sleep for most of the time to save CPU, then busy wait for the remaining time
         std::this_thread::sleep_for(std::chrono::microseconds(sleepInterval));

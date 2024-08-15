@@ -30,10 +30,17 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 
 #ifdef _WIN32
     #include <Windows.h>
+    #ifdef max
+        #undef max
+    #endif
+    #ifdef min
+        #undef min
+    #endif
 #else
     #include <pthread.h>
     #include <time.h>
 #endif
+
 
 #define FILE_TYPE "Json Midi Player"
 #define FILE_URL  "https://github.com/ruiseixasm/JsonMidiPlayer"

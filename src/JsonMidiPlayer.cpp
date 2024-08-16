@@ -515,7 +515,7 @@ int PlayList(const char* json_str, bool verbose) {
         
         MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
 
-        long long next_pin_time_us = round((midi_pin.getTime() + total_drag_ms) * 1000);
+        long long next_pin_time_us = std::round((midi_pin.getTime() + total_drag_ms) * 1000);
         auto present = std::chrono::high_resolution_clock::now();
         auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(present - start);
         long long elapsed_time_us = elapsed_time.count();

@@ -233,8 +233,11 @@ int PlayList(const char* json_str, bool verbose) {
     midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
             if (a.getTime() < b.getTime()) return true;
             if (a.getTime() > b.getTime()) return false;
-            // For the equal time case and to avoid Notes Off happening before Notes On
+            // For equal time case and to avoid Notes Off happening before Notes On
             if ((a.getMidiMessage()[0] & 0xF0) == 0x80 && (b.getMidiMessage()[0] & 0xF0) == 0x90)
+                return false;
+            // For equal time case and to avoid Program Change happening before Control Change
+            if ((a.getMidiMessage()[0] & 0xF0) == 0xC0 && (b.getMidiMessage()[0] & 0xF0) == 0xB0)
                 return false;
             return true;
         });
@@ -574,3 +577,15 @@ void highResolutionSleep(long long microseconds) {
     clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, nullptr);
 #endif
 }
+
+/*
+    Voice Message           Status Byte      Data Byte1          Data Byte2
+    -------------           -----------   -----------------   -----------------
+    Note off                      8x      Key number          Note Off velocity
+    Note on                       9x      Key number          Note on velocity
+    Polyphonic Key Pressure       Ax      Key number          Amount of pressure
+    Control Change                Bx      Controller number   Controller value
+    Program Change                Cx      Program number      None
+    Channel Pressure              Dx      Pressure value      None            
+    Pitch Bend                    Ex      MSB                 LSB
+*/

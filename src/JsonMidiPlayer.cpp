@@ -75,48 +75,6 @@ bool canOpenMidiPort(RtMidiOut& midiOut, unsigned int portNumber) {
     return false;
 }
 
-// Function to set real-time scheduling
-void setRealTimeScheduling() {
-#ifdef _WIN32
-    // Set the thread priority to highest for real-time scheduling on Windows
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-#else
-    // Set real-time scheduling on Linux
-    struct sched_param param;
-    param.sched_priority = sched_get_priority_max(SCHED_FIFO);
-    pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
-#endif
-}
-
-// High-resolution sleep function
-void highResolutionSleep(long long microseconds) {
-#ifdef _WIN32
-    // Windows: High-resolution sleep using QueryPerformanceCounter
-    LARGE_INTEGER frequency, start, end;
-    QueryPerformanceFrequency(&frequency);
-    QueryPerformanceCounter(&start);
-
-    long long sleepInterval = microseconds > 100*1000 ? microseconds - 100*1000 : 0;  // Sleep 1ms if the wait is longer than 100ms
-    if (sleepInterval > 0) {
-        // Sleep for most of the time to save CPU, then busy wait for the remaining time
-        std::this_thread::sleep_for(std::chrono::microseconds(sleepInterval));
-    }
-
-    double elapsedMicroseconds = 0;
-    do {
-        QueryPerformanceCounter(&end);
-        elapsedMicroseconds = static_cast<double>(end.QuadPart - start.QuadPart) * 1e6 / frequency.QuadPart;
-    } while (elapsedMicroseconds < microseconds);
-    
-#else
-    // Linux: High-resolution sleep using clock_nanosleep
-    struct timespec ts;
-    ts.tv_sec = microseconds / 1e6;
-    ts.tv_nsec = (microseconds % static_cast<long long>(1e6)) * 1000;
-    clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, nullptr);
-#endif
-}
-
 int PlayList(const char* json_str, bool verbose) {
     
     std::vector<MidiDevice> midi_devices;
@@ -271,8 +229,15 @@ int PlayList(const char* json_str, bool verbose) {
         if (verbose) std::cerr << "JSON parse error: " << e.what() << std::endl;
     }
 
-    // Sort the list by time in ascendent order
-    midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) { return a.getTime() < b.getTime(); });
+    // Sort the list by time in ascendent order. Choosen (<=) to avoid Note Off's before than Note On's
+    midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
+            if (a.getTime() < b.getTime()) return true;
+            if (a.getTime() > b.getTime()) return false;
+            // For the equal time case and to avoid Notes Off happening before Notes On
+            if ((a.getMidiMessage()[0] & 0xF0) == 0x80 && (b.getMidiMessage()[0] & 0xF0) == 0x90)
+                return false;
+            return true;
+        });
 
     // Clean up redundant midi messages
     {
@@ -566,4 +531,46 @@ int PlayList(const char* json_str, bool verbose) {
     
 
     return 0;
+}
+
+// Function to set real-time scheduling
+void setRealTimeScheduling() {
+#ifdef _WIN32
+    // Set the thread priority to highest for real-time scheduling on Windows
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+#else
+    // Set real-time scheduling on Linux
+    struct sched_param param;
+    param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
+#endif
+}
+
+// High-resolution sleep function
+void highResolutionSleep(long long microseconds) {
+#ifdef _WIN32
+    // Windows: High-resolution sleep using QueryPerformanceCounter
+    LARGE_INTEGER frequency, start, end;
+    QueryPerformanceFrequency(&frequency);
+    QueryPerformanceCounter(&start);
+
+    long long sleepInterval = microseconds > 100*1000 ? microseconds - 100*1000 : 0;  // Sleep 1ms if the wait is longer than 100ms
+    if (sleepInterval > 0) {
+        // Sleep for most of the time to save CPU, then busy wait for the remaining time
+        std::this_thread::sleep_for(std::chrono::microseconds(sleepInterval));
+    }
+
+    double elapsedMicroseconds = 0;
+    do {
+        QueryPerformanceCounter(&end);
+        elapsedMicroseconds = static_cast<double>(end.QuadPart - start.QuadPart) * 1e6 / frequency.QuadPart;
+    } while (elapsedMicroseconds < microseconds);
+    
+#else
+    // Linux: High-resolution sleep using clock_nanosleep
+    struct timespec ts;
+    ts.tv_sec = microseconds / 1e6;
+    ts.tv_nsec = (microseconds % static_cast<long long>(1e6)) * 1000;
+    clock_nanosleep(CLOCK_MONOTONIC, 0, &ts, nullptr);
+#endif
 }

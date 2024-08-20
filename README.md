@@ -60,12 +60,13 @@ Drag is the amount of time the entire playing got out of sync while Delay is jus
 ## Example of reported Drag and Delay
 Despite some delay, that didn't mean any drag in the example bellow.
 ```
-Total processed Midi Messages (sent):            611
-Total redundant Midi Messages (not sent):          0
-Total excluded Midi Messages (not sent):           0
-Total drag (ms):                                   0.000
-Total delay (ms):                                  2.445
-Maximum delay (ms):                                0.138
-Minimum delay (ms):                                0.000
-Average delay (ms):                                0.004
+Midi stats reporting:
+        Total processed Midi Messages (sent):            611
+        Total redundant Midi Messages (not sent):          0
+        Total excluded Midi Messages (not sent):           0
+        Total drag (ms):                                   0.000
+        Total delay (ms):                                  3.678
+        Maximum delay (ms):                                0.189
+        Minimum delay (ms):                                0.000
+        Average delay (ms):                                0.006
 ```

@@ -507,6 +507,7 @@ int PlayList(const char* json_str, bool verbose) {
             total_drag_ms += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
     }
 
+    if (verbose) std::cout << "Midi stats reporting:" << std::endl;
     if (verbose) std::cout << "\tTotal processed Midi Messages (sent):     " << std::setw(10) << midiProcessed.size() << std::endl;
     if (verbose) std::cout << "\tTotal redundant Midi Messages (not sent): " << std::setw(10) << midiRedundant.size() << std::endl;
     if (verbose) std::cout << "\tTotal excluded Midi Messages (not sent):  " << std::setw(10) << midi_excluded << std::endl;
@@ -525,8 +526,7 @@ int PlayList(const char* json_str, bool verbose) {
     min_delay_ms = std::min(min_delay_ms, max_delay_ms);
 
     // Set fixed floating-point notation and precision
-    std::cout << std::fixed << std::setprecision(3);
-
+    if (verbose) std::cout << std::fixed << std::setprecision(3);
     if (verbose) std::cout << "\tTotal drag (ms):    " << std::setw(36) << total_drag_ms << std::endl;
     if (verbose) std::cout << "\tTotal delay (ms):   " << std::setw(36) << total_delay_ms << std::endl;
     if (verbose) std::cout << "\tMaximum delay (ms): " << std::setw(36) << max_delay_ms << std::endl;

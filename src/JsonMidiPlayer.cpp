@@ -521,6 +521,8 @@ int PlayList(const char* json_str, bool verbose) {
         max_delay_ms = std::max(max_delay_ms, delay_time_ms);
         min_delay_ms = std::min(min_delay_ms, delay_time_ms);
     }
+    // Makes sure the minumum delay is never greater than the maximum delay
+    min_delay_ms = std::min(min_delay_ms, max_delay_ms);
 
     // Set fixed floating-point notation and precision
     std::cout << std::fixed << std::setprecision(3);

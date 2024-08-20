@@ -57,6 +57,7 @@ void MidiDevice::sendMessage(const unsigned char *midi_message, size_t message_s
     midiOut.sendMessage(midi_message, message_size);
 }
 
+// Consumes too much time!!
 bool canOpenMidiPort(RtMidiOut& midiOut, unsigned int portNumber) {
     try {
         midiOut.openPort(portNumber);
@@ -75,8 +76,31 @@ bool canOpenMidiPort(RtMidiOut& midiOut, unsigned int portNumber) {
     return false;
 }
 
+// Function to set real-time scheduling
+void setRealTimeScheduling() {
+#ifdef _WIN32
+    // Set the thread priority to highest for real-time scheduling on Windows
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
+#else
+    // Set real-time scheduling on Linux
+    struct sched_param param;
+    param.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
+#endif
+}
+
 int PlayList(const char* json_str, bool verbose) {
     
+    // Set real-time scheduling
+    setRealTimeScheduling();
+    
+    #ifdef DEBUGGING
+    auto debugging_start = std::chrono::high_resolution_clock::now();
+    auto debugging_now = debugging_start;
+    auto debugging_last = debugging_now;
+    long long completion_time_us = 0;
+    #endif
+
     struct PlayReporting {
         size_t total_processed  = 0;
         size_t total_redundant  = 0;
@@ -95,10 +119,8 @@ int PlayList(const char* json_str, bool verbose) {
         std::list<MidiPin> midiToProcess;
         std::list<MidiPin> midiProcessed;
         std::list<MidiPin> midiRedundant;
-        unsigned long int midi_excluded = 0;
 
         try {
-
             RtMidiOut midiOut;  // Temporary MidiOut manipulator
             unsigned int nPorts = midiOut.getPortCount();
             if (nPorts == 0) {
@@ -107,21 +129,31 @@ int PlayList(const char* json_str, bool verbose) {
             }
             if (verbose) std::cout << "Available output Midi devices:\n";
             for (unsigned int i = 0; i < nPorts; i++) {
-                if (canOpenMidiPort(midiOut, i)) {
-                    std::string portName = midiOut.getPortName(i);
-                    if (verbose) std::cout << "\tMidi device #" << i << ": " << portName << '\n';
-                    midi_devices.push_back(MidiDevice(portName, i, verbose));
-                }
+                // if (canOpenMidiPort(midiOut, i)) {
+                //     std::string portName = midiOut.getPortName(i);
+                //     if (verbose) std::cout << "\tMidi device #" << i << ": " << portName << '\n';
+                //     midi_devices.push_back(MidiDevice(portName, i, verbose));
+                // }
+                std::string portName = midiOut.getPortName(i);
+                if (verbose) std::cout << "\tMidi device #" << i << ": " << portName << std::endl;
+                midi_devices.push_back(MidiDevice(portName, i, verbose));
             }
             if (midi_devices.size() == 0) {
                 if (verbose) std::cout << "\tNo output Midi devices available.\n";
                 return 1;
             }
-
         } catch (RtMidiError &error) {
             error.printMessage();
             return EXIT_FAILURE;
         }
+
+        #ifdef DEBUGGING
+        debugging_now = std::chrono::high_resolution_clock::now();
+        auto completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+        completion_time_us = completion_time.count();
+        std::cout << "MIDI DEVICES FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+        debugging_last = std::chrono::high_resolution_clock::now();
+        #endif
 
         try {
 
@@ -161,7 +193,7 @@ int PlayList(const char* json_str, bool verbose) {
                     
                     for (auto jsonElement : jsonFileContent)
                     {
-                        midi_excluded++;
+                        play_reporting.total_excluded++;
                         // Create an API with the default API
                         try
                         {
@@ -229,7 +261,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 if (device.getName().find(deviceName) != std::string::npos) {
                                     if (device.openPort())
                                         midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
-                                        midi_excluded--;
+                                        play_reporting.total_excluded--;
                                     goto skip_to;
                                 }
                             }
@@ -243,6 +275,14 @@ int PlayList(const char* json_str, bool verbose) {
             if (verbose) std::cerr << "JSON parse error: " << e.what() << std::endl;
         }
 
+        #ifdef DEBUGGING
+        debugging_now = std::chrono::high_resolution_clock::now();
+        completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+        completion_time_us = completion_time.count();
+        std::cout << "JSON DATA FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+        debugging_last = std::chrono::high_resolution_clock::now();
+        #endif
+
         // Sort the list by time in ascendent order. Choosen (<=) to avoid Note Off's before than Note On's
         midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
                 if (a.getTime() < b.getTime()) return true;
@@ -255,6 +295,14 @@ int PlayList(const char* json_str, bool verbose) {
                     return false;
                 return true;
             });
+
+        #ifdef DEBUGGING
+        debugging_now = std::chrono::high_resolution_clock::now();
+        completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+        completion_time_us = completion_time.count();
+        std::cout << "SORTING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+        debugging_last = std::chrono::high_resolution_clock::now();
+        #endif
 
         // Clean up redundant midi messages
         {
@@ -487,25 +535,30 @@ int PlayList(const char* json_str, bool verbose) {
             }
         }
 
-        // Set real-time scheduling
-        setRealTimeScheduling();
-        
+        #ifdef DEBUGGING
+        debugging_now = std::chrono::high_resolution_clock::now();
+        completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+        completion_time_us = completion_time.count();
+        std::cout << "MIDI MESSAGES CLEANING UP FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+        debugging_last = std::chrono::high_resolution_clock::now();
+        #endif
+
         double total_drag_ms = 0.0;
-        auto start = std::chrono::high_resolution_clock::now();
+        auto playing_start = std::chrono::high_resolution_clock::now();
 
         while (midiToProcess.size() > 0) {
             
             MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
 
             long long next_pin_time_us = std::round((midi_pin.getTime() + total_drag_ms) * 1000);
-            auto present = std::chrono::high_resolution_clock::now();
-            auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(present - start);
+            auto playing_now = std::chrono::high_resolution_clock::now();
+            auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
             long long elapsed_time_us = elapsed_time.count();
             long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
 
             highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
 
-            auto pluck_time = std::chrono::high_resolution_clock::now() - start;
+            auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
             midi_pin.pluckTooth();  // as soon as possible! <----- Midi Send
 
             auto pluck_time_us = static_cast<double>(
@@ -521,9 +574,16 @@ int PlayList(const char* json_str, bool verbose) {
                 total_drag_ms += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
         }
 
+        #ifdef DEBUGGING
+        debugging_now = std::chrono::high_resolution_clock::now();
+        completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+        completion_time_us = completion_time.count();
+        std::cout << "PLAYING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+        debugging_last = std::chrono::high_resolution_clock::now();
+        #endif
+
         play_reporting.total_processed  = midiProcessed.size();
         play_reporting.total_redundant  = midiRedundant.size();
-        play_reporting.total_excluded   = midi_excluded;
 
         for (auto &midi_pin : midiProcessed) {
             auto delay_time_ms = midi_pin.getDelayTime();
@@ -554,19 +614,6 @@ int PlayList(const char* json_str, bool verbose) {
 
 
     return 0;
-}
-
-// Function to set real-time scheduling
-void setRealTimeScheduling() {
-#ifdef _WIN32
-    // Set the thread priority to highest for real-time scheduling on Windows
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
-#else
-    // Set real-time scheduling on Linux
-    struct sched_param param;
-    param.sched_priority = sched_get_priority_max(SCHED_FIFO);
-    pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
-#endif
 }
 
 // High-resolution sleep function

@@ -64,10 +64,10 @@ Midi stats reporting:
         Total processed Midi Messages (sent):            611
         Total redundant Midi Messages (not sent):          0
         Total excluded Midi Messages (not sent):           0
-        Total drag (ms):                                   0.000
-        Total delay (ms):                                  4.901
-        Maximum delay (ms):                                0.282
-        Minimum delay (ms):                                0.000
-        Average delay (ms):                                0.008
-        Standard deviation of delays (ms):                 0.033
+        Total drag (ms):                                   0.000 \
+        Total delay (ms):                                  4.349 /
+        Maximum delay (ms):                                0.196 \
+        Minimum delay (ms):                                0.000 /
+        Average delay (ms):                                0.007 \
+        Standard deviation of delays (ms):                 0.028 /
 ```

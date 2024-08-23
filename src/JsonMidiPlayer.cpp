@@ -586,15 +586,15 @@ int PlayList(const char* json_str, bool verbose) {
         play_reporting.total_processed  = midiProcessed.size();
         play_reporting.total_redundant  = midiRedundant.size();
 
-        for (auto &midi_pin : midiProcessed) {
-            auto delay_time_ms = midi_pin.getDelayTime();
-            play_reporting.total_delay += delay_time_ms;
-            play_reporting.maximum_delay = std::max(play_reporting.maximum_delay, delay_time_ms);
-        }
-
-        play_reporting.minimum_delay = play_reporting.maximum_delay;
         if (play_reporting.total_processed > 0) {
 
+            for (auto &midi_pin : midiProcessed) {
+                auto delay_time_ms = midi_pin.getDelayTime();
+                play_reporting.total_delay += delay_time_ms;
+                play_reporting.maximum_delay = std::max(play_reporting.maximum_delay, delay_time_ms);
+            }
+
+            play_reporting.minimum_delay = play_reporting.maximum_delay;
             play_reporting.average_delay = play_reporting.total_delay / play_reporting.total_processed;
 
             for (auto &midi_pin : midiProcessed) {
@@ -616,12 +616,12 @@ int PlayList(const char* json_str, bool verbose) {
         
     // Set fixed floating-point notation and precision
     if (verbose) std::cout << std::fixed << std::setprecision(3);
-    if (verbose) std::cout << "\tTotal drag (ms):    " << std::setw(36) << play_reporting.total_drag << std::endl;
-    if (verbose) std::cout << "\tTotal delay (ms):   " << std::setw(36) << play_reporting.total_delay << std::endl;
-    if (verbose) std::cout << "\tMaximum delay (ms): " << std::setw(36) << play_reporting.maximum_delay << std::endl;
-    if (verbose) std::cout << "\tMinimum delay (ms): " << std::setw(36) << play_reporting.minimum_delay << std::endl;
-    if (verbose) std::cout << "\tAverage delay (ms): " << std::setw(36) << play_reporting.average_delay << std::endl;
-    if (verbose) std::cout << "\tStandard deviation of delays (ms):" << std::setw(36 - 14) << play_reporting.sd_delay << std::endl;
+    if (verbose) std::cout << "\tTotal drag (ms):    " << std::setw(36) << play_reporting.total_drag << " \\" << std::endl;
+    if (verbose) std::cout << "\tTotal delay (ms):   " << std::setw(36) << play_reporting.total_delay << " /" << std::endl;
+    if (verbose) std::cout << "\tMaximum delay (ms): " << std::setw(36) << play_reporting.maximum_delay << " \\" << std::endl;
+    if (verbose) std::cout << "\tMinimum delay (ms): " << std::setw(36) << play_reporting.minimum_delay << " /" << std::endl;
+    if (verbose) std::cout << "\tAverage delay (ms): " << std::setw(36) << play_reporting.average_delay << " \\" << std::endl;
+    if (verbose) std::cout << "\tStandard deviation of delays (ms):" << std::setw(36 - 14) << play_reporting.sd_delay << " /"  << std::endl;
 
 
     return 0;

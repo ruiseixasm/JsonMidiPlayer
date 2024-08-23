@@ -65,8 +65,9 @@ Midi stats reporting:
         Total redundant Midi Messages (not sent):          0
         Total excluded Midi Messages (not sent):           0
         Total drag (ms):                                   0.000
-        Total delay (ms):                                  3.678
-        Maximum delay (ms):                                0.189
+        Total delay (ms):                                  4.901
+        Maximum delay (ms):                                0.282
         Minimum delay (ms):                                0.000
-        Average delay (ms):                                0.006
+        Average delay (ms):                                0.008
+        Standard deviation of delays (ms):                 0.033
 ```

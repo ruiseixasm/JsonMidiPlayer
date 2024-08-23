@@ -22,6 +22,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #include <vector>
 #include <list>
 #include <algorithm>
+#include <cmath>
 #include <cstdlib>
 #include <thread>               // Include for std::this_thread::sleep_for
 #include <chrono>               // Include for std::chrono::seconds

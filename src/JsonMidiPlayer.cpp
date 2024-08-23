@@ -110,6 +110,7 @@ int PlayList(const char* json_str, bool verbose) {
         double maximum_delay    = 0.0;
         double minimum_delay    = 0.0;
         double average_delay    = 0.0;
+        double sd_delay         = 0.0;
     };
     PlayReporting play_reporting;
 
@@ -592,8 +593,18 @@ int PlayList(const char* json_str, bool verbose) {
         }
 
         play_reporting.minimum_delay = play_reporting.maximum_delay;
-        for (auto &midi_pin : midiProcessed) {
-            play_reporting.minimum_delay = std::min(play_reporting.minimum_delay, midi_pin.getDelayTime());
+        if (play_reporting.total_processed > 0) {
+
+            play_reporting.average_delay = play_reporting.total_delay / play_reporting.total_processed;
+
+            for (auto &midi_pin : midiProcessed) {
+                auto delay_time_ms = midi_pin.getDelayTime();
+                play_reporting.minimum_delay = std::min(play_reporting.minimum_delay, delay_time_ms);
+                play_reporting.sd_delay += std::pow(delay_time_ms - play_reporting.average_delay, 2);
+            }
+
+            play_reporting.sd_delay /= play_reporting.total_processed;
+            play_reporting.sd_delay = std::sqrt(play_reporting.sd_delay);
         }
     }
 
@@ -609,8 +620,8 @@ int PlayList(const char* json_str, bool verbose) {
     if (verbose) std::cout << "\tTotal delay (ms):   " << std::setw(36) << play_reporting.total_delay << std::endl;
     if (verbose) std::cout << "\tMaximum delay (ms): " << std::setw(36) << play_reporting.maximum_delay << std::endl;
     if (verbose) std::cout << "\tMinimum delay (ms): " << std::setw(36) << play_reporting.minimum_delay << std::endl;
-    if (verbose) std::cout << "\tAverage delay (ms): " << std::setw(36) << (play_reporting.total_delay / 
-                                std::max(1.0, (1.0 * play_reporting.total_processed))) << std::endl;
+    if (verbose) std::cout << "\tAverage delay (ms): " << std::setw(36) << play_reporting.average_delay << std::endl;
+    if (verbose) std::cout << "\tStandard deviation of delays (ms):" << std::setw(36 - 14) << play_reporting.sd_delay << std::endl;
 
 
     return 0;

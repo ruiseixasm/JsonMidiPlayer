@@ -544,14 +544,13 @@ int PlayList(const char* json_str, bool verbose) {
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
 
-        double total_drag_ms = 0.0;
         auto playing_start = std::chrono::high_resolution_clock::now();
 
         while (midiToProcess.size() > 0) {
             
             MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
 
-            long long next_pin_time_us = std::round((midi_pin.getTime() + total_drag_ms) * 1000);
+            long long next_pin_time_us = std::round((midi_pin.getTime() + play_reporting.total_drag) * 1000);
             auto playing_now = std::chrono::high_resolution_clock::now();
             auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
             long long elapsed_time_us = elapsed_time.count();
@@ -572,7 +571,7 @@ int PlayList(const char* json_str, bool verbose) {
 
             // Process drag if existent
             if (delay_time_ms > DRAG_DURATION_MS)
-                total_drag_ms += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
+                play_reporting.total_drag += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
         }
 
         #ifdef DEBUGGING

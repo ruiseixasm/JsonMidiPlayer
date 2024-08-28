@@ -3,14 +3,14 @@ Very simple MIDI Player intended to be used to play JSON files created by [JsonM
 # Binary files
 If you don't want to compile the source code yourself, you can download the already compiled files from the [JsonMidiPlayer sourceforge site](https://sourceforge.net/projects/json-midi-player/) with the respective direct links below.
 ## Executable files (bin)
-### Library for Windows
+### For Windows
 https://sourceforge.net/projects/json-midi-player/files/Windows/bin/
-### Library for Linux
+### For Linux
 https://sourceforge.net/projects/json-midi-player/files/Linux/bin/
 ## Library files (lib) for JsonMidiCreator (ctypes)
-### Library for Windows
+### For Windows
 https://sourceforge.net/projects/json-midi-player/files/Windows/lib/
-### Library for Linux
+### For Linux
 https://sourceforge.net/projects/json-midi-player/files/Linux/lib/
 # Compiling Prerequisites
 ## On Windows

@@ -126,7 +126,6 @@ public:
     }
 };
 
-bool canOpenMidiPort(RtMidiOut& midiOut, unsigned int portNumber);
 void setRealTimeScheduling();
 void highResolutionSleep(long long microseconds);
 int PlayList(const char* json_str, bool verbose = false);

@@ -57,25 +57,6 @@ void MidiDevice::sendMessage(const unsigned char *midi_message, size_t message_s
     midiOut.sendMessage(midi_message, message_size);
 }
 
-// Consumes too much time!!
-bool canOpenMidiPort(RtMidiOut& midiOut, unsigned int portNumber) {
-    try {
-        midiOut.openPort(portNumber);
-        if (midiOut.isPortOpen()) {
-            midiOut.closePort();
-            return true;
-        }
-    } catch (RtMidiError &error) {
-        static bool first_time_error = true;
-        if (first_time_error) {
-            // Handle the error if needed
-            error.printMessage();
-            first_time_error = false;
-        }
-    }
-    return false;
-}
-
 // Function to set real-time scheduling
 void setRealTimeScheduling() {
 #ifdef _WIN32
@@ -130,11 +111,6 @@ int PlayList(const char* json_str, bool verbose) {
             }
             if (verbose) std::cout << "Available output Midi devices:\n";
             for (unsigned int i = 0; i < nPorts; i++) {
-                // if (canOpenMidiPort(midiOut, i)) {
-                //     std::string portName = midiOut.getPortName(i);
-                //     if (verbose) std::cout << "\tMidi device #" << i << ": " << portName << '\n';
-                //     midi_devices.push_back(MidiDevice(portName, i, verbose));
-                // }
                 std::string portName = midiOut.getPortName(i);
                 if (verbose) std::cout << "\tMidi device #" << i << ": " << portName << std::endl;
                 midi_devices.push_back(MidiDevice(portName, i, verbose));

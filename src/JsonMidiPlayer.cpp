@@ -170,76 +170,78 @@ int PlayList(const char* json_str, bool verbose) {
                     
                     for (auto jsonElement : jsonFileContent)
                     {
-                        play_reporting.total_excluded++;
-                        // Create an API with the default API
-                        try
-                        {
-                            time_milliseconds = jsonElement["time_ms"];
-                            if (time_milliseconds >= 0) {
-                                jsonDeviceNames = jsonElement["midi_message"]["device"];
-                                status_byte = jsonElement["midi_message"]["status_byte"];
+                        if (jsonElement.contains("midi_message") && jsonElement.contains("time_ms")) {
+                            play_reporting.total_excluded++;
+                            // Create an API with the default API
+                            try
+                            {
+                                time_milliseconds = jsonElement["time_ms"];
+                                if (time_milliseconds >= 0) {
+                                    jsonDeviceNames = jsonElement["midi_message"]["device"];
+                                    status_byte = jsonElement["midi_message"]["status_byte"];
 
-                                if (status_byte >= 0x80 && status_byte < 0xF0) {    // Channel messages (most significant bit = 1)
-                                    midi_message_size = 3;
-                                    data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                    data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-
-                                    if (data_byte_1 < 0 || data_byte_1 > 127 ||
-                                        data_byte_2 < 0 || data_byte_2 > 127)   // Makes sure it's inside the processing window
-                                        continue;
-
-                                } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
-                                        status_byte == 0xFC || status_byte == 0xFE || status_byte == 0xFF) { // System real-time messages
-                                    midi_message_size = 1;
-                                    data_byte_1 = 0;
-                                    data_byte_2 = 0;
-                                } else if (status_byte == 0xF1 || status_byte == 0xF3) {    // System common messages
-                                    midi_message_size = 2;
-                                    data_byte_1 = jsonElement["midi_message"]["data_byte"];
-                                    data_byte_2 = 0;
-
-                                    if (data_byte_1 < 0x00 || data_byte_1 > 0xFF) // Makes sure it's inside the processing window
-                                        continue;
-                                } else {
-                                    if (status_byte == 0xF2) {      // Song Position Pointer
+                                    if (status_byte >= 0x80 && status_byte < 0xF0) {    // Channel messages (most significant bit = 1)
                                         midi_message_size = 3;
                                         data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
                                         data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
 
-                                        if (data_byte_1 < 0x00 || data_byte_1 > 0xFF ||
-                                            data_byte_2 < 0x00 || data_byte_2 > 0xFF)  // Makes sure it's inside the processing window
+                                        if (data_byte_1 < 0 || data_byte_1 > 127 ||
+                                            data_byte_2 < 0 || data_byte_2 > 127)   // Makes sure it's inside the processing window
                                             continue;
 
-                                    } else if (status_byte == 0xF6) {   // Tune Request
+                                    } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
+                                            status_byte == 0xFC || status_byte == 0xFE || status_byte == 0xFF) { // System real-time messages
                                         midi_message_size = 1;
                                         data_byte_1 = 0;
                                         data_byte_2 = 0;
+                                    } else if (status_byte == 0xF1 || status_byte == 0xF3) {    // System common messages
+                                        midi_message_size = 2;
+                                        data_byte_1 = jsonElement["midi_message"]["data_byte"];
+                                        data_byte_2 = 0;
+
+                                        if (data_byte_1 < 0x00 || data_byte_1 > 0xFF) // Makes sure it's inside the processing window
+                                            continue;
                                     } else {
-                                        continue;
+                                        if (status_byte == 0xF2) {      // Song Position Pointer
+                                            midi_message_size = 3;
+                                            data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                            data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+
+                                            if (data_byte_1 < 0x00 || data_byte_1 > 0xFF ||
+                                                data_byte_2 < 0x00 || data_byte_2 > 0xFF)  // Makes sure it's inside the processing window
+                                                continue;
+
+                                        } else if (status_byte == 0xF6) {   // Tune Request
+                                            midi_message_size = 1;
+                                            data_byte_1 = 0;
+                                            data_byte_2 = 0;
+                                        } else {
+                                            continue;
+                                        }
                                     }
+                                } else {
+                                    continue;
                                 }
-                            } else {
+                            }
+                            catch (const nlohmann::json::exception& e) {
+                                if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+                                continue;
+                            } catch (const std::exception& e) {
+                                if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+                                continue;
+                            } catch (...) {
+                                if (verbose) std::cerr << "Unknown error occurred." << std::endl;
                                 continue;
                             }
-                        }
-                        catch (const nlohmann::json::exception& e) {
-                            if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
-                            continue;
-                        } catch (const std::exception& e) {
-                            if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-                            continue;
-                        } catch (...) {
-                            if (verbose) std::cerr << "Unknown error occurred." << std::endl;
-                            continue;
-                        }
 
-                        for (std::string deviceName : jsonDeviceNames) {
-                            for (auto &device : midi_devices) {
-                                if (device.getName().find(deviceName) != std::string::npos) {
-                                    if (device.openPort())
-                                        midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
-                                        play_reporting.total_excluded--;
-                                    goto skip_to;
+                            for (std::string deviceName : jsonDeviceNames) {
+                                for (auto &device : midi_devices) {
+                                    if (device.getName().find(deviceName) != std::string::npos) {
+                                        if (device.openPort())
+                                            midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
+                                            play_reporting.total_excluded--;
+                                        goto skip_to;
+                                    }
                                 }
                             }
                         }

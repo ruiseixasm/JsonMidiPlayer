@@ -90,7 +90,7 @@ private:
     const double time_ms;
     MidiDevice * const midi_device = nullptr;
     const size_t message_size;
-    const unsigned char midi_message[3];    // Status byte and 2 Data bytes
+    unsigned char midi_message[3];    // Status byte and 2 Data bytes
     // https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
     double delay_time_ms = -1;
 public:
@@ -119,6 +119,10 @@ public:
 
     void setDelayTime(double delay_time_ms) {
         this->delay_time_ms = delay_time_ms;
+    }
+
+    void setStatusByte(unsigned char status_byte) {
+        this->midi_message[0] = status_byte;
     }
 
     double getDelayTime() const {

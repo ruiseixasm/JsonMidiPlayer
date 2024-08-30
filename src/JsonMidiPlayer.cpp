@@ -587,7 +587,7 @@ int PlayList(const char* json_str, bool verbose) {
             }
 
             // MIDI CLOCK
-            if (last_clock_pin != nullptr)
+            if (last_clock_pin != nullptr && last_clock_pin->getMidiMessage()[0] == 0xF8)
                 last_clock_pin->setStatusByte(0xFC);    // Clock Stop
         }
 

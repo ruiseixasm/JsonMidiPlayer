@@ -497,7 +497,7 @@ int PlayList(const char* json_str, bool verbose) {
                         break;
                     }
 
-                } else {
+                } else if ((pin_midi_message[0] & 0xF0) == 0xF0) {
 
                     switch (pin_midi_message[0])
                     {
@@ -570,6 +570,11 @@ int PlayList(const char* json_str, bool verbose) {
                         ++pin_it; // Only increment if no removal
                         break;
                     }
+
+                } else {
+                    
+                    ++pin_it; // Only increment if no removal
+                    break;
                 }
 
             skip_to_2: continue;

@@ -540,11 +540,15 @@ int PlayList(const char* json_str, bool verbose) {
                     case 0xFB:  // Continue Clock
                         if (last_clock_pin != nullptr) {
                             if (last_clock_pin->getTime() == midi_pin.getTime()) {
-                                last_clock_pin->setStatusByte(0xFC);
+                                last_clock_pin->setStatusByte(0xF8);
                                 midiRedundant.push_back(midi_pin);
                                 pin_it = midiToProcess.erase(pin_it);
                                 goto skip_to_2;
-                            } else if (last_clock_pin->getMidiMessage()[0] != 0xFC) {   // NOT Clock Stop
+                            } else if (last_clock_pin->getMidiMessage()[0] == 0xFA) {   // Clock Start
+                                midi_pin.setStatusByte(0xF8);
+                            } else if (last_clock_pin->getMidiMessage()[0] == 0xFB) {   // Clock Continue
+                                midi_pin.setStatusByte(0xF8);
+                            } else {                                                    // NOT Clock Start or Continue
                                 last_clock_pin->setStatusByte(0xFC);
                             }
                         } else {
@@ -557,6 +561,10 @@ int PlayList(const char* json_str, bool verbose) {
                         if (last_clock_pin != nullptr) {
                             if (last_clock_pin->getTime() == midi_pin.getTime()) {
                                 last_clock_pin->setStatusByte(0xFC);
+                                midiRedundant.push_back(midi_pin);
+                                pin_it = midiToProcess.erase(pin_it);
+                                goto skip_to_2;
+                            } else if (last_clock_pin->getMidiMessage()[0] == 0xFC) {   // Clock Stop
                                 midiRedundant.push_back(midi_pin);
                                 pin_it = midiToProcess.erase(pin_it);
                                 goto skip_to_2;

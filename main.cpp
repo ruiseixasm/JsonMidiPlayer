@@ -28,7 +28,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #include "JsonMidiPlayer.hpp"
 
 void printUsage(const char *programName) {
-    std::cout << "Usage: " << programName << " [options] input_file output_file\n"
+    std::cout << "Usage: " << programName << " [options] input_file_1.json [input_file_2.json]\n"
               << "Options:\n"
               << "  -h, --help       Show this help message and exit\n"
               << "  -v, --verbose    Enable verbose mode\n";

@@ -31,7 +31,8 @@ void printUsage(const char *programName) {
     std::cout << "Usage: " << programName << " [options] input_file_1.json [input_file_2.json]\n"
               << "Options:\n"
               << "  -h, --help       Show this help message and exit\n"
-              << "  -v, --verbose    Enable verbose mode\n";
+              << "  -v, --verbose    Enable verbose mode\n\n"
+              << "More info here: https://github.com/ruiseixasm/JsonMidiPlayer\n\n";
 }
 
 int main(int argc, char *argv[]) {
@@ -65,7 +66,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (optind + 1 > argc) {    // optind points to the first non-option argument (at least 1 file)
-        std::cerr << "Error: Missing input or output file\n";
+        std::cerr << "Error: Missing input file(s)\n";
         printUsage(argv[0]);
         return 1;
     }

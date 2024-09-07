@@ -181,14 +181,22 @@ int PlayList(const char* json_str, bool verbose) {
                                     status_byte = jsonElement["midi_message"]["status_byte"];
 
                                     if (status_byte >= 0x80 && status_byte < 0xF0) {    // Channel messages (most significant bit = 1)
-                                        midi_message_size = 3;
-                                        data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                        data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                        if ((status_byte & 0xF0) == 0xC0) {             // For Program Change messages
+                                            midi_message_size = 2;
+                                            data_byte_1 = jsonElement["midi_message"]["data_byte"];
+                                            data_byte_2 = 0;
 
-                                        if (data_byte_1 < 0 || data_byte_1 > 127 ||
-                                            data_byte_2 < 0 || data_byte_2 > 127)   // Makes sure it's inside the processing window
-                                            continue;
+                                            if (data_byte_1 < 0x00 || data_byte_1 > 0xFF) // Makes sure it's inside the processing window
+                                                continue;
+                                        } else {
+                                            midi_message_size = 3;
+                                            data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                            data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
 
+                                            if (data_byte_1 < 0 || data_byte_1 > 127 ||
+                                                data_byte_2 < 0 || data_byte_2 > 127)   // Makes sure it's inside the processing window
+                                                continue;
+                                        }
                                     } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
                                             status_byte == 0xFC || status_byte == 0xFE || status_byte == 0xFF) { // System real-time messages
                                         midi_message_size = 1;

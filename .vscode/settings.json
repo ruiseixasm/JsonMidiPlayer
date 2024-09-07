@@ -90,5 +90,8 @@
         "numbers": "cpp",
         "semaphore": "cpp",
         "cinttypes": "cpp"
-    }
+    },
+    "cSpell.words": [
+        "Aftertouch"
+    ]
 }

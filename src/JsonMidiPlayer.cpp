@@ -337,12 +337,12 @@ int PlayList(const char* json_str, bool verbose) {
                 }
             };
 
-            std::list<MidiLastMessage> last_midi_note_on_list;
-            std::list<MidiLastMessage> last_midi_kp_list;
-            std::list<MidiLastMessage> last_midi_cc_list;
-            std::list<MidiLastMessage> last_midi_cp_list;
-            std::list<MidiLastMessage> last_midi_pb_list;
-            MidiPin *last_clock_pin = nullptr;
+            std::list<MidiLastMessage> last_midi_note_on_list;  // Midi Notes 0x80 and 0x90
+            std::list<MidiLastMessage> last_midi_kp_list;       // Midi Key Aftertouch 0xA0
+            std::list<MidiLastMessage> last_midi_cc_list;       // Midi Control Change 0xB0
+            std::list<MidiLastMessage> last_midi_cp_list;       // Midi Channel Aftertouch 0xD0
+            std::list<MidiLastMessage> last_midi_pb_list;       // Midi Pitch Bend 0xE0
+            MidiPin *last_clock_pin = nullptr;                  // Midi clock messages 0xF0
             const unsigned char type_note_off = 0x80;           // Note off
             const unsigned char type_note_on = 0x90;            // Note on
             const unsigned char type_key_pressure = 0xA0;       // Polyphonic Key Pressure
@@ -498,7 +498,7 @@ int PlayList(const char* json_str, bool verbose) {
                         ++pin_it; // Only increment if no removal
                         break;
                     
-                    default:
+                    default:    // Includes Program Change 0xC0 (Never considered redundant!)
                         ++pin_it; // Only increment if no removal
                         break;
                     }

@@ -222,7 +222,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             data_byte_1 = 0;
                                             data_byte_2 = 0;
                                         } else {
-                                            continue;
+                                            midi_message_size = 0;
                                         }
                                     }
                                 } else {

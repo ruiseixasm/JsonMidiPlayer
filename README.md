@@ -10,6 +10,8 @@ https://sourceforge.net/projects/json-midi-player/files/Windows/bin/
 ### For Linux
 https://sourceforge.net/projects/json-midi-player/files/Linux/bin/
 ## Library files (lib) for JsonMidiCreator (ctypes)
+### Releases
+https://github.com/ruiseixasm/JsonMidiPlayer/releases
 ### For Windows
 https://sourceforge.net/projects/json-midi-player/files/Windows/lib/
 ### For Linux

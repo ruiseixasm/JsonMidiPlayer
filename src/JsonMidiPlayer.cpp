@@ -270,9 +270,12 @@ int PlayList(const char* json_str, bool verbose) {
 
         // Sort the list by time in ascendent order. Choosen (<=) to avoid Note Off's before than Note On's
         midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
-                if (a.getTime() < b.getTime()) return true;
+                if (a.getTime() < b.getTime()) return true; // No flipping happens
                 if (a.getTime() > b.getTime()) return false;
-                // For equal time case and to avoid Program Change happening before Control Change
+                // For equal time case and to avoid Notes Off happening AFTER Notes On
+                if ((a.getMidiMessage()[0] & 0xF0) == 0x90 && (b.getMidiMessage()[0] & 0xF0) == 0x80)
+                    return false;
+                // For equal time case and to avoid Program Change happening BEFORE Control Change
                 if ((a.getMidiMessage()[0] & 0xF0) == 0xC0 && (b.getMidiMessage()[0] & 0xF0) == 0xB0)
                     return false;
                 return true;

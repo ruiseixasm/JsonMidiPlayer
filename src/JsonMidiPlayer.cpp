@@ -272,9 +272,6 @@ int PlayList(const char* json_str, bool verbose) {
         midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
                 if (a.getTime() < b.getTime()) return true;
                 if (a.getTime() > b.getTime()) return false;
-                // For equal time case and to avoid Notes Off happening before Notes On
-                if ((a.getMidiMessage()[0] & 0xF0) == 0x80 && (b.getMidiMessage()[0] & 0xF0) == 0x90)
-                    return false;
                 // For equal time case and to avoid Program Change happening before Control Change
                 if ((a.getMidiMessage()[0] & 0xF0) == 0xC0 && (b.getMidiMessage()[0] & 0xF0) == 0xB0)
                     return false;
@@ -297,7 +294,7 @@ int PlayList(const char* json_str, bool verbose) {
                 const unsigned char status_byte;
                 unsigned char data_byte_1;
                 unsigned char data_byte_2;
-                size_t level = 1;
+                size_t level = 1;   // VERY IMPORTANT TO AVOID EARLIER NOTE OFF
 
                 MidiLastMessage(MidiDevice * const midi_device, unsigned char status_byte, unsigned char data_byte_1, unsigned char data_byte_2):
                         midi_device(midi_device), status_byte(status_byte), data_byte_1(data_byte_1), data_byte_2(data_byte_2) { }
@@ -395,8 +392,20 @@ int PlayList(const char* json_str, bool verbose) {
                                 } else {
 
                                     ++last_midi_note_on;    // Increments level
-                                    midiRedundant.push_back(midi_pin);
-                                    pin_it = midiToProcess.erase(pin_it);
+                                    pin_it = midiToProcess.insert(pin_it,
+                                        MidiPin(
+                                                midi_pin.getTime(),
+                                                midi_pin.getMidiDevice(),
+                                                3,  // Message size
+                                                midi_pin.getMidiMessage()[0] & 0x0F | 0x80, // Includes the Channel
+                                                midi_pin.getMidiMessage()[1],   // Note pitch
+                                                0   // Velocity
+                                            )
+                                        );
+                                    // Skips the previously inserted Note Off MidiPin
+                                    ++pin_it;  // Move the iterator to the next element
+                                    // Skips the Note On MidiPin
+                                    ++pin_it;  // Move the iterator to the next element
                                 }
                                 goto skip_to_2;
                             }

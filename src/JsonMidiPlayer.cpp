@@ -379,7 +379,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 goto skip_to_2;
                             }
                         }
-                        midiRedundant.push_back(midi_pin);
+                        midiRedundant.push_back(midi_pin);  /// Note Off as no Note On pair
                         pin_it = midiToProcess.erase(pin_it);
                         break;
                     case type_note_on:
@@ -395,13 +395,14 @@ int PlayList(const char* json_str, bool verbose) {
                                 } else {
 
                                     ++last_midi_note_on;    // Increments level
+
                                     pin_it = midiToProcess.insert(pin_it,
                                         MidiPin(
                                                 midi_pin.getTime(),
                                                 midi_pin.getMidiDevice(),
                                                 3,  // Message size
-                                                midi_pin.getMidiMessage()[0] & 0x0F | 0x80, // Includes the Channel
-                                                midi_pin.getMidiMessage()[1],   // Note pitch
+                                                pin_midi_message[0] & 0x0F | 0x80, // Includes the Channel
+                                                pin_midi_message[1],   // Note pitch
                                                 0   // Velocity
                                             )
                                         );
@@ -413,6 +414,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 goto skip_to_2;
                             }
                         }
+                        
                         // First timer Note On
                         last_midi_note_on_list.push_back(
                             MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
@@ -598,9 +600,8 @@ int PlayList(const char* json_str, bool verbose) {
                     }
 
                 } else {
-                    
+                    // Whatever it is (maybe Rest), let it pass!
                     ++pin_it; // Only increment if no removal
-                    break;
                 }
 
             skip_to_2: continue;

@@ -9,7 +9,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/JsonMidiPlayer.exe",
-            "args": ["../_debugging_file.json", "--verbose"],
+            "args": ["../book-01-repeating_theme_2.json", "--verbose"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/",
             "environment": [],

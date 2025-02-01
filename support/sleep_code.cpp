@@ -20,7 +20,7 @@ void setRealTimeScheduling() {
 #ifdef _WIN32
     // Set the thread priority to highest for real-time scheduling on Windows
     // https://learn.microsoft.com/en-us/windows/win32/api/processthreadsapi/nf-processthreadsapi-setthreadpriority
-    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_HIGHEST);
+    SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL);
     // THREAD_MODE_BACKGROUND_BEGIN        0x00010000
     // THREAD_MODE_BACKGROUND_END          0x00020000
     // THREAD_PRIORITY_ABOVE_NORMAL        1

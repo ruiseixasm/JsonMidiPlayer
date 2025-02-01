@@ -32,11 +32,21 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #ifdef _WIN32
     #define NOMINMAX    // disables the definition of min and max macros.
     #include <Windows.h>
+    #include <processthreadsapi.h> // For SetProcessInformation
+
+    // // Disable background throttling
+    // void disableBackgroundThrottling() {
+    //     PROCESS_POWER_THROTTLING_STATE PowerThrottling;
+    //     PowerThrottling.Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
+    //     PowerThrottling.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED;
+    //     PowerThrottling.StateMask = 0;
+
+    //     SetProcessInformation(GetCurrentProcess(), ProcessPowerThrottling, &PowerThrottling, sizeof(PowerThrottling));
+    // }
 #else
     #include <pthread.h>
     #include <time.h>
 #endif
-
 
 // #define DEBUGGING true
 #define FILE_TYPE "Json Midi Player"
@@ -130,6 +140,9 @@ public:
         return this->delay_time_ms;
     }
 };
+
+// Declare the function in the header file
+void disableBackgroundThrottling();
 
 void setRealTimeScheduling();
 void highResolutionSleep(long long microseconds);

@@ -127,6 +127,8 @@ void setRealTimeScheduling() {
 
 int PlayList(const char* json_str, bool verbose) {
     
+    disableBackgroundThrottling();
+
     // Set real-time scheduling
     setRealTimeScheduling();
     
@@ -763,6 +765,20 @@ int PlayList(const char* json_str, bool verbose) {
 
 
     return 0;
+}
+
+void disableBackgroundThrottling() {
+#ifdef _WIN32
+    // Windows-specific code to disable background throttling
+    PROCESS_POWER_THROTTLING_STATE PowerThrottling;
+    PowerThrottling.Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
+    PowerThrottling.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED;
+    PowerThrottling.StateMask = 0;
+
+    SetProcessInformation(GetCurrentProcess(), ProcessPowerThrottling, &PowerThrottling, sizeof(PowerThrottling));
+#else
+    // Linux: No equivalent functionality, so do nothing
+#endif
 }
 
 // High-resolution sleep function

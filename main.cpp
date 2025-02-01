@@ -31,7 +31,8 @@ void printUsage(const char *programName) {
     std::cout << "Usage: " << programName << " [options] input_file_1.json [input_file_2.json]\n"
               << "Options:\n"
               << "  -h, --help       Show this help message and exit\n"
-              << "  -v, --verbose    Enable verbose mode\n\n"
+              << "  -v, --verbose    Enable verbose mode\n"
+              << "  -V, --version    Prints the current version number\n\n"
               << "More info here: https://github.com/ruiseixasm/JsonMidiPlayer\n\n";
 }
 
@@ -43,11 +44,12 @@ int main(int argc, char *argv[]) {
     struct option long_options[] = {
         {"help",    no_argument,       nullptr, 'h'},
         {"verbose", no_argument,       nullptr, 'v'},
+        {"version", no_argument,       nullptr, 'V'}, // New option for version
         {nullptr,   0,                 nullptr,  0 }
     };
 
     while (true) {
-        int c = getopt_long(argc, argv, "hv", long_options, &option_index);
+        int c = getopt_long(argc, argv, "hvV", long_options, &option_index);
         if (c == -1) break;
 
         switch (c) {
@@ -57,6 +59,9 @@ int main(int argc, char *argv[]) {
             case 'v':
                 verbose = 1;
                 break;
+            case 'V': // Handle the --version option
+                std::cout << "JsonMidiPlayer " << VERSION << std::endl;
+                return 0;   // Exit after printing the version
             case '?':
                 // getopt_long already printed an error message.
                 return 1;

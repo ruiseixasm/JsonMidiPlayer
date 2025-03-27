@@ -357,13 +357,33 @@ int PlayList(const char* json_str, bool verbose) {
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
 
+        //
+        // Where the existing Midi messages are sorted by time and other parameters
+        //
+
         // Sort the list by time in ascendent order. Choosen (<=) to avoid Note Off's before than Note On's
         midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
+                // Time is the primary sorting criteria
                 if (a.getTime() < b.getTime()) return true; // No flipping happens
                 if (a.getTime() > b.getTime()) return false;
+
+                int a_byte = a.getMidiMessage()[0];
+                int b_byte = b.getMidiMessage()[0];
+
                 // For equal time case and to avoid Notes Off happening AFTER Notes On
-                if ((a.getMidiMessage()[0] & 0xF0) == 0x90 && (b.getMidiMessage()[0] & 0xF0) == 0x80)
+                // Note Off messages must come FIRST
+                if ((a_byte & 0xF0) == 0x90 && (b_byte & 0xF0) == 0x80)
                     return false;
+
+                // Time messages always come FIRST
+                if (b_byte == 0xF8 || b_byte == 0xFA || b_byte == 0xFB ||
+                    b_byte == 0xFC || b_byte == 0xFE || b_byte == 0xFF)
+                    return false;   // No distinct clock signals happen at the same time
+
+                // Song Position and SysEx messages must come LAST
+                if (a_byte == 0xF2 || a_byte == 0xF0)
+                    return false;
+
                 return true;
             });
 

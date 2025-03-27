@@ -127,7 +127,7 @@ public:
 
     void pluckTooth() {
         if (midi_device != nullptr && message_size > 0)
-            if (midi_message[0] == 0xF0 && message_size > 1) {  // SysEx messages content
+            if (midi_message[0] == 0xF0 && message_size == 2) { // SysEx messages content
                 midi_device->sendMessage(&midi_message[1], 1);
             } else {
                 midi_device->sendMessage(midi_message, message_size);

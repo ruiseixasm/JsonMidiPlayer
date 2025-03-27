@@ -328,7 +328,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                     midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, data_byte));
                                                 }
                                                 midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, 0xF7)); // 0xF7 is the SysEx end byte
-                                            } else {    // Processes SysEx messages
+                                            } else {    // Processes NON SysEx messages
                                                 midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
                                             }
                                             play_reporting.total_excluded--;

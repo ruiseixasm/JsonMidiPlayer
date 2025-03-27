@@ -322,7 +322,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             //
                                             // Where each Midi Pin or Pins are added to the midi processing list
                                             //
-                                            if (status_byte == 0xF0) {
+                                            if (status_byte == 0xF0) {  // SysEx message
                                                 midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, 0xF0));
                                                 for (int data_byte : sysex_data_bytes) {
                                                     midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, data_byte));

@@ -159,6 +159,10 @@ int PlayList(const char* json_str, bool verbose) {
         std::list<MidiPin> midiProcessed;
         std::list<MidiPin> midiRedundant;
 
+        //
+        // Where each Available Device is collected and set as Available or not
+        //
+
         try {
             RtMidiOut midiOut;  // Temporary MidiOut manipulator
             unsigned int nPorts = midiOut.getPortCount();
@@ -188,6 +192,10 @@ int PlayList(const char* json_str, bool verbose) {
         std::cout << "MIDI DEVICES FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
+
+        //
+        // Where the JSON content is processed and added up the Pluck midi messages
+        //
 
         try {
 
@@ -342,6 +350,10 @@ int PlayList(const char* json_str, bool verbose) {
         std::cout << "SORTING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
+
+        //
+        // Where the existing Midi messages lists are Cleaned up and processed
+        //
 
         // Clean up redundant midi messages
         {
@@ -685,6 +697,10 @@ int PlayList(const char* json_str, bool verbose) {
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
 
+        //
+        // Where the Midi messages are sent to each Device
+        //
+
         auto playing_start = std::chrono::high_resolution_clock::now();
 
         while (midiToProcess.size() > 0) {
@@ -722,6 +738,10 @@ int PlayList(const char* json_str, bool verbose) {
         std::cout << "PLAYING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
+
+        //
+        // Where the final Statistics are calculated
+        //
 
         play_reporting.total_processed  = midiProcessed.size();
         play_reporting.total_redundant  = midiRedundant.size();
@@ -820,6 +840,7 @@ void highResolutionSleep(long long microseconds) {
     Program Change                Cx      Program number      None
     Channel Pressure              Dx      Pressure value      None            
     Pitch Bend                    Ex      MSB                 LSB
+    Song Position Ptr             F2      0                   0
 
     System Real-Time Message         Status Byte 
     ------------------------         -----------

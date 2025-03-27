@@ -227,6 +227,8 @@ int PlayList(const char* json_str, bool verbose) {
                     unsigned char status_byte;
                     int data_byte_1;
                     int data_byte_2;
+                    std::vector<int> data_bytes;
+                    int end_byte;
                     MidiDevice *midi_device;
                     
                     for (auto jsonElement : jsonFileContent)
@@ -283,8 +285,16 @@ int PlayList(const char* json_str, bool verbose) {
                                             data_byte_1 = 0;
                                             data_byte_2 = 0;
 
-                                        } else if (false) {   // SySex Messages
+                                        } else if (status_byte == 0xF0) {   // SysEx Messages
+                                            midi_message_size = 3;
+                                            data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<int>>();
 
+                                            // nlohmann::json jsonDataBytes = jsonElement["midi_message"]["data_bytes"]
+                                            // for (int single_data_byte : jsonDataBytes) {
+                                                
+                                            // }
+
+                                            end_byte = jsonElement["midi_message"]["end_byte"];
                                         } else {
                                             midi_message_size = 0;
                                         }
@@ -852,4 +862,25 @@ void highResolutionSleep(long long microseconds) {
     Stop Sequence                        FC
     Active Sensing                       FE
     System Reset                         FF
+
+
+    SysEx Message                    Status Byte 
+    ------------------------         -----------
+    0xF0: SysEx Start
+    <Data Bytes>: Manufacturer ID + Command + Data
+    0xF7: SysEx End
+
+    self_playlist.append(
+        {
+            "time_ms": self.get_time_ms(single_pulse_duration_ms * total_clock_pulses),
+            "midi_message": {
+                "status_byte": 0xF0,    # Start of SysEx
+                "data_bytes": [0x7F, 0x7F, 0x06, 0x01],  # Universal Stop command
+                "end_byte": 0xF7,       # End of SysEx
+                "device": devices
+            }
+        }
+    )
+
+
 */

@@ -304,7 +304,9 @@ int PlayList(const char* json_str, bool verbose) {
                             for (std::string deviceName : jsonDeviceNames) {
                                 for (auto &device : midi_devices) {
                                     if (device.getName().find(deviceName) != std::string::npos) {
+                                        //
                                         // Where the Device Port is connected/opened (Main reason for errors)
+                                        //
                                         if (device.openPort())
                                             midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
                                             play_reporting.total_excluded--;

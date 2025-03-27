@@ -386,7 +386,7 @@ int PlayList(const char* json_str, bool verbose) {
                     return false;
 
                 // SysEx messages must come LAST to all others
-                if (a_byte == 0xF0)
+                if (a_byte == 0xF0 && b_byte != 0xF0)
                     return false;
 
                 return true;

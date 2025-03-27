@@ -323,15 +323,19 @@ int PlayList(const char* json_str, bool verbose) {
                                             // Where each Midi Pin or Pins are added to the midi processing list
                                             //
                                             if (status_byte == 0xF0) {  // SysEx message
-                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, 0xF0));
-                                                for (int data_byte : sysex_data_bytes) {
-                                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, data_byte));
+                                                if (sysex_data_bytes.size() > 0) {  // Avoids sending empty SysEx messages
+                                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, 0xF0));
+                                                    for (int data_byte : sysex_data_bytes) {
+                                                        midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, data_byte));
+                                                    }
+                                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, 0xF7)); // 0xF7 is the SysEx end byte
+                                                } else {
+                                                    play_reporting.total_excluded++;    // Marks it as excluded
                                                 }
-                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, 0xF7)); // 0xF7 is the SysEx end byte
                                             } else {    // Processes NON SysEx messages
                                                 midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
                                             }
-                                            play_reporting.total_excluded--;
+                                            play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
                                         goto skip_to;
                                     }
                                 }

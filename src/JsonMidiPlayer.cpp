@@ -323,16 +323,16 @@ int PlayList(const char* json_str, bool verbose) {
                                         //
                                         if (device.openPort())
                                             //
-                                            // Where each Midi Pin is added to the midi processing list
+                                            // Where each Midi Pin or Pins are added to the midi processing list
                                             //
                                             if (end_byte < 0) {
                                                 midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
                                             } else {    // Processes SysEx messages
-                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, status_byte, 0, 0));
+                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, status_byte));
                                                 for (int single_data_byte : data_bytes) {
-                                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, single_data_byte, 0, 0));
+                                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, status_byte, single_data_byte));
                                                 }
-                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, end_byte, 0, 0));
+                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, status_byte, end_byte));
                                             }
                                             play_reporting.total_excluded--;
                                         goto skip_to;

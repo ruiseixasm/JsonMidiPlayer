@@ -234,6 +234,7 @@ int PlayList(const char* json_str, bool verbose) {
                     for (auto jsonElement : jsonFileContent)
                     {
                         if (jsonElement.contains("midi_message") && jsonElement.contains("time_ms")) {
+                            end_byte = -1;
                             play_reporting.total_excluded++;
                             // Create an API with the default API
                             try
@@ -286,7 +287,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             data_byte_2 = 0;
 
                                         } else if (status_byte == 0xF0) {   // SysEx Messages
-                                            midi_message_size = 3;
+                                            
                                             data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<int>>();
 
                                             // nlohmann::json jsonDataBytes = jsonElement["midi_message"]["data_bytes"]
@@ -321,7 +322,18 @@ int PlayList(const char* json_str, bool verbose) {
                                         // Where the Device Port is connected/opened (Main reason for errors)
                                         //
                                         if (device.openPort())
-                                            midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
+                                            //
+                                            // Where each Midi Pin is added to the midi processing list
+                                            //
+                                            if (end_byte < 0) {
+                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
+                                            } else {    // Processes SysEx messages
+                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, status_byte, 0, 0));
+                                                for (int single_data_byte : data_bytes) {
+                                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, single_data_byte, 0, 0));
+                                                }
+                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, end_byte, 0, 0));
+                                            }
                                             play_reporting.total_excluded--;
                                         goto skip_to;
                                     }

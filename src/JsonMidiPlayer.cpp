@@ -227,7 +227,7 @@ int PlayList(const char* json_str, bool verbose) {
                     unsigned char status_byte;
                     int data_byte_1;
                     int data_byte_2;
-                    std::vector<int> sysex_data_bytes = {};
+                    std::vector<int> sysex_data_bytes;
                     MidiDevice *midi_device;
                     
                     for (auto jsonElement : jsonFileContent)

@@ -18,6 +18,10 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #include <sstream>
 #include <string>
 
+// Testing program in the project folder
+//   Windows: .\build\Release\JsonMidiPlayer.exe -v .\exported_lead_sheet_melody_jmp.json
+//   Linux: ./build/Release/JsonMidiPlayer.exe -v ./exported_lead_sheet_melody_jmp.json
+
 // #ifdef _WIN32    // Check if it's a Windows machine
 #ifdef _MSC_VER     // Check if using Microsoft compiler (Visual Studio 2019 or later) (#if _MSC_VER >= 1920)
     #include <third_party/getopt.h> // Used to process inputed arguments from the command line

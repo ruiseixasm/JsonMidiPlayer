@@ -227,14 +227,13 @@ int PlayList(const char* json_str, bool verbose) {
                     unsigned char status_byte;
                     int data_byte_1;
                     int data_byte_2;
-                    std::vector<int> data_bytes;
-                    int end_byte;
+                    std::vector<int> sysex_data_bytes = {};
                     MidiDevice *midi_device;
                     
                     for (auto jsonElement : jsonFileContent)
                     {
                         if (jsonElement.contains("midi_message") && jsonElement.contains("time_ms")) {
-                            end_byte = -1;
+                            
                             play_reporting.total_excluded++;
                             // Create an API with the default API
                             try
@@ -288,14 +287,12 @@ int PlayList(const char* json_str, bool verbose) {
 
                                         } else if (status_byte == 0xF0) {   // SysEx Messages
                                             
-                                            data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<int>>();
+                                            sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<int>>();
 
                                             // nlohmann::json jsonDataBytes = jsonElement["midi_message"]["data_bytes"]
                                             // for (int single_data_byte : jsonDataBytes) {
                                                 
                                             // }
-
-                                            end_byte = jsonElement["midi_message"]["end_byte"];
                                         } else {
                                             midi_message_size = 0;
                                         }
@@ -325,14 +322,14 @@ int PlayList(const char* json_str, bool verbose) {
                                             //
                                             // Where each Midi Pin or Pins are added to the midi processing list
                                             //
-                                            if (end_byte < 0) {
-                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
-                                            } else {    // Processes SysEx messages
-                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, status_byte));
-                                                for (int single_data_byte : data_bytes) {
-                                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, status_byte, single_data_byte));
+                                            if (status_byte == 0xF0) {
+                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, 0xF0));
+                                                for (int data_byte : sysex_data_bytes) {
+                                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, data_byte));
                                                 }
-                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, status_byte, end_byte));
+                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, 0xF7)); // 0xF7 is the SysEx end byte
+                                            } else {    // Processes SysEx messages
+                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
                                             }
                                             play_reporting.total_excluded--;
                                         goto skip_to;

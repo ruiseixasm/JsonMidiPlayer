@@ -16,7 +16,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #include "JsonMidiPlayer.hpp"
 
 bool MidiDevice::openPort() {
-    if (!opened_port) {
+    if (!opened_port && !unavailable_device) {
         try {
             midiOut.openPort(port);
             opened_port = true;
@@ -28,6 +28,7 @@ bool MidiDevice::openPort() {
                 error.printMessage();
                 first_time_error = false;
             }
+            unavailable_device = true;
         }
     }
     return opened_port;
@@ -160,7 +161,7 @@ int PlayList(const char* json_str, bool verbose) {
         std::list<MidiPin> midiRedundant;
 
         //
-        // Where each Available Device is collected and set as Available or not
+        // Where each Available Device is collected BUT NOT connected
         //
 
         try {
@@ -308,6 +309,7 @@ int PlayList(const char* json_str, bool verbose) {
                             for (std::string deviceName : jsonDeviceNames) {
                                 for (auto &device : midi_devices) {
                                     if (device.getName().find(deviceName) != std::string::npos) {
+                                        // Where the Device Port is connected/opened (Main reason for errors)
                                         if (device.openPort())
                                             midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
                                             play_reporting.total_excluded--;

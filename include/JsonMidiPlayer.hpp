@@ -61,6 +61,7 @@ private:
     const unsigned int port;
     const bool verbose;
     bool opened_port = false;
+    bool unavailable_device = false;
 public:
     MidiDevice(std::string device_name, unsigned int device_port, bool verbose = false)
                 : name(device_name), port(device_port), verbose(verbose) { }

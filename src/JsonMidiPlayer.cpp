@@ -282,6 +282,9 @@ int PlayList(const char* json_str, bool verbose) {
                                             midi_message_size = 1;
                                             data_byte_1 = 0;
                                             data_byte_2 = 0;
+
+                                        } else if (false) {   // SySex Messages
+
                                         } else {
                                             midi_message_size = 0;
                                         }

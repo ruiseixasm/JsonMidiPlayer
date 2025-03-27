@@ -22,13 +22,8 @@ bool MidiDevice::openPort() {
             opened_port = true;
             if (verbose) std::cout << "Midi device connected: " << name << std::endl;
         } catch (RtMidiError &error) {
-            static bool first_time_error = true;
-            if (first_time_error) {
-                // Handle the error if needed
-                error.printMessage();
-                first_time_error = false;
-            }
             unavailable_device = true;
+            error.printMessage();
         }
     }
     return opened_port;

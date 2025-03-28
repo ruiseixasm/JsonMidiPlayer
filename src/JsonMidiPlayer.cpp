@@ -248,7 +248,7 @@ int PlayList(const char* json_str, bool verbose) {
                                         data_byte_1 = jsonElement["midi_message"]["data_byte"];
                                         data_byte_2 = 0;
 
-                                        if (data_byte_1 < 0x00 || data_byte_1 > 0xFF) // Makes sure it's inside the processing window
+                                        if (data_byte_1 > 0xFF) // Makes sure it's inside the processing window
                                             continue;
                                     } else if (status_byte >= 0x80 && status_byte < 0xF0) { // Channel messages (most significant bit = 1)
                                         midi_message_size = 3;
@@ -268,7 +268,7 @@ int PlayList(const char* json_str, bool verbose) {
                                         data_byte_1 = jsonElement["midi_message"]["data_byte"];
                                         data_byte_2 = 0;
 
-                                        if (data_byte_1 < 0x00 || data_byte_1 > 0xFF) // Makes sure it's inside the processing window
+                                        if (data_byte_1 > 0xFF) // Makes sure it's inside the processing window
                                             continue;
                                     } else {
                                         if (status_byte == 0xF2) {      // Song Position Pointer
@@ -276,8 +276,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
                                             data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
 
-                                            if (data_byte_1 < 0x00 || data_byte_1 > 0xFF ||
-                                                data_byte_2 < 0x00 || data_byte_2 > 0xFF)  // Makes sure it's inside the processing window
+                                            if (data_byte_1 > 0xFF || data_byte_2 > 0xFF)  // Makes sure it's inside the processing window
                                                 continue;
 
                                         } else if (status_byte == 0xF6) {   // Tune Request
@@ -291,9 +290,9 @@ int PlayList(const char* json_str, bool verbose) {
                                             // Resets sysex_data_bytes array
                                             sysex_data_bytes = {};
                                             nlohmann::json jsonDataBytes = jsonElement["midi_message"]["data_bytes"];
-                                            for (int sysex_data_byte : jsonDataBytes) {
+                                            for (unsigned char sysex_data_byte : jsonDataBytes) {
                                                 // Makes sure it's SysEx valid data
-                                                if (sysex_data_byte >= 0 && sysex_data_byte < 0xF7 && sysex_data_byte != 0xF0 && 
+                                                if (sysex_data_byte < 0xF7 && sysex_data_byte != 0xF0 && 
                                                     sysex_data_byte != 0xF8 && sysex_data_byte != 0xFA && 
                                                     sysex_data_byte != 0xFB && sysex_data_byte != 0xFC && 
                                                     sysex_data_byte != 0xFE && sysex_data_byte != 0xFF) {
@@ -333,7 +332,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             if (status_byte == 0xF0) {  // SysEx message
                                                 if (sysex_data_bytes.size() > 0) {  // Avoids sending empty SysEx messages
                                                     midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, 0xF0));
-                                                    for (int data_byte : sysex_data_bytes) {
+                                                    for (unsigned char data_byte : sysex_data_bytes) {
                                                         midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, data_byte));
                                                     }
                                                     midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, 0xF7)); // 0xF7 is the SysEx end byte
@@ -376,8 +375,8 @@ int PlayList(const char* json_str, bool verbose) {
                 if (a.getTime() < b.getTime()) return true; // No flipping happens
                 if (a.getTime() > b.getTime()) return false;
 
-                int a_byte = a.getMidiMessage()[0];
-                int b_byte = b.getMidiMessage()[0];
+                unsigned char a_byte = a.getMidiMessage()[0];
+                unsigned char b_byte = b.getMidiMessage()[0];
 
                 // For equal time case and to avoid Notes Off happening AFTER Notes On
                 // Note Off messages must come FIRST

@@ -225,9 +225,9 @@ int PlayList(const char* json_str, bool verbose) {
                     nlohmann::json jsonDeviceNames;
                     size_t midi_message_size;
                     unsigned char status_byte;
-                    int data_byte_1;
-                    int data_byte_2;
-                    std::vector<int> sysex_data_bytes;
+                    unsigned char data_byte_1;
+                    unsigned char data_byte_2;
+                    std::vector<unsigned char> sysex_data_bytes;
                     MidiDevice *midi_device;
                     
                     for (auto jsonElement : jsonFileContent)
@@ -287,7 +287,7 @@ int PlayList(const char* json_str, bool verbose) {
 
                                         } else if (status_byte == 0xF0) {   // SysEx Messages
                                             
-                                            // sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<int>>();
+                                            // sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
                                             // Resets sysex_data_bytes array
                                             sysex_data_bytes = {};
                                             nlohmann::json jsonDataBytes = jsonElement["midi_message"]["data_bytes"];

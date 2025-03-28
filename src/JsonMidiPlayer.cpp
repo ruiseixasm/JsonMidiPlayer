@@ -253,6 +253,43 @@ int PlayList(const char* json_str, bool verbose) {
 
                             } else {
 
+
+                                switch (message_action) {
+                                    case action_note_off:
+
+
+                                        break;
+                                    case action_note_on:
+
+
+                                        break;
+                                    case action_key_pressure:
+
+
+                                        break;
+                                    case action_control_change:
+
+
+                                        break;
+                                    case action_program_change:
+
+
+                                        break;
+                                    case action_channel_pressure:
+
+
+                                        break;
+                                    case action_pitch_bend:
+
+
+                                        break;
+                                    
+                                    default:
+                                    
+
+                                        break;
+                                }
+
                                 if (status_byte >= 0xC0 && status_byte < 0xE0) {        // For Program Change and Aftertouch messages
                                     
                                     if (jsonElement["midi_message"].contains("data_byte")) {

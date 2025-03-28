@@ -230,7 +230,7 @@ int PlayList(const char* json_str, bool verbose) {
                         unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
                         std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
                         double time_milliseconds = jsonElement["time_ms"];
-                        unsigned char priority = 0xFF;
+                        unsigned char priority = 0xFF;  // Lowest priority 16 by default
                         
                         play_reporting.total_excluded++;
                         // Create an API with the default API
@@ -328,12 +328,12 @@ int PlayList(const char* json_str, bool verbose) {
                                                 // Makes sure it's SysEx valid data
                                                 if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
                                                     json_midi_message.push_back(sysex_data_byte);
-                                                    priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 16
                                                 } else {
                                                     continue;
                                                 }
                                             }
                                             json_midi_message.push_back(0xF7);  // End SysEx Data Byte
+                                            priority = 0xF0 | status_byte & 0x0F;   // Lowest priority 16
                                         }
                                     } else {
                                         continue;
@@ -371,7 +371,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                 play_reporting.total_excluded++;    // Marks it as excluded
                                             }
                                         } else {    // Processes NON SysEx messages
-                                            midiToProcess.push_back(MidiPin(time_milliseconds, &device, json_midi_message));
+                                            midiToProcess.push_back(MidiPin(time_milliseconds, &device, json_midi_message, priority));
                                         }
                                         play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
                                     goto skip_to;

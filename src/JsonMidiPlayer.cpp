@@ -123,6 +123,8 @@ void setRealTimeScheduling() {
 
 int PlayList(const char* json_str, bool verbose) {
     
+    auto processing_start = std::chrono::high_resolution_clock::now();
+
     disableBackgroundThrottling();
 
     // Set real-time scheduling
@@ -136,6 +138,7 @@ int PlayList(const char* json_str, bool verbose) {
     #endif
 
     struct PlayReporting {
+        double pre_processing   = 0.0;
         size_t total_processed  = 0;
         size_t total_redundant  = 0;
         size_t total_excluded   = 0;
@@ -384,7 +387,10 @@ int PlayList(const char* json_str, bool verbose) {
             
             unsigned char a_byte = a.getStatusByte();
             unsigned char b_byte = b.getStatusByte();
-            if (a_byte < b_byte)   // Aggregate by StatusByte (Descendent)
+
+            // Note Off (0x80) messages must come FIRST than Notes On (0x90)
+            // regardless Channel or Device (implicit)
+            if (a_byte > b_byte)   // Aggregate by StatusByte (Ascendent)
                 return false;
 
             return true;
@@ -396,39 +402,26 @@ int PlayList(const char* json_str, bool verbose) {
                 if (a.getTime() < b.getTime()) return true; // No flipping happens
                 if (a.getTime() > b.getTime()) return false;
 
-                if (&a != &b)   // Don't compare different Devices parameters besides their time
-                    return true;    // true is not problematic, false is (no swapping)
+                if (&a == &b) {  // The following messages are Device exclusive
 
-                unsigned char a_action = a.getAction();
-                unsigned char b_action = b.getAction();
+                    unsigned char a_byte = a.getStatusByte();
+                    unsigned char b_byte = b.getStatusByte();
 
-                // For equal time case and to avoid Notes Off happening AFTER Notes On
-                // Note Off messages must come FIRST
-                if (a_action == 0x90 && b_action == 0x80) {
+                    // Clock messages always come FIRST
+                    if (b_byte == 0xF8 || b_byte == 0xFA || b_byte == 0xFB ||
+                        b_byte == 0xFC || b_byte == 0xFE || b_byte == 0xFF)
+                            // No distinct clock signals happen at the same time in the same Device
+                            return false;   
 
-                    unsigned char a_channel = a.getChannel();
-                    unsigned char b_channel = b.getChannel();
-
-                    if (a_channel == b_channel) {
+                    // Song Position messages must come LAST to all but SysEx or itself
+                    if (a_byte == 0xF2 && b_byte != 0xF0)
+                        // No distinct Song Position messages happen at the same time in the same Device
                         return false;
-                    }
+
+                    // SysEx messages must come LAST to all others
+                    if (a_byte == 0xF0 && b_byte != 0xF0)
+                        return false;
                 }
-
-                unsigned char a_byte = a.getStatusByte();
-                unsigned char b_byte = b.getStatusByte();
-
-                // Clock messages always come FIRST
-                if (b_byte == 0xF8 || b_byte == 0xFA || b_byte == 0xFB ||
-                    b_byte == 0xFC || b_byte == 0xFE || b_byte == 0xFF)
-                    return false;   // No distinct clock signals happen at the same time
-
-                // Song Position messages must come LAST to all but SysEx or itself
-                if (a_byte == 0xF2 && b_byte != 0xF2 && b_byte != 0xF0)
-                    return false;
-
-                // SysEx messages must come LAST to all others
-                if (a_byte == 0xF0 && b_byte != 0xF0)
-                    return false;
 
                 return true;
             });
@@ -791,6 +784,10 @@ int PlayList(const char* json_str, bool verbose) {
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
 
+        auto processing_finish = std::chrono::high_resolution_clock::now();
+        auto pre_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(processing_finish - processing_start);
+        play_reporting.pre_processing = pre_processing_time.count();
+
         //
         // Where the Midi messages are sent to each Device
         //
@@ -864,6 +861,7 @@ int PlayList(const char* json_str, bool verbose) {
 
     // Where the reporting is finally done
     if (verbose) std::cout << "Midi stats reporting:" << std::endl;
+    if (verbose) std::cout << "\tPre-processing time (ms):                 " << std::setw(10) << play_reporting.pre_processing << std::endl;
     if (verbose) std::cout << "\tTotal processed Midi Messages (sent):     " << std::setw(10) << play_reporting.total_processed << std::endl;
     if (verbose) std::cout << "\tTotal redundant Midi Messages (not sent): " << std::setw(10) << play_reporting.total_redundant << std::endl;
     if (verbose) std::cout << "\tTotal excluded Midi Messages (not sent):  " << std::setw(10) << play_reporting.total_excluded << std::endl;

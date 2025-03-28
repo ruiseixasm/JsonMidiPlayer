@@ -45,15 +45,21 @@ Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) o
     ```
 # Testing the build
 ## On Windows
-1. Go to the repository folder `.\build\Release\` and open the command line by typing `cmd` in the windows folder path
-2. Type the following command:
+1. Go to the root project folder and open the command line by typing `cmd` in the windows folder path
+2. Type the following commands:
     ```
-    JsonMidiPlayer.exe ..\..\midiSimpleNotes.json --verbose
+    .\build\Release\JsonMidiPlayer.exe -v .\windows_exported_lead_sheet_melody_jmp.json
+    ```
+    ```
+    .\build\Release\JsonMidiPlayer.exe -Version
     ```
 ## On Linux
-1. go to the repository directory `./build/` and type the following command:
+1. Go to the root project directory and type the following commands:
     ```
-    ./JsonMidiPlayer.out ../midiSimpleNotes.json --verbose
+    ./build/Release/JsonMidiPlayer.out -v ./linux_exported_lead_sheet_melody_jmp.json
+    ```
+    ```
+    ./build/Release/JsonMidiPlayer.out -Version
     ```
 # Python library for JsonMidiCreator
 It is possible to run this program directly from the [JsonMidiCreator](https://github.com/ruiseixasm/JsonMidiCreator) with the `>> Play()` operation, you just need to do the following.

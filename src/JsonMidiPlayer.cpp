@@ -293,7 +293,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             nlohmann::json jsonDataBytes = jsonElement["midi_message"]["data_bytes"];
                                             for (int sysex_data_byte : jsonDataBytes) {
                                                 // Makes sure it's SysEx valid data
-                                                if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7 && 
+                                                if (sysex_data_byte >= 0 && sysex_data_byte < 0xF7 && sysex_data_byte != 0xF0 && 
                                                     sysex_data_byte != 0xF8 && sysex_data_byte != 0xFA && 
                                                     sysex_data_byte != 0xFB && sysex_data_byte != 0xFC && 
                                                     sysex_data_byte != 0xFE && sysex_data_byte != 0xFF) {

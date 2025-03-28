@@ -407,8 +407,8 @@ int PlayList(const char* json_str, bool verbose) {
                 return a.getTime() < b.getTime(); // Primary: Sort by time (ascending)
         
             // Then sort by Device (Ascendent)
-            if (&a != &b)
-                return &a < &b; // Secondary: Sort by device (ascending)
+            if (a.getDeviceID() != b.getDeviceID())
+                return a.getDeviceID() < b.getDeviceID(); // Secondary: Sort by device (ascending)
         
             // Then sort by Priority (Ascendent)
             return a.getPriority() < b.getPriority(); // Tertiary: Sort by priority (ascending)

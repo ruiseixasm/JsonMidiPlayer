@@ -163,6 +163,10 @@ public:
         return this->priority;
     }
 
+    const MidiDevice * const getDeviceID() const {
+        return this->midi_device;
+    }
+
 };
 
 // Declare the function in the header file

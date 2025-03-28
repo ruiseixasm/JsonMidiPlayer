@@ -405,19 +405,15 @@ int PlayList(const char* json_str, bool verbose) {
         // Where the existing Midi messages are sorted by time and other parameters
         //
 
-        // Three levels sorting criteria
+        // Two levels sorting criteria
         midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
             
             // Time is the primary sorting criteria
             if (a.getTime() != b.getTime())  
                 return a.getTime() < b.getTime();           // Primary: Sort by time (ascending)
         
-            // Then sort by Device (Ascendent)
-            if (a.getDeviceID() != b.getDeviceID())
-                return a.getDeviceID() < b.getDeviceID();   // Secondary: Sort by device (ascending)
-        
             // Then sort by Priority (Ascendent)
-            return a.getPriority() <= b.getPriority();      // Tertiary: Sort by priority (ascending)
+            return a.getPriority() <= b.getPriority();      // Secondary: Sort by priority (ascending)
             
         });
 

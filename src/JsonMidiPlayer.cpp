@@ -381,8 +381,8 @@ int PlayList(const char* json_str, bool verbose) {
                     b_byte == 0xFC || b_byte == 0xFE || b_byte == 0xFF)
                     return false;   // No distinct clock signals happen at the same time
 
-                // Song Position messages must come LAST to all but SysEx
-                if (a_byte == 0xF2 && b_byte != 0xF0)
+                // Song Position messages must come LAST to all but SysEx or itself
+                if (a_byte == 0xF2 && b_byte != 0xF2 && b_byte != 0xF0)
                     return false;
 
                 // SysEx messages must come LAST to all others

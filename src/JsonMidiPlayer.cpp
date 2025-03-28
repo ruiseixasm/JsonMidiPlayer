@@ -399,7 +399,7 @@ int PlayList(const char* json_str, bool verbose) {
         // Finally sorts the list by time in ascendent order
         midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
                 // Time is the primary sorting criteria
-                if (a.getTime() < b.getTime()) return true; // No flipping happens
+                if (a.getTime() < b.getTime()) return true; // No swapping happens
                 if (a.getTime() > b.getTime()) return false;
 
                 if (&a == &b) {  // The following messages are Device exclusive

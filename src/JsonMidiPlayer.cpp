@@ -269,16 +269,16 @@ int PlayList(const char* json_str, bool verbose) {
                                             if ((status_byte & 0xF0) == 0xB0) {         // Control Change
                                                 priority = 0x00 | status_byte & 0x0F;       // High priority 0
                                             } else if ((status_byte & 0xF0) == 0x80) {  // Note Off
-                                                priority = 0x40 | status_byte & 0x0F;       // High priority 4
+                                                priority = 0x40 | status_byte & 0x0F;       // Normal priority 4
                                             } else {
-                                                priority = 0x50 | status_byte & 0x0F;       // High priority 5
+                                                priority = 0x50 | status_byte & 0x0F;       // Normal priority 5
                                             }
                                         }
                                     }
                                 } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
                                         status_byte == 0xFC || status_byte == 0xFE || status_byte == 0xFF) { // System real-time messages
                                             
-                                    // Nothing to do here, it's just the Status Byte to be sent as Midi Message
+                                    priority = 0x30 | status_byte & 0x0F;       // High priority 3
 
                                 } else if (status_byte == 0xF1 || status_byte == 0xF3) {    // System common messages
                                     
@@ -287,8 +287,10 @@ int PlayList(const char* json_str, bool verbose) {
                                         unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
                                         if (data_byte > 0xFF) // Makes sure it's inside the processing window
                                             continue;
-                                        else
+                                        else {
                                             json_midi_message.push_back(data_byte);
+                                            priority = 0xC0 | status_byte & 0x0F;       // Low priority 13
+                                        }
                                     }
                                 } else {
                                     if (status_byte == 0xF2) {      // Song Position Pointer
@@ -302,11 +304,12 @@ int PlayList(const char* json_str, bool verbose) {
                                             else {
                                                 json_midi_message.push_back(data_byte_1);
                                                 json_midi_message.push_back(data_byte_2);
+                                                priority = 0xB0 | status_byte & 0x0F;       // Low priority 12
                                             }
                                         }
                                     } else if (status_byte == 0xF6) {   // Tune Request
                                         
-                                        // Nothing to do here, it's just the Status Byte to be sent as Midi Message
+                                        priority = 0xD0 | status_byte & 0x0F;       // Low priority 14
 
                                     } else if (status_byte == 0xF0) {   // SysEx Messages
                                         
@@ -319,6 +322,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                 // Makes sure it's SysEx valid data
                                                 if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
                                                     json_midi_message.push_back(sysex_data_byte);
+                                                    priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 16
                                                 } else {
                                                     continue;
                                                 }

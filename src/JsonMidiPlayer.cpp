@@ -296,12 +296,12 @@ int PlayList(const char* json_str, bool verbose) {
                                             for (unsigned char sysex_data_byte : jsonDataBytes) {
                                                 // Makes sure it's SysEx valid data
                                                 if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
-
                                                     json_midi_message.push_back(sysex_data_byte);
                                                 } else {
                                                     continue;
                                                 }
                                             }
+                                            json_midi_message.push_back(0xF7);  // End SysEx Data Byte
                                         } else {
                                             continue;
                                         }

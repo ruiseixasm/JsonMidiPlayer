@@ -404,6 +404,13 @@ int PlayList(const char* json_str, bool verbose) {
 
                 if (&a == &b) {  // The following messages are Device exclusive
 
+                    // unsigned char a_action = a.getAction();
+                    // unsigned char b_action = b.getAction();
+
+                    // // Note Off (0x80) messages must come FIRST than Notes On (0x90)
+                    // if (a_action == 0x90 && b_action == 0x80)
+                    //     return false;
+
                     unsigned char a_byte = a.getStatusByte();
                     unsigned char b_byte = b.getStatusByte();
 

@@ -376,7 +376,7 @@ int PlayList(const char* json_str, bool verbose) {
                 if ((a_byte & 0xF0) == 0x90 && (b_byte & 0xF0) == 0x80)
                     return false;
 
-                // Time messages always come FIRST
+                // Clock messages always come FIRST
                 if (b_byte == 0xF8 || b_byte == 0xFA || b_byte == 0xFB ||
                     b_byte == 0xFC || b_byte == 0xFE || b_byte == 0xFF)
                     return false;   // No distinct clock signals happen at the same time

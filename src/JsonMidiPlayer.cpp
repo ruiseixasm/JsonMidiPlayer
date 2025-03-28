@@ -399,26 +399,21 @@ int PlayList(const char* json_str, bool verbose) {
         // Where the existing Midi messages are sorted by time and other parameters
         //
 
-        // Starts aggregating MidiPins by Device and Priority
+        // Three levels sorting criteria
         midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
-
-            if (&a > &b)   // Aggregate by Device (Ascendent)
-                return false;
             
-            if (a.getPriority() > b.getPriority())   // Aggregate by Priority (Ascendent)
-                return false;
-
-            return true;
+            // Time is the primary sorting criteria
+            if (a.getTime() != b.getTime())  
+                return a.getTime() < b.getTime(); // Primary: Sort by time (ascending)
+        
+            // Then sort by Device (Ascendent)
+            if (&a != &b)
+                return &a < &b; // Secondary: Sort by device (ascending)
+        
+            // Then sort by Priority (Ascendent)
+            return a.getPriority() < b.getPriority(); // Tertiary: Sort by priority (ascending)
+            
         });
-
-        // Finally sorts the list by time in ascendent order
-        midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
-                // Time is the primary sorting criteria
-                if (a.getTime() > b.getTime())
-                    return false;
-
-                return true;
-            });
 
         #ifdef DEBUGGING
         debugging_now = std::chrono::high_resolution_clock::now();

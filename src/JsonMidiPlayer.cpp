@@ -271,7 +271,13 @@ int PlayList(const char* json_str, bool verbose) {
                                             json_midi_message.push_back(data_byte_1);
                                             json_midi_message.push_back(data_byte_2);
                                             if ((status_byte & 0xF0) == 0xB0) {         // Control Change
-                                                priority = 0x20 | status_byte & 0x0F;       // High priority 2
+                                                if (data_byte_1 == 0 || data_byte_1 == 32) {
+                                                    // 0 -  Bank Select (MSB)
+                                                    // 32 - Bank Select (LSB)
+                                                    priority = 0x00 | status_byte & 0x0F;       // Top priority 0
+                                                } else {
+                                                    priority = 0x20 | status_byte & 0x0F;       // High priority 2
+                                                }
                                             } else if ((status_byte & 0xF0) == 0x80) {  // Note Off
                                                 priority = 0x40 | status_byte & 0x0F;       // Normal priority 4
                                             } else if ((status_byte & 0xF0) == 0x90) {  // Note On

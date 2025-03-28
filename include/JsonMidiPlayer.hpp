@@ -100,15 +100,18 @@ class MidiPin {
 
 private:
     const double time_ms;
+    const unsigned char priority;
     MidiDevice * const midi_device = nullptr;
     std::vector<unsigned char> midi_message;  // Replaces midi_message[3]
     // https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
     double delay_time_ms = -1;
 public:
-    MidiPin(double time_milliseconds, MidiDevice* midi_device, const std::vector<unsigned char>& json_midi_message)
-        : time_ms(time_milliseconds),
-        midi_device(midi_device),
-        midi_message(json_midi_message)  // Directly initialize midi_message
+    MidiPin(double time_milliseconds, MidiDevice* midi_device,
+        const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
+            : time_ms(time_milliseconds),
+            midi_device(midi_device),
+            midi_message(json_midi_message),    // Directly initialize midi_message
+            priority(priority)
         { }
 
     double getTime() const {

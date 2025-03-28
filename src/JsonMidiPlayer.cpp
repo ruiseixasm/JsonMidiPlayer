@@ -230,6 +230,7 @@ int PlayList(const char* json_str, bool verbose) {
                         unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
                         std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
                         double time_milliseconds = jsonElement["time_ms"];
+                        unsigned char priority = 0xFF;
                         
                         play_reporting.total_excluded++;
                         // Create an API with the default API
@@ -248,8 +249,10 @@ int PlayList(const char* json_str, bool verbose) {
                                         unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
                                         if (data_byte > 0xFF) // Makes sure it's inside the processing window
                                             continue;
-                                        else
+                                        else {
                                             json_midi_message.push_back(data_byte);
+                                            priority = 0x10 | status_byte & 0x0F;   // Top priority 1
+                                        }
                                     }
 
                                 } else if (status_byte >= 0x80 && status_byte < 0xF0) { // Channel messages (most significant bit = 1)
@@ -263,6 +266,13 @@ int PlayList(const char* json_str, bool verbose) {
                                         else {
                                             json_midi_message.push_back(data_byte_1);
                                             json_midi_message.push_back(data_byte_2);
+                                            if ((status_byte & 0xF0) == 0xB0) {         // Control Change
+                                                priority = 0x00 | status_byte & 0x0F;       // High priority 0
+                                            } else if ((status_byte & 0xF0) == 0x80) {  // Note Off
+                                                priority = 0x40 | status_byte & 0x0F;       // High priority 4
+                                            } else {
+                                                priority = 0x50 | status_byte & 0x0F;       // High priority 5
+                                            }
                                         }
                                     }
                                 } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
@@ -346,7 +356,7 @@ int PlayList(const char* json_str, bool verbose) {
                                         //
                                         if (status_byte == 0xF0) {  // SysEx message
                                             if (json_midi_message.size() > 2) {  // Avoids sending empty payload SysEx messages
-                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, json_midi_message));
+                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, json_midi_message, priority));
                                             } else {
                                                 play_reporting.total_excluded++;    // Marks it as excluded
                                             }

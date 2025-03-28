@@ -382,6 +382,9 @@ int PlayList(const char* json_str, bool verbose) {
                 if (a.getTime() < b.getTime()) return true; // No flipping happens
                 if (a.getTime() > b.getTime()) return false;
 
+                if (&a != &b)   // Don't compare different Devices parameters besides their time
+                    return true;
+
                 unsigned char a_byte = a.getStatusByte();
                 unsigned char b_byte = b.getStatusByte();
 

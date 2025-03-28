@@ -475,7 +475,6 @@ int PlayList(const char* json_str, bool verbose) {
             for (auto pin_it = midiToProcess.begin(); pin_it != midiToProcess.end(); ) {
 
                 auto &midi_pin = *pin_it;
-                const unsigned char *pin_midi_message = midi_pin.getMidiMessage();
 
                 if (midi_pin.getStatusByte() >= 0x80 && midi_pin.getStatusByte() < 0xF0) {
 

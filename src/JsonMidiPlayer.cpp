@@ -523,7 +523,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                 midi_pin.getMidiDevice(),
                                                 3,  // Message size
                                                 midi_pin.getStatusByte() & 0x0F | 0x80, // Includes the Channel
-                                                pin_midi_message[1],   // Note pitch
+                                                midi_pin.getDataByte(1),   // Note pitch
                                                 0   // Velocity
                                             )
                                         );
@@ -538,7 +538,7 @@ int PlayList(const char* json_str, bool verbose) {
                         
                         // First timer Note On
                         last_midi_note_on_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], midi_pin.getDataByte(2))
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), midi_pin.getDataByte(1), midi_pin.getDataByte(2))
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -560,7 +560,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_kp_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], midi_pin.getDataByte(2))
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), midi_pin.getDataByte(1), midi_pin.getDataByte(2))
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -582,7 +582,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_cc_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], midi_pin.getDataByte(2))
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), midi_pin.getDataByte(1), midi_pin.getDataByte(2))
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -590,9 +590,9 @@ int PlayList(const char* json_str, bool verbose) {
                         for (auto &last_midi_cp : last_midi_cp_list) {
                             if (last_midi_cp == midi_pin) {
 
-                                if (last_midi_cp.data_byte_1 != pin_midi_message[1]) {
+                                if (last_midi_cp.data_byte_1 != midi_pin.getDataByte(1)) {
 
-                                    last_midi_cp.data_byte_1 = pin_midi_message[1];
+                                    last_midi_cp.data_byte_1 = midi_pin.getDataByte(1);
                                     ++pin_it; // Only increment if no removal
                                 } else {
 
@@ -604,7 +604,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_cp_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], midi_pin.getDataByte(2))
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), midi_pin.getDataByte(1), midi_pin.getDataByte(2))
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -612,10 +612,10 @@ int PlayList(const char* json_str, bool verbose) {
                         for (auto &last_midi_pb : last_midi_pb_list) {
                             if (last_midi_pb == midi_pin) {
 
-                                if (last_midi_pb.data_byte_1 != pin_midi_message[1] ||
+                                if (last_midi_pb.data_byte_1 != midi_pin.getDataByte(1) ||
                                     last_midi_pb.data_byte_2 != midi_pin.getDataByte(2)) {
 
-                                    last_midi_pb.data_byte_1 = pin_midi_message[1];
+                                    last_midi_pb.data_byte_1 = midi_pin.getDataByte(1);
                                     last_midi_pb.data_byte_2 = midi_pin.getDataByte(2);
                                     ++pin_it; // Only increment if no removal
                                 } else {
@@ -628,7 +628,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_pb_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], midi_pin.getDataByte(2))
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), midi_pin.getDataByte(1), midi_pin.getDataByte(2))
                         );
                         ++pin_it; // Only increment if no removal
                         break;

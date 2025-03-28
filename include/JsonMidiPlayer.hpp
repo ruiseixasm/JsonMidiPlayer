@@ -93,7 +93,7 @@ public:
     bool isPortOpened() const;
     const std::string& getName() const;
     unsigned int getDevicePort() const;
-    void sendMessage(const unsigned char *midi_message, size_t message_size);
+    void sendMessage(const std::vector<unsigned char> *midi_message);
 };
 
 class MidiPin {
@@ -101,13 +101,15 @@ class MidiPin {
 private:
     const double time_ms;
     MidiDevice * const midi_device = nullptr;
-    const size_t message_size;
-    unsigned char midi_message[3];    // Status byte and 2 Data bytes
+    std::vector<unsigned char> midi_message;  // Replaces midi_message[3]
     // https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
     double delay_time_ms = -1;
 public:
-    MidiPin(double time_milliseconds, MidiDevice *midi_device, size_t message_size, unsigned char status_byte, unsigned char data_byte_1 = 0, unsigned char data_byte_2 = 0)
-        : time_ms(time_milliseconds), midi_device(midi_device), message_size(message_size), midi_message{status_byte, data_byte_1, data_byte_2} { }
+    MidiPin(double time_milliseconds, MidiDevice* midi_device, const std::vector<unsigned char>& json_midi_message)
+        : time_ms(time_milliseconds),
+        midi_device(midi_device),
+        midi_message(json_midi_message)  // Directly initialize midi_message
+        { }
 
     double getTime() const {
         return time_ms;
@@ -121,17 +123,9 @@ public:
         return midi_device->getDevicePort();
     }
 
-    const unsigned char* getMidiMessage() const {
-        return midi_message;
-    }
-
     void pluckTooth() {
-        if (midi_device != nullptr && message_size > 0)
-            if (midi_message[0] == 0xF0 && message_size == 2) { // SysEx messages content
-                midi_device->sendMessage(&midi_message[1], 1);
-            } else {
-                midi_device->sendMessage(midi_message, message_size);
-            }
+        if (midi_device != nullptr)
+            midi_device->sendMessage(&midi_message);
     }
 
     void setDelayTime(double delay_time_ms) {

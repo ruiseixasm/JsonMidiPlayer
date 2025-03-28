@@ -49,8 +49,8 @@ unsigned int MidiDevice::getDevicePort() const {
     return port;
 }
 
-void MidiDevice::sendMessage(const unsigned char *midi_message, size_t message_size) {
-    midiOut.sendMessage(midi_message, message_size);
+void MidiDevice::sendMessage(const std::vector<unsigned char> *midi_message) {
+    midiOut.sendMessage(midi_message);
 }
 
 
@@ -223,17 +223,15 @@ int PlayList(const char* json_str, bool verbose) {
                     // temporary/buffer variables
                     double time_milliseconds;
                     nlohmann::json jsonDeviceNames;
-                    size_t midi_message_size;
                     unsigned char status_byte;
-                    unsigned char data_byte_1;
-                    unsigned char data_byte_2;
-                    std::vector<unsigned char> sysex_data_bytes;
+                    std::vector<unsigned char> json_midi_message;
                     MidiDevice *midi_device;
                     
                     for (auto jsonElement : jsonFileContent)
                     {
                         if (jsonElement.contains("midi_message") && jsonElement.contains("time_ms")) {
                             
+                            json_midi_message = {}; // Resets json_midi_message to a new empty vector
                             play_reporting.total_excluded++;
                             // Create an API with the default API
                             try
@@ -242,65 +240,70 @@ int PlayList(const char* json_str, bool verbose) {
                                 if (time_milliseconds >= 0) {
                                     jsonDeviceNames = jsonElement["midi_message"]["device"];
                                     status_byte = jsonElement["midi_message"]["status_byte"];
+                                    json_midi_message.push_back(status_byte);
 
                                     if (status_byte >= 0xC0 && status_byte < 0xE0) {        // For Program Change and Aftertouch messages
-                                        midi_message_size = 2;
-                                        data_byte_1 = jsonElement["midi_message"]["data_byte"];
-                                        data_byte_2 = 0;
-
+                                        
+                                        unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte"];
                                         if (data_byte_1 > 0xFF) // Makes sure it's inside the processing window
                                             continue;
-                                    } else if (status_byte >= 0x80 && status_byte < 0xF0) { // Channel messages (most significant bit = 1)
-                                        midi_message_size = 3;
-                                        data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                        data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                        else
+                                            json_midi_message.push_back(data_byte_1);
 
-                                        if (data_byte_1 < 0 || data_byte_1 > 127 ||
-                                            data_byte_2 < 0 || data_byte_2 > 127)   // Makes sure it's inside the processing window
+                                    } else if (status_byte >= 0x80 && status_byte < 0xF0) { // Channel messages (most significant bit = 1)
+                                        
+                                        unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                        unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                        if (data_byte_1 > 127 || data_byte_2 > 127)   // Makes sure it's inside the processing window
                                             continue;
+                                        else {
+                                            json_midi_message.push_back(data_byte_1);
+                                            json_midi_message.push_back(data_byte_2);
+                                        }
                                     } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
                                             status_byte == 0xFC || status_byte == 0xFE || status_byte == 0xFF) { // System real-time messages
-                                        midi_message_size = 1;
-                                        data_byte_1 = 0;
-                                        data_byte_2 = 0;
-                                    } else if (status_byte == 0xF1 || status_byte == 0xF3) {    // System common messages
-                                        midi_message_size = 2;
-                                        data_byte_1 = jsonElement["midi_message"]["data_byte"];
-                                        data_byte_2 = 0;
+                                                
+                                            // Nothing to do here, it's just the Status Byte to be sent as Midi Message
 
+                                    } else if (status_byte == 0xF1 || status_byte == 0xF3) {    // System common messages
+                                        
+                                        unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte"];
                                         if (data_byte_1 > 0xFF) // Makes sure it's inside the processing window
                                             continue;
+                                        else
+                                            json_midi_message.push_back(data_byte_1);
                                     } else {
                                         if (status_byte == 0xF2) {      // Song Position Pointer
-                                            midi_message_size = 3;
-                                            data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                            data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-
+                                            
+                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
                                             if (data_byte_1 > 0xFF || data_byte_2 > 0xFF)  // Makes sure it's inside the processing window
                                                 continue;
+                                            else {
+                                                json_midi_message.push_back(data_byte_1);
+                                                json_midi_message.push_back(data_byte_2);
+                                            }
 
                                         } else if (status_byte == 0xF6) {   // Tune Request
-                                            midi_message_size = 1;
-                                            data_byte_1 = 0;
-                                            data_byte_2 = 0;
+                                            
+                                            // Nothing to do here, it's just the Status Byte to be sent as Midi Message
 
                                         } else if (status_byte == 0xF0) {   // SysEx Messages
                                             
                                             // sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
-                                            // Resets sysex_data_bytes array
-                                            sysex_data_bytes = {};
+                                            
                                             nlohmann::json jsonDataBytes = jsonElement["midi_message"]["data_bytes"];
                                             for (unsigned char sysex_data_byte : jsonDataBytes) {
                                                 // Makes sure it's SysEx valid data
                                                 if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
 
-                                                    sysex_data_bytes.push_back(sysex_data_byte);
+                                                    json_midi_message.push_back(sysex_data_byte);
                                                 } else {
                                                     continue;
                                                 }
                                             }
                                         } else {
-                                            midi_message_size = 0;
+                                            continue;
                                         }
                                     }
                                 } else {
@@ -329,17 +332,13 @@ int PlayList(const char* json_str, bool verbose) {
                                             // Where each Midi Pin or Pins are added to the midi processing list
                                             //
                                             if (status_byte == 0xF0) {  // SysEx message
-                                                if (sysex_data_bytes.size() > 0) {  // Avoids sending empty SysEx messages
-                                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, 1, 0xF0));
-                                                    for (unsigned char data_byte : sysex_data_bytes) {
-                                                        midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, data_byte));
-                                                    }
-                                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, 2, 0xF0, 0xF7)); // 0xF7 is the SysEx end byte
+                                                if (json_midi_message.size() > 2) {  // Avoids sending empty payload SysEx messages
+                                                    midiToProcess.push_back(MidiPin(time_milliseconds, &device, json_midi_message));
                                                 } else {
                                                     play_reporting.total_excluded++;    // Marks it as excluded
                                                 }
                                             } else {    // Processes NON SysEx messages
-                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, midi_message_size, status_byte, data_byte_1, data_byte_2));
+                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, json_midi_message));
                                             }
                                             play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
                                         goto skip_to;
@@ -516,14 +515,16 @@ int PlayList(const char* json_str, bool verbose) {
 
                                     ++last_midi_note_on;    // Increments level
 
+                                    std::vector<unsigned char> midi_message = {
+                                        static_cast<unsigned char>(midi_pin.getStatusByte() & 0x0F | 0x80),
+                                        midi_pin.getDataByte(1),
+                                        0
+                                    };
                                     pin_it = midiToProcess.insert(pin_it,
                                         MidiPin(
                                                 midi_pin.getTime(),
                                                 midi_pin.getMidiDevice(),
-                                                3,  // Message size
-                                                midi_pin.getStatusByte() & 0x0F | 0x80, // Includes the Channel
-                                                midi_pin.getDataByte(1),   // Note pitch
-                                                0   // Velocity
+                                                midi_message
                                             )
                                         );
                                     // Skips the previously inserted Note Off MidiPin
@@ -733,9 +734,12 @@ int PlayList(const char* json_str, bool verbose) {
             // Add the needed note off for all those still on at the end!
             for (auto &last_midi_note_on : last_midi_note_on_list) {
                 // Transform midi on in midi off
-                const unsigned char note_off_status_byte = last_midi_note_on.status_byte & 0x0F | 0x80;
-                midiToProcess.push_back(MidiPin(last_message_time_ms, last_midi_note_on.midi_device,
-                        3, note_off_status_byte, last_midi_note_on.data_byte_1));
+                std::vector<unsigned char> midi_message = {
+                    static_cast<unsigned char>(last_midi_note_on.status_byte & 0x0F | 0x80),    // note_off_status_byte
+                    last_midi_note_on.data_byte_1,
+                    last_midi_note_on.data_byte_2
+                };
+                midiToProcess.push_back(MidiPin(last_message_time_ms, last_midi_note_on.midi_device, midi_message));
             }
 
             // MIDI CLOCK

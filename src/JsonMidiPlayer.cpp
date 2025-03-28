@@ -393,7 +393,7 @@ int PlayList(const char* json_str, bool verbose) {
         // Where the existing Midi messages are sorted by time and other parameters
         //
 
-        // Starts by aggregate MidiPins by Device and StatusByte
+        // Starts by aggregate MidiPins by Device and Priority
         midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
 
             if (&a > &b)   // Aggregate by Device (Ascendent)

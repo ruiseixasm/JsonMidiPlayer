@@ -374,8 +374,8 @@ int PlayList(const char* json_str, bool verbose) {
                 if (a.getTime() < b.getTime()) return true; // No flipping happens
                 if (a.getTime() > b.getTime()) return false;
 
-                unsigned char a_byte = a.getMidiMessage()[0];
-                unsigned char b_byte = b.getMidiMessage()[0];
+                unsigned char a_byte = a.getStatusByte();
+                unsigned char b_byte = b.getStatusByte();
 
                 // For equal time case and to avoid Notes Off happening AFTER Notes On
                 // Note Off messages must come FIRST
@@ -424,9 +424,9 @@ int PlayList(const char* json_str, bool verbose) {
                         midi_device(midi_device), status_byte(status_byte), data_byte_1(data_byte_1), data_byte_2(data_byte_2) { }
 
                 bool operator == (const MidiPin &midi_pin) {
-                    if (midi_device == midi_pin.getMidiDevice() && (status_byte & 0x0F) == (midi_pin.getMidiMessage()[0] & 0x0F)) {
+                    if (midi_device == midi_pin.getMidiDevice() && (status_byte & 0x0F) == (midi_pin.getStatusByte() & 0x0F)) {
                         if (status_byte >= 0x80 && status_byte < 0xC0)
-                            if (data_byte_1 == midi_pin.getMidiMessage()[1])
+                            if (data_byte_1 == midi_pin.getDataByte(1))
                                 return true;
                         if (status_byte >= 0xC0 && status_byte < 0xF0)
                             return true;
@@ -645,13 +645,13 @@ int PlayList(const char* json_str, bool verbose) {
                     case 0xF8:  // Timing Clock
                         if (last_clock_pin != nullptr) {
                             if (last_clock_pin->getTime() == midi_pin.getTime()) {
-                                if (last_clock_pin->getMidiMessage()[0] == 0xFC) {      // Clock Stop
+                                if (last_clock_pin->getStatusByte() == 0xFC) {      // Clock Stop
                                     last_clock_pin->setStatusByte(0xF8);
                                 }
                                 midiRedundant.push_back(midi_pin);
                                 pin_it = midiToProcess.erase(pin_it);
                                 goto skip_to_2;
-                            } else if (last_clock_pin->getMidiMessage()[0] == 0xFC) {   // Clock Stop
+                            } else if (last_clock_pin->getStatusByte() == 0xFC) {   // Clock Stop
                                 midi_pin.setStatusByte(0xFB);
                             }
                         } else {
@@ -663,13 +663,13 @@ int PlayList(const char* json_str, bool verbose) {
                     case 0xFA:  // Start Clock
                         if (last_clock_pin != nullptr) {
                             if (last_clock_pin->getTime() == midi_pin.getTime()) {
-                                if (last_clock_pin->getMidiMessage()[0] == 0xFC) {      // Clock Stop
+                                if (last_clock_pin->getStatusByte() == 0xFC) {      // Clock Stop
                                     last_clock_pin->setStatusByte(0xF8);
                                 }
                                 midiRedundant.push_back(midi_pin);
                                 pin_it = midiToProcess.erase(pin_it);
                                 goto skip_to_2;
-                            } else if (last_clock_pin->getMidiMessage()[0] == 0xFC) {   // Clock Stop
+                            } else if (last_clock_pin->getStatusByte() == 0xFC) {   // Clock Stop
                                 midi_pin.setStatusByte(0xFB);
                             } else {
                                 midi_pin.setStatusByte(0xF8);
@@ -685,9 +685,9 @@ int PlayList(const char* json_str, bool verbose) {
                                 midiRedundant.push_back(midi_pin);
                                 pin_it = midiToProcess.erase(pin_it);
                                 goto skip_to_2;
-                            } else if (last_clock_pin->getMidiMessage()[0] == 0xFA) {   // Clock Start
+                            } else if (last_clock_pin->getStatusByte() == 0xFA) {   // Clock Start
                                 midi_pin.setStatusByte(0xF8);
-                            } else if (last_clock_pin->getMidiMessage()[0] == 0xFB) {   // Clock Continue
+                            } else if (last_clock_pin->getStatusByte() == 0xFB) {   // Clock Continue
                                 midi_pin.setStatusByte(0xF8);
                             } else {                                                    // NOT Clock Start or Continue
                                 last_clock_pin->setStatusByte(0xFC);
@@ -705,7 +705,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 midiRedundant.push_back(midi_pin);
                                 pin_it = midiToProcess.erase(pin_it);
                                 goto skip_to_2;
-                            } else if (last_clock_pin->getMidiMessage()[0] == 0xFC) {   // Clock Stop
+                            } else if (last_clock_pin->getStatusByte() == 0xFC) {   // Clock Stop
                                 midiRedundant.push_back(midi_pin);
                                 pin_it = midiToProcess.erase(pin_it);
                                 goto skip_to_2;
@@ -740,7 +740,7 @@ int PlayList(const char* json_str, bool verbose) {
             }
 
             // MIDI CLOCK
-            if (last_clock_pin != nullptr && last_clock_pin->getMidiMessage()[0] == 0xF8)
+            if (last_clock_pin != nullptr && last_clock_pin->getStatusByte() == 0xF8)
                 last_clock_pin->setStatusByte(0xFC);    // Clock Stop
         }
 

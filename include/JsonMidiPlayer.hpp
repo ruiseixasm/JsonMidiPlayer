@@ -150,6 +150,10 @@ public:
         return this->midi_message[0];
     }
 
+    unsigned char getDataByte(int nth_byte = 1) const {
+        return this->midi_message[nth_byte];
+    }
+
 };
 
 // Declare the function in the header file

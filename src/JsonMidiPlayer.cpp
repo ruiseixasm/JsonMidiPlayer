@@ -508,10 +508,10 @@ int PlayList(const char* json_str, bool verbose) {
                             if (last_midi_note_on == midi_pin) {
 
                                 // A special case for Note On with velocity 0!
-                                if (last_midi_note_on.data_byte_2 == 0 && pin_midi_message[2] > 0 ||
-                                    last_midi_note_on.data_byte_2 > 0 && pin_midi_message[2] == 0) {
+                                if (last_midi_note_on.data_byte_2 == 0 && midi_pin.getDataByte(2) > 0 ||
+                                    last_midi_note_on.data_byte_2 > 0 && midi_pin.getDataByte(2) == 0) {
 
-                                    last_midi_note_on.data_byte_2 = pin_midi_message[2];
+                                    last_midi_note_on.data_byte_2 = midi_pin.getDataByte(2);
                                     ++pin_it; // Only increment if no removal
                                 } else {
 
@@ -538,7 +538,7 @@ int PlayList(const char* json_str, bool verbose) {
                         
                         // First timer Note On
                         last_midi_note_on_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], pin_midi_message[2])
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], midi_pin.getDataByte(2))
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -546,9 +546,9 @@ int PlayList(const char* json_str, bool verbose) {
                         for (auto &last_midi_kp : last_midi_kp_list) {
                             if (last_midi_kp == midi_pin) {
 
-                                if (last_midi_kp.data_byte_2 != pin_midi_message[2]) {
+                                if (last_midi_kp.data_byte_2 != midi_pin.getDataByte(2)) {
 
-                                    last_midi_kp.data_byte_2 = pin_midi_message[2];
+                                    last_midi_kp.data_byte_2 = midi_pin.getDataByte(2);
                                     ++pin_it; // Only increment if no removal
                                 } else {
 
@@ -560,7 +560,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_kp_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], pin_midi_message[2])
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], midi_pin.getDataByte(2))
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -568,9 +568,9 @@ int PlayList(const char* json_str, bool verbose) {
                         for (auto &last_midi_cc : last_midi_cc_list) {
                             if (last_midi_cc == midi_pin) {
 
-                                if (last_midi_cc.data_byte_2 != pin_midi_message[2]) {
+                                if (last_midi_cc.data_byte_2 != midi_pin.getDataByte(2)) {
 
-                                    last_midi_cc.data_byte_2 = pin_midi_message[2];
+                                    last_midi_cc.data_byte_2 = midi_pin.getDataByte(2);
                                     ++pin_it; // Only increment if no removal
                                 } else {
 
@@ -582,7 +582,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_cc_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], pin_midi_message[2])
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], midi_pin.getDataByte(2))
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -604,7 +604,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_cp_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], pin_midi_message[2])
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], midi_pin.getDataByte(2))
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -613,10 +613,10 @@ int PlayList(const char* json_str, bool verbose) {
                             if (last_midi_pb == midi_pin) {
 
                                 if (last_midi_pb.data_byte_1 != pin_midi_message[1] ||
-                                    last_midi_pb.data_byte_2 != pin_midi_message[2]) {
+                                    last_midi_pb.data_byte_2 != midi_pin.getDataByte(2)) {
 
                                     last_midi_pb.data_byte_1 = pin_midi_message[1];
-                                    last_midi_pb.data_byte_2 = pin_midi_message[2];
+                                    last_midi_pb.data_byte_2 = midi_pin.getDataByte(2);
                                     ++pin_it; // Only increment if no removal
                                 } else {
 
@@ -628,7 +628,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_pb_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], pin_midi_message[2])
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], midi_pin.getDataByte(2))
                         );
                         ++pin_it; // Only increment if no removal
                         break;

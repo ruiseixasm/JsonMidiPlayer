@@ -265,7 +265,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
                                         status_byte == 0xFC || status_byte == 0xFE || status_byte == 0xFF) { // System real-time messages
                                             
-                                        // Nothing to do here, it's just the Status Byte to be sent as Midi Message
+                                    // Nothing to do here, it's just the Status Byte to be sent as Midi Message
 
                                 } else if (status_byte == 0xF1 || status_byte == 0xF3) {    // System common messages
                                     

@@ -159,6 +159,10 @@ public:
         return this->midi_message[0] & 0xF0;
     }
 
+    unsigned char getPriority() const {
+        return this->priority;
+    }
+
 };
 
 // Declare the function in the header file

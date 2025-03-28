@@ -251,7 +251,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             continue;
                                         else {
                                             json_midi_message.push_back(data_byte);
-                                            priority = 0x10 | status_byte & 0x0F;   // Top priority 1
+                                            priority = 0x10 | status_byte & 0x0F;   // High priority 1
                                         }
                                     }
 
@@ -267,7 +267,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             json_midi_message.push_back(data_byte_1);
                                             json_midi_message.push_back(data_byte_2);
                                             if ((status_byte & 0xF0) == 0xB0) {         // Control Change
-                                                priority = 0x00 | status_byte & 0x0F;       // High priority 0
+                                                priority = 0x00 | status_byte & 0x0F;       // Top priority 0
                                             } else if ((status_byte & 0xF0) == 0x80) {  // Note Off
                                                 priority = 0x40 | status_byte & 0x0F;       // Normal priority 4
                                             } else {
@@ -399,12 +399,7 @@ int PlayList(const char* json_str, bool verbose) {
             if (&a > &b)   // Aggregate by Device (Ascendent)
                 return false;
             
-            unsigned char a_byte = a.getStatusByte();
-            unsigned char b_byte = b.getStatusByte();
-
-            // Note Off (0x80) messages must come FIRST than Notes On (0x90)
-            // regardless Channel or Device (implicit)
-            if (a_byte > b_byte)   // Aggregate by StatusByte (Ascendent)
+            if (a.getPriority() > b.getPriority())   // Aggregate by Priority (Ascendent)
                 return false;
 
             return true;
@@ -413,36 +408,8 @@ int PlayList(const char* json_str, bool verbose) {
         // Finally sorts the list by time in ascendent order
         midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
                 // Time is the primary sorting criteria
-                if (a.getTime() < b.getTime()) return true; // No swapping happens
-                if (a.getTime() > b.getTime()) return false;
-
-                if (&a == &b) {  // The following messages are Device exclusive
-
-                    // unsigned char a_action = a.getAction();
-                    // unsigned char b_action = b.getAction();
-
-                    // // Note Off (0x80) messages must come FIRST than Notes On (0x90)
-                    // if (a_action == 0x90 && b_action == 0x80)
-                    //     return false;
-
-                    unsigned char a_byte = a.getStatusByte();
-                    unsigned char b_byte = b.getStatusByte();
-
-                    // Clock messages always come FIRST
-                    if (b_byte == 0xF8 || b_byte == 0xFA || b_byte == 0xFB ||
-                        b_byte == 0xFC || b_byte == 0xFE || b_byte == 0xFF)
-                            // No distinct clock signals happen at the same time in the same Device
-                            return false;   
-
-                    // Song Position messages must come LAST to all but SysEx or itself
-                    if (a_byte == 0xF2 && b_byte != 0xF0)
-                        // No distinct Song Position messages happen at the same time in the same Device
-                        return false;
-
-                    // SysEx messages must come LAST to all others
-                    if (a_byte == 0xF0 && b_byte != 0xF0)
-                        return false;
-                }
+                if (a.getTime() > b.getTime())
+                    return false;
 
                 return true;
             });

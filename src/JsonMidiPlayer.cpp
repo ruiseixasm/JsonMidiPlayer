@@ -477,9 +477,9 @@ int PlayList(const char* json_str, bool verbose) {
                 auto &midi_pin = *pin_it;
                 const unsigned char *pin_midi_message = midi_pin.getMidiMessage();
 
-                if (pin_midi_message[0] >= 0x80 && pin_midi_message[0] < 0xF0) {
+                if (midi_pin.getStatusByte() >= 0x80 && midi_pin.getStatusByte() < 0xF0) {
 
-                    const unsigned char pin_midi_message_type = pin_midi_message[0] & 0xF0;
+                    const unsigned char pin_midi_message_type = midi_pin.getStatusByte() & 0xF0;
 
                     switch (pin_midi_message_type) {
                     case type_note_off:
@@ -522,7 +522,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                 midi_pin.getTime(),
                                                 midi_pin.getMidiDevice(),
                                                 3,  // Message size
-                                                pin_midi_message[0] & 0x0F | 0x80, // Includes the Channel
+                                                midi_pin.getStatusByte() & 0x0F | 0x80, // Includes the Channel
                                                 pin_midi_message[1],   // Note pitch
                                                 0   // Velocity
                                             )
@@ -538,7 +538,7 @@ int PlayList(const char* json_str, bool verbose) {
                         
                         // First timer Note On
                         last_midi_note_on_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], pin_midi_message[2])
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -560,7 +560,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_kp_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], pin_midi_message[2])
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -582,7 +582,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_cc_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], pin_midi_message[2])
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -604,7 +604,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_cp_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], pin_midi_message[2])
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -628,7 +628,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         last_midi_pb_list.push_back(
-                            MidiLastMessage(midi_pin.getMidiDevice(), pin_midi_message[0], pin_midi_message[1], pin_midi_message[2])
+                            MidiLastMessage(midi_pin.getMidiDevice(), midi_pin.getStatusByte(), pin_midi_message[1], pin_midi_message[2])
                         );
                         ++pin_it; // Only increment if no removal
                         break;
@@ -638,9 +638,9 @@ int PlayList(const char* json_str, bool verbose) {
                         break;
                     }
 
-                } else if ((pin_midi_message[0] & 0xF0) == 0xF0) {
+                } else if ((midi_pin.getStatusByte() & 0xF0) == 0xF0) {
 
-                    switch (pin_midi_message[0])
+                    switch (midi_pin.getStatusByte())
                     {
                     case 0xF8:  // Timing Clock
                         if (last_clock_pin != nullptr) {

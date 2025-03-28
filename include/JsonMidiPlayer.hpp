@@ -138,13 +138,18 @@ public:
         this->delay_time_ms = delay_time_ms;
     }
 
+    double getDelayTime() const {
+        return this->delay_time_ms;
+    }
+
     void setStatusByte(unsigned char status_byte) {
         this->midi_message[0] = status_byte;
     }
 
-    double getDelayTime() const {
-        return this->delay_time_ms;
+    unsigned char getStatusByte() const {
+        return this->midi_message[0];
     }
+
 };
 
 // Declare the function in the header file

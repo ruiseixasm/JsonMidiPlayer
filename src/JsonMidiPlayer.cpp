@@ -287,12 +287,20 @@ int PlayList(const char* json_str, bool verbose) {
 
                                         } else if (status_byte == 0xF0) {   // SysEx Messages
                                             
-                                            sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<int>>();
+                                            // sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<int>>();
+                                            // Resets sysex_data_bytes array
+                                            sysex_data_bytes = {};
+                                            nlohmann::json jsonDataBytes = jsonElement["midi_message"]["data_bytes"];
+                                            for (int sysex_data_byte : jsonDataBytes) {
+                                                // Makes sure it's SysEx valid data
+                                                if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7 && 
+                                                    sysex_data_byte != 0xF8 && sysex_data_byte != 0xFA && 
+                                                    sysex_data_byte != 0xFB && sysex_data_byte != 0xFC && 
+                                                    sysex_data_byte != 0xFE && sysex_data_byte != 0xFF) {
 
-                                            // nlohmann::json jsonDataBytes = jsonElement["midi_message"]["data_bytes"]
-                                            // for (int single_data_byte : jsonDataBytes) {
-                                                
-                                            // }
+                                                    sysex_data_bytes.push_back(sysex_data_byte);
+                                                }
+                                            }
                                         } else {
                                             midi_message_size = 0;
                                         }

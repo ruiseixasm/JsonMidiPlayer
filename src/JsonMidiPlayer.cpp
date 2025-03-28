@@ -194,6 +194,16 @@ int PlayList(const char* json_str, bool verbose) {
         // Where the JSON content is processed and added up the Pluck midi messages
         //
 
+
+        const unsigned char action_note_off = 0x80;         // Note off
+        const unsigned char action_note_on = 0x90;          // Note on
+        const unsigned char action_key_pressure = 0xA0;     // Polyphonic Key Pressure
+        const unsigned char action_control_change = 0xB0;   // Control Change
+        const unsigned char action_program_change = 0xC0;   // Program Change
+        const unsigned char action_channel_pressure = 0xD0; // Channel Pressure
+        const unsigned char action_pitch_bend = 0xE0;       // Pitch Bend
+
+
         auto data_processing_start = std::chrono::high_resolution_clock::now();
 
         try {
@@ -228,6 +238,7 @@ int PlayList(const char* json_str, bool verbose) {
                         jsonElement["midi_message"].contains("device") && jsonElement.contains("time_ms")) {
                         
                         unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
+                        unsigned char message_action = status_byte & 0xF0;
                         std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
                         double time_milliseconds = jsonElement["time_ms"];
                         unsigned char priority = 0xFF;  // Lowest priority 16 by default
@@ -485,12 +496,6 @@ int PlayList(const char* json_str, bool verbose) {
             std::list<MidiLastMessage> last_midi_cp_list;       // Midi Channel Aftertouch 0xD0
             std::list<MidiLastMessage> last_midi_pb_list;       // Midi Pitch Bend 0xE0
             MidiPin *last_clock_pin = nullptr;                  // Midi clock messages 0xF0
-            const unsigned char type_note_off = 0x80;           // Note off
-            const unsigned char type_note_on = 0x90;            // Note on
-            const unsigned char type_key_pressure = 0xA0;       // Polyphonic Key Pressure
-            const unsigned char type_control_change = 0xB0;     // Control Change
-            const unsigned char type_channel_pressure = 0xD0;   // Channel Pressure
-            const unsigned char type_pitch_bend = 0xE0;         // Pitch Bend
 
             // Loop through the list and remove elements
             for (auto pin_it = midiToProcess.begin(); pin_it != midiToProcess.end(); ) {
@@ -502,7 +507,7 @@ int PlayList(const char* json_str, bool verbose) {
                     const unsigned char pin_midi_message_action = midi_pin.getAction();
 
                     switch (pin_midi_message_action) {
-                    case type_note_off:
+                    case action_note_off:
                         // Loop through the list and remove elements
                         for (auto note_on = last_midi_note_on_list.begin(); note_on != last_midi_note_on_list.end(); ++note_on) {
 
@@ -523,7 +528,7 @@ int PlayList(const char* json_str, bool verbose) {
                         midiRedundant.push_back(midi_pin);  /// Note Off as no Note On pair
                         pin_it = midiToProcess.erase(pin_it);
                         break;
-                    case type_note_on:
+                    case action_note_on:
                         for (auto &last_midi_note_on : last_midi_note_on_list) {
                             if (last_midi_note_on == midi_pin) {
 
@@ -564,7 +569,7 @@ int PlayList(const char* json_str, bool verbose) {
                         );
                         ++pin_it; // Only increment if no removal
                         break;
-                    case type_key_pressure:
+                    case action_key_pressure:
                         for (auto &last_midi_kp : last_midi_kp_list) {
                             if (last_midi_kp == midi_pin) {
 
@@ -586,7 +591,7 @@ int PlayList(const char* json_str, bool verbose) {
                         );
                         ++pin_it; // Only increment if no removal
                         break;
-                    case type_control_change:
+                    case action_control_change:
                         for (auto &last_midi_cc : last_midi_cc_list) {
                             if (last_midi_cc == midi_pin) {
 
@@ -608,7 +613,7 @@ int PlayList(const char* json_str, bool verbose) {
                         );
                         ++pin_it; // Only increment if no removal
                         break;
-                    case type_channel_pressure:
+                    case action_channel_pressure:
                         for (auto &last_midi_cp : last_midi_cp_list) {
                             if (last_midi_cp == midi_pin) {
 
@@ -630,7 +635,7 @@ int PlayList(const char* json_str, bool verbose) {
                         );
                         ++pin_it; // Only increment if no removal
                         break;
-                    case type_pitch_bend:
+                    case action_pitch_bend:
                         for (auto &last_midi_pb : last_midi_pb_list) {
                             if (last_midi_pb == midi_pin) {
 

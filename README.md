@@ -2,20 +2,13 @@
 Very simple MIDI Player intended to be used to play JSON files created by [JsonMidiCreator](https://github.com/ruiseixasm/JsonMidiCreator) or directly by the generated dynamic library.
 # Binary files
 If you don't want to compile the source code yourself, you can download the already compiled files from the [JsonMidiPlayer sourceforge site](https://sourceforge.net/projects/json-midi-player/) with the respective direct links below.
-## Executable files (bin)
+## Executable and Library files (ctypes) for JsonMidiCreator
 ### Releases
 https://github.com/ruiseixasm/JsonMidiPlayer/releases
 ### For Windows
-https://sourceforge.net/projects/json-midi-player/files/Windows/bin/
+https://sourceforge.net/projects/json-midi-player/files/Windows/
 ### For Linux
-https://sourceforge.net/projects/json-midi-player/files/Linux/bin/
-## Library files (lib) for JsonMidiCreator (ctypes)
-### Releases
-https://github.com/ruiseixasm/JsonMidiPlayer/releases
-### For Windows
-https://sourceforge.net/projects/json-midi-player/files/Windows/lib/
-### For Linux
-https://sourceforge.net/projects/json-midi-player/files/Linux/lib/
+https://sourceforge.net/projects/json-midi-player/files/Linux/
 # Compiling Prerequisites
 ## On Windows
 1. Download the Visual Studio 2017+ from https://visualstudio.microsoft.com/

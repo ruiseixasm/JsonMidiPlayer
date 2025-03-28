@@ -229,9 +229,12 @@ int PlayList(const char* json_str, bool verbose) {
                     
                     for (auto jsonElement : jsonFileContent)
                     {
-                        if (jsonElement.contains("midi_message") && jsonElement.contains("time_ms")) {
+                        if (jsonElement.contains("midi_message") && jsonElement["midi_message"].contains("status_byte") && 
+                            jsonElement.contains("time_ms")) {
                             
-                            json_midi_message = {}; // Resets json_midi_message to a new empty vector
+                            status_byte = jsonElement["midi_message"]["status_byte"];
+                            json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
+                            
                             play_reporting.total_excluded++;
                             // Create an API with the default API
                             try
@@ -239,8 +242,6 @@ int PlayList(const char* json_str, bool verbose) {
                                 time_milliseconds = jsonElement["time_ms"];
                                 if (time_milliseconds >= 0) {
                                     jsonDeviceNames = jsonElement["midi_message"]["device"];
-                                    status_byte = jsonElement["midi_message"]["status_byte"];
-                                    json_midi_message.push_back(status_byte);
 
                                     if (status_byte >= 0xC0 && status_byte < 0xE0) {        // For Program Change and Aftertouch messages
                                         

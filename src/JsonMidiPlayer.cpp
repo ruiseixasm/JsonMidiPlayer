@@ -376,22 +376,46 @@ int PlayList(const char* json_str, bool verbose) {
         // Where the existing Midi messages are sorted by time and other parameters
         //
 
-        // Sort the list by time in ascendent order. Choosen (<=) to avoid Note Off's before than Note On's
+        // Starts by aggregate MidiPins by Device and StatusByte
+        midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
+
+            if (&a > &b)   // Aggregate by Device (Ascendent)
+                return false;
+            
+            unsigned char a_byte = a.getStatusByte();
+            unsigned char b_byte = b.getStatusByte();
+            if (a_byte < b_byte)   // Aggregate by StatusByte (Descendent)
+                return false;
+
+            return true;
+        });
+
+        // Finally sorts the list by time in ascendent order
         midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
                 // Time is the primary sorting criteria
                 if (a.getTime() < b.getTime()) return true; // No flipping happens
                 if (a.getTime() > b.getTime()) return false;
 
                 if (&a != &b)   // Don't compare different Devices parameters besides their time
-                    return true;
+                    return true;    // true is not problematic, false is (no swapping)
 
-                unsigned char a_byte = a.getStatusByte();
-                unsigned char b_byte = b.getStatusByte();
+                unsigned char a_action = a.getAction();
+                unsigned char b_action = b.getAction();
 
                 // For equal time case and to avoid Notes Off happening AFTER Notes On
                 // Note Off messages must come FIRST
-                if ((a_byte & 0xF0) == 0x90 && (b_byte & 0xF0) == 0x80)
-                    return false;
+                if (a_action == 0x90 && b_action == 0x80) {
+
+                    unsigned char a_channel = a.getChannel();
+                    unsigned char b_channel = b.getChannel();
+
+                    if (a_channel == b_channel) {
+                        return false;
+                    }
+                }
+
+                unsigned char a_byte = a.getStatusByte();
+                unsigned char b_byte = b.getStatusByte();
 
                 // Clock messages always come FIRST
                 if (b_byte == 0xF8 || b_byte == 0xFA || b_byte == 0xFB ||
@@ -489,9 +513,9 @@ int PlayList(const char* json_str, bool verbose) {
 
                 if (midi_pin.getStatusByte() >= 0x80 && midi_pin.getStatusByte() < 0xF0) {
 
-                    const unsigned char pin_midi_message_type = midi_pin.getStatusByte() & 0xF0;
+                    const unsigned char pin_midi_message_action = midi_pin.getAction();
 
-                    switch (pin_midi_message_type) {
+                    switch (pin_midi_message_action) {
                     case type_note_off:
                         // Loop through the list and remove elements
                         for (auto note_on = last_midi_note_on_list.begin(); note_on != last_midi_note_on_list.end(); ++note_on) {

@@ -148,6 +148,14 @@ public:
         return this->midi_message[nth_byte];
     }
 
+    unsigned char getChannel() const {
+        return this->midi_message[0] & 0x0F;
+    }
+
+    unsigned char getAction() const {
+        return this->midi_message[0] & 0xF0;
+    }
+
 };
 
 // Declare the function in the header file

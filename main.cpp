@@ -19,8 +19,8 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #include <string>
 
 // Testing program in the project folder
-//   Windows: .\build\Release\JsonMidiPlayer.exe -v .\exported_lead_sheet_melody_jmp.json
-//   Linux: ./build/Release/JsonMidiPlayer.exe -v ./exported_lead_sheet_melody_jmp.json
+//   Windows: .\build\Release\JsonMidiPlayer.exe -v .\windows_exported_lead_sheet_melody_jmp.json
+//   Linux: ./build/Release/JsonMidiPlayer.out -v ./linux_exported_lead_sheet_melody_jmp.json
 
 // #ifdef _WIN32    // Check if it's a Windows machine
 #ifdef _MSC_VER     // Check if using Microsoft compiler (Visual Studio 2019 or later) (#if _MSC_VER >= 1920)

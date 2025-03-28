@@ -254,7 +254,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             if ((status_byte & 0xF0) == 0xC0) {         // Program Change
                                                 priority = 0x10 | status_byte & 0x0F;       // High priority 1
                                             } else {                                    // Aftertouch
-                                                priority = 0x70 | status_byte & 0x0F;       // Normal priority 7
+                                                priority = 0x80 | status_byte & 0x0F;       // Low priority 8
                                             }
                                         }
                                     }
@@ -271,7 +271,9 @@ int PlayList(const char* json_str, bool verbose) {
                                             json_midi_message.push_back(data_byte_1);
                                             json_midi_message.push_back(data_byte_2);
                                             if ((status_byte & 0xF0) == 0xB0) {         // Control Change
-                                                if (data_byte_1 == 0 || data_byte_1 == 32) {
+                                                if (data_byte_1 == 1) {             // Modulation
+                                                    priority = 0x60 | status_byte & 0x0F;       // Low priority 6
+                                                } else if (data_byte_1 == 0 || data_byte_1 == 32) {
                                                     // 0 -  Bank Select (MSB)
                                                     // 32 - Bank Select (LSB)
                                                     priority = 0x00 | status_byte & 0x0F;       // Top priority 0
@@ -283,7 +285,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             } else if ((status_byte & 0xF0) == 0x90) {  // Note On
                                                 priority = 0x50 | status_byte & 0x0F;       // Normal priority 5
                                             } else {                                    // Pitch Bend
-                                                priority = 0x60 | status_byte & 0x0F;       // Normal priority 6
+                                                priority = 0x70 | status_byte & 0x0F;       // Low priority 7
                                             }
                                         }
                                     }

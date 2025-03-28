@@ -123,8 +123,6 @@ void setRealTimeScheduling() {
 
 int PlayList(const char* json_str, bool verbose) {
     
-    auto processing_start = std::chrono::high_resolution_clock::now();
-
     disableBackgroundThrottling();
 
     // Set real-time scheduling
@@ -195,6 +193,8 @@ int PlayList(const char* json_str, bool verbose) {
         //
         // Where the JSON content is processed and added up the Pluck midi messages
         //
+
+        auto data_processing_start = std::chrono::high_resolution_clock::now();
 
         try {
 
@@ -784,8 +784,8 @@ int PlayList(const char* json_str, bool verbose) {
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
 
-        auto processing_finish = std::chrono::high_resolution_clock::now();
-        auto pre_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(processing_finish - processing_start);
+        auto data_processing_finish = std::chrono::high_resolution_clock::now();
+        auto pre_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
         play_reporting.pre_processing = pre_processing_time.count();
 
         //
@@ -861,7 +861,7 @@ int PlayList(const char* json_str, bool verbose) {
 
     // Where the reporting is finally done
     if (verbose) std::cout << "Midi stats reporting:" << std::endl;
-    if (verbose) std::cout << "\tPre-processing time (ms):                 " << std::setw(10) << play_reporting.pre_processing << std::endl;
+    if (verbose) std::cout << "\tData pre-processing time (ms):            " << std::setw(10) << play_reporting.pre_processing << std::endl;
     if (verbose) std::cout << "\tTotal processed Midi Messages (sent):     " << std::setw(10) << play_reporting.total_processed << std::endl;
     if (verbose) std::cout << "\tTotal redundant Midi Messages (not sent): " << std::setw(10) << play_reporting.total_redundant << std::endl;
     if (verbose) std::cout << "\tTotal excluded Midi Messages (not sent):  " << std::setw(10) << play_reporting.total_excluded << std::endl;

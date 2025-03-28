@@ -76,7 +76,7 @@ Drag is the amount of time the entire playing got out of sync while Delay is jus
 Despite some delay, that didn't mean any drag in the example bellow.
 ```
 Midi stats reporting:
-	Pre-processing time (ms):                         46
+	Data pre-processing time (ms):                    28
 	Total processed Midi Messages (sent):            152
 	Total redundant Midi Messages (not sent):          8
 	Total excluded Midi Messages (not sent):           0

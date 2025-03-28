@@ -56,10 +56,10 @@ Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) o
 ## On Linux
 1. Go to the root project directory and type the following commands:
     ```
-    ./build/Release/JsonMidiPlayer.out -v ./linux_exported_lead_sheet_melody_jmp.json
+    ./build/JsonMidiPlayer.out -v ./linux_exported_lead_sheet_melody_jmp.json
     ```
     ```
-    ./build/Release/JsonMidiPlayer.out -Version
+    ./build/JsonMidiPlayer.out -Version
     ```
 # Python library for JsonMidiCreator
 It is possible to run this program directly from the [JsonMidiCreator](https://github.com/ruiseixasm/JsonMidiCreator) with the `>> Play()` operation, you just need to do the following.

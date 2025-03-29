@@ -267,107 +267,98 @@ int PlayList(const char* json_str, bool verbose) {
 
                             } else {
 
-
                                 switch (message_action) {
                                     case action_system:
-
                                         switch (status_byte) {
                                             case system_timing_clock:
-        
-
-                                            break;
                                             case system_timing_start:
-        
-
-                                            break;
                                             case system_timing_stop:
-        
-
-                                            break;
                                             case system_timing_continue:
-        
-
-                                            break;
+                                                // Any clock message falls here
+                                                priority = 0x30 | status_byte & 0x0F;       // High priority 3
+                                                break;
                                             case system_song_pointer:
-        
 
-                                            break;
+                                                if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
+
+                                                    unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                                    unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                                    if (data_byte_1 > 127 || data_byte_2 > 127)  // Makes sure it's inside the processing window
+                                                        continue;
+                                                    else {
+                                                        json_midi_message.push_back(data_byte_1);
+                                                        json_midi_message.push_back(data_byte_2);
+                                                        priority = 0xB0 | status_byte & 0x0F;       // Low priority 12
+                                                    }
+                                                }
+                                                break;
                                             case system_sysex_start:
-        
 
-                                            break;
+                                                if (jsonElement["midi_message"].contains("data_bytes")) {
+
+                                                    // sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
+                                                    
+                                                    nlohmann::json data_bytes = jsonElement["midi_message"]["data_bytes"];
+                                                    for (unsigned char sysex_data_byte : data_bytes) {
+                                                        // Makes sure it's SysEx valid data
+                                                        if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
+                                                            json_midi_message.push_back(sysex_data_byte);
+                                                        } else {
+                                                            continue;
+                                                        }
+                                                    }
+                                                    json_midi_message.push_back(0xF7);  // End SysEx Data Byte
+                                                    priority = 0xF0 | status_byte & 0x0F;   // Lowest priority 16
+                                                }
+                                                break;
                                             
                                             default:
-                                            
-
-                                            break;
+                                                // All other messages get a low priority
+                                                priority = 0xD0 | status_byte & 0x0F;       // Low priority 14
+                                                break;
                                         }
-
                                         break;
                                     case action_note_off:
 
+                                        if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
 
+                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                            if (data_byte_1 > 127 || data_byte_2 > 127) {
+                                                continue;
+                                            } else {
+                                                json_midi_message.push_back(data_byte_1);
+                                                json_midi_message.push_back(data_byte_2);
+                                                priority = 0x40 | status_byte & 0x0F;       // Normal priority 4
+                                            }
+                                        }
                                         break;
                                     case action_note_on:
 
+                                        if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
 
+                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                            if (data_byte_1 > 127 || data_byte_2 > 127) {
+                                                continue;
+                                            } else {
+                                                json_midi_message.push_back(data_byte_1);
+                                                json_midi_message.push_back(data_byte_2);
+                                                priority = 0x50 | status_byte & 0x0F;       // Normal priority 5
+                                            }
+                                        }
                                         break;
                                     case action_control_change:
 
+                                        if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
 
-                                        break;
-                                    case action_program_change:
-
-
-                                        break;
-                                    case action_pitch_bend:
-
-
-                                        break;
-                                    case action_channel_pressure:
-
-
-                                        break;
-                                    case action_key_pressure:
-
-
-                                        break;
-                                    
-                                    default:
-                                    
-
-                                        break;
-                                }
-
-                                if (status_byte >= 0xC0 && status_byte < 0xE0) {        // For Program Change and Aftertouch messages
-                                    
-                                    if (jsonElement["midi_message"].contains("data_byte")) {
-
-                                        unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
-                                        if (data_byte > 0xFF) // Makes sure it's inside the processing window
-                                            continue;
-                                        else {
-                                            json_midi_message.push_back(data_byte);
-                                            if ((status_byte & 0xF0) == 0xC0) {         // Program Change
-                                                priority = 0x10 | status_byte & 0x0F;       // High priority 1
-                                            } else {                                    // Aftertouch
-                                                priority = 0x80 | status_byte & 0x0F;       // Low priority 8
-                                            }
-                                        }
-                                    }
-
-                                } else if (status_byte >= 0x80 && status_byte < 0xF0) { // Channel messages (most significant bit = 1)
-                                    
-                                    if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
-
-                                        unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                        unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                        if (data_byte_1 > 127 || data_byte_2 > 127)   // Makes sure it's inside the processing window
-                                            continue;
-                                        else {
-                                            json_midi_message.push_back(data_byte_1);
-                                            json_midi_message.push_back(data_byte_2);
-                                            if ((status_byte & 0xF0) == 0xB0) {         // Control Change
+                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                            if (data_byte_1 > 127 || data_byte_2 > 127) {
+                                                continue;
+                                            } else {
+                                                json_midi_message.push_back(data_byte_1);
+                                                json_midi_message.push_back(data_byte_2);
                                                 if (data_byte_1 == 1) {             // Modulation
                                                     priority = 0x60 | status_byte & 0x0F;       // Low priority 6
                                                 } else if (data_byte_1 == 0 || data_byte_1 == 32) {
@@ -377,72 +368,68 @@ int PlayList(const char* json_str, bool verbose) {
                                                 } else {
                                                     priority = 0x20 | status_byte & 0x0F;       // High priority 2
                                                 }
-                                            } else if ((status_byte & 0xF0) == 0x80) {  // Note Off
-                                                priority = 0x40 | status_byte & 0x0F;       // Normal priority 4
-                                            } else if ((status_byte & 0xF0) == 0x90) {  // Note On
-                                                priority = 0x50 | status_byte & 0x0F;       // Normal priority 5
-                                            } else {                                    // Pitch Bend
-                                                priority = 0x70 | status_byte & 0x0F;       // Low priority 7
                                             }
                                         }
-                                    }
-                                } else if (status_byte == 0xF8 || status_byte == 0xFA || status_byte == 0xFB ||
-                                        status_byte == 0xFC || status_byte == 0xFE || status_byte == 0xFF) { // System real-time messages
-                                            
-                                    priority = 0x30 | status_byte & 0x0F;       // High priority 3
+                                        break;
+                                    case action_program_change:
 
-                                } else if (status_byte == 0xF1 || status_byte == 0xF3) {    // System common messages
-                                    
-                                    if (jsonElement["midi_message"].contains("data_byte")) {
+                                        if (jsonElement["midi_message"].contains("data_byte")) {
 
-                                        unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
-                                        if (data_byte > 0xFF) // Makes sure it's inside the processing window
-                                            continue;
-                                        else {
-                                            json_midi_message.push_back(data_byte);
-                                            priority = 0xC0 | status_byte & 0x0F;       // Low priority 13
+                                            unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
+                                            if (data_byte > 127) {
+                                                continue;
+                                            } else {
+                                                json_midi_message.push_back(data_byte);
+                                                priority = 0x10 | status_byte & 0x0F;       // High priority 1
+                                            }
                                         }
-                                    }
-                                } else {
-                                    if (status_byte == 0xF2) {      // Song Position Pointer
-                                        
+                                        break;
+                                    case action_pitch_bend:
+
                                         if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
 
                                             unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
                                             unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                            if (data_byte_1 > 0xFF || data_byte_2 > 0xFF)  // Makes sure it's inside the processing window
+                                            if (data_byte_1 > 127 || data_byte_2 > 127) {
                                                 continue;
-                                            else {
+                                            } else {
                                                 json_midi_message.push_back(data_byte_1);
                                                 json_midi_message.push_back(data_byte_2);
-                                                priority = 0xB0 | status_byte & 0x0F;       // Low priority 12
+                                                priority = 0x70 | status_byte & 0x0F;       // Low priority 7
                                             }
                                         }
-                                    } else if (status_byte == 0xF6) {   // Tune Request
-                                        
-                                        priority = 0xD0 | status_byte & 0x0F;       // Low priority 14
+                                        break;
+                                    case action_channel_pressure:
 
-                                    } else if (status_byte == 0xF0) {   // SysEx Messages
-                                        
-                                        if (jsonElement["midi_message"].contains("data_bytes")) {
+                                        if (jsonElement["midi_message"].contains("data_byte")) {
 
-                                            // sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
-                                            
-                                            nlohmann::json data_bytes = jsonElement["midi_message"]["data_bytes"];
-                                            for (unsigned char sysex_data_byte : data_bytes) {
-                                                // Makes sure it's SysEx valid data
-                                                if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
-                                                    json_midi_message.push_back(sysex_data_byte);
-                                                } else {
-                                                    continue;
-                                                }
+                                            unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
+                                            if (data_byte > 127) {
+                                                continue;
+                                            } else {
+                                                json_midi_message.push_back(data_byte);
+                                                priority = 0x80 | status_byte & 0x0F;       // Low priority 8
                                             }
-                                            json_midi_message.push_back(0xF7);  // End SysEx Data Byte
-                                            priority = 0xF0 | status_byte & 0x0F;   // Lowest priority 16
                                         }
-                                    } else {
+                                        break;
+                                    case action_key_pressure:
+
+                                        if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
+
+                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                            if (data_byte_1 > 127 || data_byte_2 > 127) {
+                                                continue;
+                                            } else {
+                                                json_midi_message.push_back(data_byte_1);
+                                                json_midi_message.push_back(data_byte_2);
+                                                priority = 0x90 | status_byte & 0x0F;       // Low priority 9
+                                            }
+                                        }
+                                        break;
+                                    
+                                    default:
                                         continue;
-                                    }
                                 }
                             }
                         }

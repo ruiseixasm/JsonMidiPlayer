@@ -37,7 +37,7 @@ void MidiDevice::closePort() {
     }
 }
 
-bool MidiDevice::isPortOpened() const {
+bool MidiDevice::isPortOpen() const {
     return opened_port;
 }
 
@@ -719,23 +719,26 @@ int PlayList(const char* json_str, bool verbose) {
             // Get time_ms of last message
             auto last_message_time_ms = midiToProcess.back().getTime();
 
-            
+
             for (auto &device : midi_devices) {
 
-                // Add the needed note off for all those still on at the end!
-                for (MidiPin *last_pin_note_on : device.last_pin_note_on_list) {
-                    // Transform midi on in midi off
-                    std::vector<unsigned char> midi_message = {
-                        static_cast<unsigned char>(last_pin_note_on->getStatusByte() & 0x0F | action_note_off),    // note_off_status_byte
-                        last_pin_note_on->getDataByte(1),
-                        last_pin_note_on->getDataByte(2)
-                    };
-                    midiToProcess.push_back( MidiPin(last_message_time_ms, &device, midi_message) );
-                }
+                if (device.isPortOpen()) {
 
-                // MIDI CLOCK
-                if (device.last_pin_clock_message != nullptr && device.last_pin_clock_message->getStatusByte() == system_timing_clock)
-                    device.last_pin_clock_message->setStatusByte(system_clock_stop);    // Clock Stop
+                    // Add the needed note off for all those still on at the end!
+                    for (MidiPin *last_pin_note_on : device.last_pin_note_on_list) {
+                        // Transform midi on in midi off
+                        std::vector<unsigned char> midi_message = {
+                            static_cast<unsigned char>(last_pin_note_on->getStatusByte() & 0x0F | action_note_off),    // note_off_status_byte
+                            last_pin_note_on->getDataByte(1),
+                            last_pin_note_on->getDataByte(2)
+                        };
+                        midiToProcess.push_back( MidiPin(last_message_time_ms, &device, midi_message) );
+                    }
+
+                    // MIDI CLOCK
+                    if (device.last_pin_clock_message != nullptr && device.last_pin_clock_message->getStatusByte() == system_timing_clock)
+                        device.last_pin_clock_message->setStatusByte(system_clock_stop);    // Clock Stop
+                }
             }
         }
 

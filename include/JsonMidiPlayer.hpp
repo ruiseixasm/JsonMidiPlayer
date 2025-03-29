@@ -133,7 +133,7 @@ public:
 
     bool openPort();
     void closePort();
-    bool isPortOpened() const;
+    bool isPortOpen() const;
     const std::string& getName() const;
     unsigned int getDevicePort() const;
     void sendMessage(const std::vector<unsigned char> *midi_message);

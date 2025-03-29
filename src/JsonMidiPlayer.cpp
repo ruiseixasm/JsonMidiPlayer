@@ -136,7 +136,7 @@ int PlayList(const char* json_str, bool verbose) {
     #endif
 
     struct PlayReporting {
-        double pre_processing   = 0.0;
+        size_t pre_processing   = 0;    // milliseconds
         size_t total_processed  = 0;
         size_t total_redundant  = 0;
         size_t total_excluded   = 0;
@@ -856,6 +856,7 @@ int PlayList(const char* json_str, bool verbose) {
         #endif
 
         auto data_processing_finish = std::chrono::high_resolution_clock::now();
+        
         auto pre_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
         play_reporting.pre_processing = pre_processing_time.count();
 

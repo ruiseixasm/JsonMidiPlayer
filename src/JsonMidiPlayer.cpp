@@ -308,7 +308,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                 // This is already a try catch situation
                                                 unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
                                                 unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                                if (data_byte_1 > 127 || data_byte_2 > 127)  // Makes sure it's inside the processing window
+                                                if (data_byte_1 & 128 | data_byte_2 & 128)  // Makes sure it's inside the processing window
                                                     continue;
 
                                                 json_midi_message.push_back(data_byte_1);
@@ -351,7 +351,7 @@ int PlayList(const char* json_str, bool verbose) {
                                         // This is already a try catch situation
                                         unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
                                         unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                        if (data_byte_1 > 127 || data_byte_2 > 127)
+                                        if (data_byte_1 & 128 | data_byte_2 & 128)
                                             continue;
 
                                         json_midi_message.push_back(data_byte_1);
@@ -390,7 +390,7 @@ int PlayList(const char* json_str, bool verbose) {
                                     case action_channel_pressure:
                                     {
                                         unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
-                                        if (data_byte > 127)
+                                        if (data_byte & 128)
                                             continue;
                                         
                                         json_midi_message.push_back(data_byte);

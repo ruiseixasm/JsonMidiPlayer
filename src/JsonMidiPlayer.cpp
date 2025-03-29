@@ -193,7 +193,8 @@ int PlayList(const char* json_str, bool verbose) {
         //
         // Where the JSON content is processed and added up the Pluck midi messages
         //
-
+            
+        const unsigned char status_clip_devices     = 0x0F; // Clip Devices
 
         const unsigned char action_note_off         = 0x80; // Note off
         const unsigned char action_note_on          = 0x90; // Note on
@@ -252,7 +253,6 @@ int PlayList(const char* json_str, bool verbose) {
                         jsonElement["midi_message"].contains("device") && jsonElement.contains("time_ms")) {
                         
                         unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
-                        unsigned char message_action = status_byte & 0xF0;
                         std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
                         double time_milliseconds = jsonElement["time_ms"];
                         unsigned char priority = 0xFF;  // Lowest priority 16 by default
@@ -265,8 +265,12 @@ int PlayList(const char* json_str, bool verbose) {
 
                                 continue;
 
+                            } else if (status_byte == status_clip_devices) {
+
+                                
                             } else {
 
+                                unsigned char message_action = status_byte & 0xF0;
                                 switch (message_action) {
                                     case action_system:
                                         switch (status_byte) {

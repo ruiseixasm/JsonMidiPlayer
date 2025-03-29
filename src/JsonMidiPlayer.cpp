@@ -476,7 +476,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 if (pluck_device.last_pin_clock_message != nullptr) {
                                     if (pluck_device.last_pin_clock_message->getTime() == pluck_pin.getTime()) {
                                         if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_stop) {      // Clock Stop
-                                            pluck_device.last_pin_clock_message->setStatusByte(0xF8);
+                                            pluck_device.last_pin_clock_message->setStatusByte(system_timing_clock);
                                         }
                                         midiRedundant.push_back(pluck_pin);
                                         pin_it = midiToProcess.erase(pin_it);
@@ -494,7 +494,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 if (pluck_device.last_pin_clock_message != nullptr) {
                                     if (pluck_device.last_pin_clock_message->getTime() == pluck_pin.getTime()) {
                                         if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_stop) {      // Clock Stop
-                                            pluck_device.last_pin_clock_message->setStatusByte(0xF8);
+                                            pluck_device.last_pin_clock_message->setStatusByte(system_timing_clock);
                                         }
                                         midiRedundant.push_back(pluck_pin);
                                         pin_it = midiToProcess.erase(pin_it);
@@ -502,7 +502,7 @@ int PlayList(const char* json_str, bool verbose) {
                                     } else if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_stop) {   // Clock Stop
                                         pluck_pin.setStatusByte(system_clock_continue);
                                     } else {
-                                        pluck_pin.setStatusByte(0xF8);
+                                        pluck_pin.setStatusByte(system_timing_clock);
                                     }
                                 }
                                 pluck_device.last_pin_clock_message = &pluck_pin;
@@ -527,14 +527,14 @@ int PlayList(const char* json_str, bool verbose) {
                             case system_clock_continue:
                                 if (pluck_device.last_pin_clock_message != nullptr) {
                                     if (pluck_device.last_pin_clock_message->getTime() == pluck_pin.getTime()) {
-                                        pluck_device.last_pin_clock_message->setStatusByte(0xF8);
+                                        pluck_device.last_pin_clock_message->setStatusByte(system_timing_clock);
                                         midiRedundant.push_back(pluck_pin);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
                                     } else if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_start) {   // Clock Start
-                                        pluck_pin.setStatusByte(0xF8);
+                                        pluck_pin.setStatusByte(system_timing_clock);
                                     } else if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_continue) {   // Clock Continue
-                                        pluck_pin.setStatusByte(0xF8);
+                                        pluck_pin.setStatusByte(system_timing_clock);
                                     } else {                                                    // NOT Clock Start or Continue
                                         pluck_device.last_pin_clock_message->setStatusByte(system_clock_stop);
                                     }

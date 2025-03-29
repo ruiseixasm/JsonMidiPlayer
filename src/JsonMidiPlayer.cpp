@@ -37,7 +37,7 @@ void MidiDevice::closePort() {
     }
 }
 
-bool MidiDevice::isPortOpen() const {
+bool MidiDevice::hasPortOpen() const {
     return opened_port;
 }
 
@@ -722,7 +722,7 @@ int PlayList(const char* json_str, bool verbose) {
 
             for (auto &device : midi_devices) {
 
-                if (device.isPortOpen()) {
+                if (device.hasPortOpen()) {
 
                     // Add the needed note off for all those still on at the end!
                     for (MidiPin *last_pin_note_on : device.last_pin_note_on_list) {

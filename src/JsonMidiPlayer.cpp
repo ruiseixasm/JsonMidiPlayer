@@ -762,6 +762,20 @@ int PlayList(const char* json_str, bool verbose) {
                         last_clock_pin = &midi_pin;
                         ++pin_it; // Only increment if no removal
                         break;
+                    case system_song_pointer:  // Song Pointer
+                        if (last_clock_pin != nullptr) {
+                            if (last_clock_pin->getTime() == midi_pin.getTime()
+                                    && last_clock_pin->getStatusByte() == system_song_pointer
+                                    && last_clock_pin->getDataByte(1) == midi_pin.getDataByte(1)
+                                    && last_clock_pin->getDataByte(2) == midi_pin.getDataByte(2)) {
+                                midiRedundant.push_back(midi_pin);
+                                pin_it = midiToProcess.erase(pin_it);
+                                goto skip_to_2;
+                            }
+                        }
+                        last_clock_pin = &midi_pin;
+                        ++pin_it; // Only increment if no removal
+                        break;
                     
                     default:
                         ++pin_it; // Only increment if no removal

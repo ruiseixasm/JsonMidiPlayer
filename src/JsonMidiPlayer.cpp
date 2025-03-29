@@ -276,8 +276,14 @@ int PlayList(const char* json_str, bool verbose) {
                                             //
                                             // Where the Device Port is connected/opened (Main reason for errors)
                                             //
-                                            if (device.openPort()) {
-                                                clip_midi_device = &device;
+                                            try {
+                                                if (device.openPort()) {
+                                                    clip_midi_device = &device;
+                                                    goto skip_to;
+                                                }
+                                            } catch (const std::exception& e) {
+                                                if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+                                                clip_midi_device = nullptr;
                                                 goto skip_to;
                                             }
                                         }

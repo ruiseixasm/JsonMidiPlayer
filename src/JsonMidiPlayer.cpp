@@ -527,9 +527,7 @@ int PlayList(const char* json_str, bool verbose) {
 
                 if (midi_pin.getStatusByte() >= 0x80 && midi_pin.getStatusByte() < 0xF0) {
 
-                    const unsigned char pin_midi_message_action = midi_pin.getAction();
-
-                    switch (pin_midi_message_action) {
+                    switch (midi_pin.getAction()) {
                     case action_note_off:
                         // Loop through the list and remove elements
                         for (auto note_on = last_midi_note_on_list.begin(); note_on != last_midi_note_on_list.end(); ++note_on) {
@@ -688,7 +686,7 @@ int PlayList(const char* json_str, bool verbose) {
                         break;
                     }
 
-                } else if ((midi_pin.getStatusByte() & 0xF0) == 0xF0) {
+                } else if (midi_pin.getAction() == action_system) {
 
                     switch (midi_pin.getStatusByte())
                     {

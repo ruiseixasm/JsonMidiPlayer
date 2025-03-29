@@ -272,10 +272,35 @@ int PlayList(const char* json_str, bool verbose) {
                                     case action_system:
 
                                         switch (status_byte) {
-                                            case action_system:
+                                            case system_timing_clock:
         
 
-                                                break;
+                                            break;
+                                            case system_timing_start:
+        
+
+                                            break;
+                                            case system_timing_stop:
+        
+
+                                            break;
+                                            case system_timing_continue:
+        
+
+                                            break;
+                                            case system_song_pointer:
+        
+
+                                            break;
+                                            case system_sysex_start:
+        
+
+                                            break;
+                                            
+                                            default:
+                                            
+
+                                            break;
                                         }
 
                                         break;
@@ -287,10 +312,6 @@ int PlayList(const char* json_str, bool verbose) {
 
 
                                         break;
-                                    case action_key_pressure:
-
-
-                                        break;
                                     case action_control_change:
 
 
@@ -299,11 +320,15 @@ int PlayList(const char* json_str, bool verbose) {
 
 
                                         break;
+                                    case action_pitch_bend:
+
+
+                                        break;
                                     case action_channel_pressure:
 
 
                                         break;
-                                    case action_pitch_bend:
+                                    case action_key_pressure:
 
 
                                         break;

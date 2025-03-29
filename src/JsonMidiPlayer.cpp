@@ -273,12 +273,12 @@ int PlayList(const char* json_str, bool verbose) {
                                             if (device.openPort()) {
                                                 clip_midi_device = &device;
                                                 devices_dict[jsonDevicesNames] = clip_midi_device;
-                                                goto skip_to;
+                                                goto skip_to_1;
                                             }
                                         } catch (const std::exception& e) {
                                             if (verbose) std::cerr << "Error: " << e.what() << std::endl;
                                             clip_midi_device = nullptr;
-                                            goto skip_to;
+                                            goto skip_to_1;
                                         }
                                     }
                                 }
@@ -439,7 +439,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                     }
 
-                skip_to: continue;
+                skip_to_1: continue;
                 }
             }
         } catch (const nlohmann::json::parse_error& e) {
@@ -542,12 +542,9 @@ int PlayList(const char* json_str, bool verbose) {
 
                 auto &midi_pin = *pin_it;
 
-                unsigned char status_byte = midi_pin.getStatusByte();
-                unsigned char message_action = midi_pin.getAction();
-
-                switch (message_action) {
+                switch (midi_pin.getAction()) {
                     case action_system:
-                        switch (status_byte) {
+                        switch (midi_pin.getStatusByte()) {
                             case system_timing_clock:
                                 if (last_clock_pin != nullptr) {
                                     if (last_clock_pin->getTime() == midi_pin.getTime()) {

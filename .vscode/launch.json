@@ -9,11 +9,11 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/Debug/JsonMidiPlayer.exe",
-            "args": ["../_Export_11.1_sysex_stop.json", "--verbose"],
+            "args": ["${workspaceFolder}/_Export_11.1_two_devices.json", "--verbose"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/",
             "environment": [],
-            "externalConsole": false,
+            "externalConsole": true,
             "MIMode": "gdb",
             "miDebuggerPath": "C:/MinGW/bin/gdb.exe",
             "setupCommands": [

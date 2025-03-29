@@ -276,13 +276,9 @@ int PlayList(const char* json_str, bool verbose) {
 
                     } else if (clip_midi_device != nullptr && jsonElement.contains("midi_message")) {
                         
+                        play_reporting.total_excluded++;
                         double time_milliseconds = jsonElement["time_ms"];
 
-                        unsigned char status_byte;
-                        std::vector<unsigned char> json_midi_message; // Starts the json_midi_message to a new Status Byte
-                        unsigned char priority;
-                        
-                        play_reporting.total_excluded++;
                         // Create an API with the default API
                         try
                         {
@@ -292,10 +288,10 @@ int PlayList(const char* json_str, bool verbose) {
                                 
                             } else {
 
-                                status_byte = jsonElement["midi_message"]["status_byte"];
-                                json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
+                                unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
+                                std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
                                 time_milliseconds = jsonElement["time_ms"];
-                                priority = 0xFF;  // Lowest priority 16 by default
+                                unsigned char priority = 0xFF;  // Lowest priority 16 by default
                                 
                                 unsigned char message_action = status_byte & 0xF0;
                                 switch (message_action) {
@@ -415,11 +411,10 @@ int PlayList(const char* json_str, bool verbose) {
                                     default:
                                         continue;
                                 }
+                                
+                                midiToProcess.push_back( MidiPin(time_milliseconds, clip_midi_device, json_midi_message, priority) );
+                                play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
                             }
-
-                            midiToProcess.push_back( MidiPin(time_milliseconds, clip_midi_device, json_midi_message, priority) );
-                            play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
-
                         }
                         catch (const nlohmann::json::exception& e) {
                             if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;

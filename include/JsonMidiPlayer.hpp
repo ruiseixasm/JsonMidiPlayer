@@ -220,7 +220,8 @@ public:
 
 public:
 
-    size_t level = 0;   // VERY IMPORTANT TO AVOID EARLIER NOTE OFF
+    // If this is a Note On pin, then, by definition, is already at level 1
+    size_t level = 1;   // VERY IMPORTANT TO AVOID EARLIER NOTE OFF
 
     bool operator == (const MidiPin &midi_pin) {
         if ((this->getStatusByte() & 0x0F) == (midi_pin.getStatusByte() & 0x0F)) {
@@ -258,52 +259,6 @@ public:
 
 };
 
-
-
-// class MidiLastMessage {
-//     public:
-//         const unsigned char status_byte;
-//         unsigned char data_byte_1;
-//         unsigned char data_byte_2;
-//         size_t level = 1;   // VERY IMPORTANT TO AVOID EARLIER NOTE OFF
-
-//         MidiLastMessage(unsigned char status_byte, unsigned char data_byte_1, unsigned char data_byte_2):
-//                 status_byte(status_byte), data_byte_1(data_byte_1), data_byte_2(data_byte_2) { }
-
-//         bool operator == (const MidiPin &midi_pin) {
-//             if ((status_byte & 0x0F) == (midi_pin.getStatusByte() & 0x0F)) {
-//                 if (status_byte >= 0x80 && status_byte < 0xC0)
-//                     if (data_byte_1 == midi_pin.getDataByte(1))
-//                         return true;
-//                 if (status_byte >= 0xC0 && status_byte < 0xF0)
-//                     return true;
-//             }
-//             return false;
-//         }
-
-//         // Prefix increment
-//         MidiLastMessage& operator++() {
-//             ++level;
-//             return *this;
-//         }
-//         // Postfix increment
-//         MidiLastMessage operator++(int) {
-//             MidiLastMessage temp = *this;
-//             ++level;
-//             return temp;
-//         }
-//         // Prefix decrement
-//         MidiLastMessage& operator--() {
-//             --level;
-//             return *this;
-//         }
-//         // Postfix decrement
-//         MidiLastMessage operator--(int) {
-//             MidiLastMessage temp = *this;
-//             --level;
-//             return temp;
-//         }
-// };
 
 
 

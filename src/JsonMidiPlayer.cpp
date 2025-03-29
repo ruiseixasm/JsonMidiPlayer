@@ -249,7 +249,32 @@ int PlayList(const char* json_str, bool verbose) {
 
                 for (auto jsonElement : jsonFileContent)
                 {
-                    if (jsonElement.contains("time_ms")) {
+                    if (jsonElement.contains("devices")) {
+
+                        nlohmann::json jsonDeviceNames = jsonElement["devices"];
+                        // It's a list of Devices that is given as Device
+                        for (std::string deviceName : jsonDeviceNames) {
+                            for (auto &device : midi_devices) {
+                                if (device.getName().find(deviceName) != std::string::npos) {
+                                    //
+                                    // Where the Device Port is connected/opened (Main reason for errors)
+                                    //
+                                    try {
+                                        if (device.openPort()) {
+                                            clip_midi_device = &device;
+                                            goto skip_to;
+                                        }
+                                    } catch (const std::exception& e) {
+                                        if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+                                        clip_midi_device = nullptr;
+                                        goto skip_to;
+                                    }
+                                }
+                            }
+                        }
+                        clip_midi_device = nullptr; // No available device found
+
+                    } else if (jsonElement.contains("time_ms")) {
                         
                         double time_milliseconds = jsonElement["time_ms"];
 
@@ -264,32 +289,7 @@ int PlayList(const char* json_str, bool verbose) {
                             if (time_milliseconds < 0) {
 
                                 continue;
-
-                            } else if (jsonElement.contains("devices")) {
-
-                                nlohmann::json jsonDeviceNames = jsonElement["devices"];
-                                // It's a list of Devices that is given as Device
-                                for (std::string deviceName : jsonDeviceNames) {
-                                    for (auto &device : midi_devices) {
-                                        if (device.getName().find(deviceName) != std::string::npos) {
-                                            //
-                                            // Where the Device Port is connected/opened (Main reason for errors)
-                                            //
-                                            try {
-                                                if (device.openPort()) {
-                                                    clip_midi_device = &device;
-                                                    goto skip_to;
-                                                }
-                                            } catch (const std::exception& e) {
-                                                if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-                                                clip_midi_device = nullptr;
-                                                goto skip_to;
-                                            }
-                                        }
-                                    }
-                                }
-                                clip_midi_device = nullptr; // No available device found
-
+                                
                             } else {
 
                                 status_byte = jsonElement["midi_message"]["status_byte"];

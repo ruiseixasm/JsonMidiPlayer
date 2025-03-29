@@ -245,7 +245,7 @@ int PlayList(const char* json_str, bool verbose) {
                     continue;
                 }
 
-                const MidiDevice *clip_midi_device = nullptr;
+                MidiDevice *clip_midi_device = nullptr;
 
                 for (auto jsonElement : jsonFileContent)
                 {
@@ -274,7 +274,7 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         clip_midi_device = nullptr; // No available device found
 
-                    } else if (jsonElement.contains("time_ms")) {
+                    } else if (clip_midi_device != nullptr && jsonElement.contains("midi_message")) {
                         
                         double time_milliseconds = jsonElement["time_ms"];
 
@@ -334,6 +334,9 @@ int PlayList(const char* json_str, bool verbose) {
                                                         continue;
                                                     }
                                                 }
+                                                if (json_midi_message.size() < 2)
+                                                    continue;
+                                                
                                                 json_midi_message.push_back(0xF7);  // End SysEx Data Byte
                                                 priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 16
                                                 break;
@@ -425,32 +428,38 @@ int PlayList(const char* json_str, bool verbose) {
                             continue;
                         }
 
-                        nlohmann::json jsonDeviceNames = jsonElement["midi_message"]["device"];
-                        // It's a list of Devices that is given as Device
-                        for (std::string deviceName : jsonDeviceNames) {
-                            for (auto &device : midi_devices) {
-                                if (device.getName().find(deviceName) != std::string::npos) {
-                                    //
-                                    // Where the Device Port is connected/opened (Main reason for errors)
-                                    //
-                                    if (device.openPort())
-                                        //
-                                        // Where each Midi Pin or Pins are added to the midi processing list
-                                        //
-                                        if (status_byte == 0xF0) {  // SysEx message
-                                            if (json_midi_message.size() > 2) {  // Avoids sending empty payload SysEx messages
-                                                midiToProcess.push_back(MidiPin(time_milliseconds, &device, json_midi_message, priority));
-                                            } else {
-                                                play_reporting.total_excluded++;    // Marks it as excluded
-                                            }
-                                        } else {    // Processes NON SysEx messages
-                                            midiToProcess.push_back(MidiPin(time_milliseconds, &device, json_midi_message, priority));
-                                        }
-                                        play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
-                                    goto skip_to;
-                                }
-                            }
-                        }
+
+                        midiToProcess.push_back( MidiPin(time_milliseconds, clip_midi_device, json_midi_message, priority) );
+                        play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
+
+
+
+                        // nlohmann::json jsonDeviceNames = jsonElement["midi_message"]["device"];
+                        // // It's a list of Devices that is given as Device
+                        // for (std::string deviceName : jsonDeviceNames) {
+                        //     for (auto &device : midi_devices) {
+                        //         if (device.getName().find(deviceName) != std::string::npos) {
+                        //             //
+                        //             // Where the Device Port is connected/opened (Main reason for errors)
+                        //             //
+                        //             if (device.openPort())
+                        //                 //
+                        //                 // Where each Midi Pin or Pins are added to the midi processing list
+                        //                 //
+                        //                 if (status_byte == 0xF0) {  // SysEx message
+                        //                     if (json_midi_message.size() > 2) {  // Avoids sending empty payload SysEx messages
+                        //                         midiToProcess.push_back(MidiPin(time_milliseconds, &device, json_midi_message, priority));
+                        //                     } else {
+                        //                         play_reporting.total_excluded++;    // Marks it as excluded
+                        //                     }
+                        //                 } else {    // Processes NON SysEx messages
+                        //                     midiToProcess.push_back(MidiPin(time_milliseconds, &device, json_midi_message, priority));
+                        //                 }
+                        //                 play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
+                        //             goto skip_to;
+                        //         }
+                        //     }
+                        // }
                     }
 
                 skip_to: continue;

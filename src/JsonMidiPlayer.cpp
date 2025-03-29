@@ -195,13 +195,27 @@ int PlayList(const char* json_str, bool verbose) {
         //
 
 
-        const unsigned char action_note_off = 0x80;         // Note off
-        const unsigned char action_note_on = 0x90;          // Note on
-        const unsigned char action_key_pressure = 0xA0;     // Polyphonic Key Pressure
-        const unsigned char action_control_change = 0xB0;   // Control Change
-        const unsigned char action_program_change = 0xC0;   // Program Change
+        const unsigned char action_note_off         = 0x80; // Note off
+        const unsigned char action_note_on          = 0x90; // Note on
+        const unsigned char action_key_pressure     = 0xA0; // Polyphonic Key Pressure
+        const unsigned char action_control_change   = 0xB0; // Control Change
+        const unsigned char action_program_change   = 0xC0; // Program Change
         const unsigned char action_channel_pressure = 0xD0; // Channel Pressure
-        const unsigned char action_pitch_bend = 0xE0;       // Pitch Bend
+        const unsigned char action_pitch_bend       = 0xE0; // Pitch Bend
+        const unsigned char action_system           = 0xF0; // Device related Messages, System
+
+        const unsigned char system_sysex_start      = 0xF0; // Sysex Start
+        const unsigned char system_time_mtc         = 0xF1; // MIDI Time Code Quarter Frame
+        const unsigned char system_song_pointer     = 0xF2; // Song Position Pointer
+        const unsigned char system_song_select      = 0xF3; // Song Select
+        const unsigned char system_tune_request     = 0xF6; // Tune Request
+        const unsigned char system_sysex_end        = 0xF7; // Sysex End
+        const unsigned char system_timing_clock     = 0xF8; // Timing Clock
+        const unsigned char system_timing_start     = 0xFA; // Start
+        const unsigned char system_timing_continue  = 0xFB; // Continue
+        const unsigned char system_timing_stop      = 0xFC; // Stop
+        const unsigned char system_active_sensing   = 0xFE; // Active Sensing
+        const unsigned char system_system_reset     = 0xFF; // System Reset
 
 
         auto data_processing_start = std::chrono::high_resolution_clock::now();
@@ -255,6 +269,16 @@ int PlayList(const char* json_str, bool verbose) {
 
 
                                 switch (message_action) {
+                                    case action_system:
+
+                                        switch (status_byte) {
+                                            case action_system:
+        
+
+                                                break;
+                                        }
+
+                                        break;
                                     case action_note_off:
 
 

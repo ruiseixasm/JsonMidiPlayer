@@ -193,8 +193,6 @@ int PlayList(const char* json_str, bool verbose) {
         //
         // Where the JSON content is processed and added up the Pluck midi messages
         //
-            
-        const unsigned char status_clip_devices     = 0x0F; // Clip Devices
 
         const unsigned char action_note_off         = 0x80; // Note off
         const unsigned char action_note_on          = 0x90; // Note on
@@ -251,12 +249,13 @@ int PlayList(const char* json_str, bool verbose) {
 
                 for (auto jsonElement : jsonFileContent)
                 {
-                    if (jsonElement["midi_message"].contains("status_byte") && jsonElement.contains("time_ms")) {
+                    if (jsonElement.contains("time_ms")) {
                         
-                        unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
-                        std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
                         double time_milliseconds = jsonElement["time_ms"];
-                        unsigned char priority = 0xFF;  // Lowest priority 16 by default
+
+                        unsigned char status_byte;
+                        std::vector<unsigned char> json_midi_message; // Starts the json_midi_message to a new Status Byte
+                        unsigned char priority;
                         
                         play_reporting.total_excluded++;
                         // Create an API with the default API
@@ -266,7 +265,7 @@ int PlayList(const char* json_str, bool verbose) {
 
                                 continue;
 
-                            } else if (status_byte == status_clip_devices) {
+                            } else if (jsonElement.contains("devices")) {
 
                                 nlohmann::json jsonDeviceNames = jsonElement["devices"];
                                 // It's a list of Devices that is given as Device
@@ -293,6 +292,11 @@ int PlayList(const char* json_str, bool verbose) {
 
                             } else {
 
+                                status_byte = jsonElement["midi_message"]["status_byte"];
+                                json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
+                                time_milliseconds = jsonElement["time_ms"];
+                                priority = 0xFF;  // Lowest priority 16 by default
+                                
                                 unsigned char message_action = status_byte & 0xF0;
                                 switch (message_action) {
                                     case action_system:

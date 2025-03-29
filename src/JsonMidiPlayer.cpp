@@ -216,12 +216,12 @@ int PlayList(const char* json_str, bool verbose) {
         const unsigned char system_active_sensing   = 0xFE; // Active Sensing
         const unsigned char system_system_reset     = 0xFF; // System Reset
 
-
         auto data_processing_start = std::chrono::high_resolution_clock::now();
 
         try {
 
             nlohmann::json json_files_data = nlohmann::json::parse(json_str);
+
             for (nlohmann::json jsonData : json_files_data) {
 
                 nlohmann::json jsonFileType;
@@ -246,33 +246,45 @@ int PlayList(const char* json_str, bool verbose) {
                 }
 
                 MidiDevice *clip_midi_device = nullptr;
+                // Dictionary where the key is a JSON list
+                std::unordered_map<nlohmann::json, MidiDevice*, JsonHash, JsonEqual> devices_dict;        
 
                 for (auto jsonElement : jsonFileContent)
                 {
                     if (jsonElement.contains("devices")) {
 
-                        nlohmann::json jsonDeviceNames = jsonElement["devices"];
-                        // It's a list of Devices that is given as Device
-                        for (std::string deviceName : jsonDeviceNames) {
-                            for (auto &device : midi_devices) {
-                                if (device.getName().find(deviceName) != std::string::npos) {
-                                    //
-                                    // Where the Device Port is connected/opened (Main reason for errors)
-                                    //
-                                    try {
-                                        if (device.openPort()) {
-                                            clip_midi_device = &device;
+                        // The devices JSON list key
+                        nlohmann::json jsonDevicesNames = jsonElement["devices"];
+
+                        if (devices_dict.find(jsonDevicesNames) != devices_dict.end()) {
+                            
+                            clip_midi_device = devices_dict[jsonDevicesNames];
+
+                        } else {
+
+                            // It's a list of Devices that is given as Device
+                            for (std::string deviceName : jsonDevicesNames) {
+                                for (auto &device : midi_devices) {
+                                    if (device.getName().find(deviceName) != std::string::npos) {
+                                        //
+                                        // Where the Device Port is connected/opened (Main reason for errors)
+                                        //
+                                        try {
+                                            if (device.openPort()) {
+                                                clip_midi_device = &device;
+                                                devices_dict[jsonDevicesNames] = clip_midi_device;
+                                                goto skip_to;
+                                            }
+                                        } catch (const std::exception& e) {
+                                            if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+                                            clip_midi_device = nullptr;
                                             goto skip_to;
                                         }
-                                    } catch (const std::exception& e) {
-                                        if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-                                        clip_midi_device = nullptr;
-                                        goto skip_to;
                                     }
                                 }
                             }
+                            clip_midi_device = nullptr; // No available device found
                         }
-                        clip_midi_device = nullptr; // No available device found
 
                     } else if (clip_midi_device != nullptr && jsonElement.contains("midi_message")) {
                         

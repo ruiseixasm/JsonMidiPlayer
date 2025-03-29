@@ -247,10 +247,11 @@ int PlayList(const char* json_str, bool verbose) {
                     continue;
                 }
 
+                const MidiDevice *clip_midi_device = nullptr;
+
                 for (auto jsonElement : jsonFileContent)
                 {
-                    if (jsonElement.contains("midi_message") && jsonElement["midi_message"].contains("status_byte") && 
-                        jsonElement["midi_message"].contains("device") && jsonElement.contains("time_ms")) {
+                    if (jsonElement["midi_message"].contains("status_byte") && jsonElement.contains("time_ms")) {
                         
                         unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
                         std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
@@ -267,7 +268,23 @@ int PlayList(const char* json_str, bool verbose) {
 
                             } else if (status_byte == status_clip_devices) {
 
-                                
+                                nlohmann::json jsonDeviceNames = jsonElement["devices"];
+                                // It's a list of Devices that is given as Device
+                                for (std::string deviceName : jsonDeviceNames) {
+                                    for (auto &device : midi_devices) {
+                                        if (device.getName().find(deviceName) != std::string::npos) {
+                                            //
+                                            // Where the Device Port is connected/opened (Main reason for errors)
+                                            //
+                                            if (device.openPort()) {
+                                                clip_midi_device = &device;
+                                                goto skip_to;
+                                            }
+                                        }
+                                    }
+                                }
+                                clip_midi_device = nullptr; // No available device found
+
                             } else {
 
                                 unsigned char message_action = status_byte & 0xF0;

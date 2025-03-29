@@ -290,7 +290,6 @@ int PlayList(const char* json_str, bool verbose) {
 
                                 unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
                                 std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
-                                time_milliseconds = jsonElement["time_ms"];
                                 unsigned char priority = 0xFF;  // Lowest priority 16 by default
                                 
                                 unsigned char message_action = status_byte & 0xF0;
@@ -411,7 +410,7 @@ int PlayList(const char* json_str, bool verbose) {
                                     default:
                                         continue;
                                 }
-                                
+
                                 midiToProcess.push_back( MidiPin(time_milliseconds, clip_midi_device, json_midi_message, priority) );
                                 play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
                             }

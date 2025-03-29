@@ -56,6 +56,34 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #define VERSION   "4.0.0"
 #define DRAG_DURATION_MS (1000.0/((120/60)*24))
 
+
+const unsigned char action_note_off         = 0x80; // Note off
+const unsigned char action_note_on          = 0x90; // Note on
+const unsigned char action_key_pressure     = 0xA0; // Polyphonic Key Pressure
+const unsigned char action_control_change   = 0xB0; // Control Change
+const unsigned char action_program_change   = 0xC0; // Program Change
+const unsigned char action_channel_pressure = 0xD0; // Channel Pressure
+const unsigned char action_pitch_bend       = 0xE0; // Pitch Bend
+const unsigned char action_system           = 0xF0; // Device related Messages, System
+
+const unsigned char system_sysex_start      = 0xF0; // Sysex Start
+const unsigned char system_time_mtc         = 0xF1; // MIDI Time Code Quarter Frame
+const unsigned char system_song_pointer     = 0xF2; // Song Position Pointer
+const unsigned char system_song_select      = 0xF3; // Song Select
+const unsigned char system_tune_request     = 0xF6; // Tune Request
+const unsigned char system_sysex_end        = 0xF7; // Sysex End
+const unsigned char system_timing_clock     = 0xF8; // Timing Clock
+const unsigned char system_clock_start      = 0xFA; // Start
+const unsigned char system_clock_continue   = 0xFB; // Continue
+const unsigned char system_clock_stop       = 0xFC; // Stop
+const unsigned char system_active_sensing   = 0xFE; // Active Sensing
+const unsigned char system_system_reset     = 0xFF; // System Reset
+
+
+
+class MidiPin;
+
+
 class MidiDevice {
 private:
     RtMidiOut midiOut;
@@ -64,6 +92,19 @@ private:
     const bool verbose;
     bool opened_port = false;
     bool unavailable_device = false;
+
+public:
+
+
+    std::list<MidiPin*> last_pin_note_on_list;     // Midi Notes 0x80 and 0x90
+    std::list<MidiPin*> last_pin_kp_list;          // Midi Key Aftertouch 0xA0
+    std::list<MidiPin*> last_pin_cc_list;          // Midi Control Change 0xB0
+    std::list<MidiPin*> last_pin_cp_list;          // Midi Channel Aftertouch 0xD0
+    std::list<MidiPin*> last_pin_pb_list;          // Midi Pitch Bend 0xE0
+    MidiPin *last_pin_clock_message = nullptr;     // Midi clock messages 0xF0
+
+
+
 public:
     MidiDevice(std::string device_name, unsigned int device_port, bool verbose = false)
                 : name(device_name), port(device_port), verbose(verbose) { }
@@ -98,6 +139,8 @@ public:
     void sendMessage(const std::vector<unsigned char> *midi_message);
 };
 
+
+
 class MidiPin {
 
 private:
@@ -107,6 +150,7 @@ private:
     std::vector<unsigned char> midi_message;  // Replaces midi_message[3]
     // https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
     double delay_time_ms = -1;
+
 public:
     MidiPin(double time_milliseconds, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
@@ -149,6 +193,10 @@ public:
         return this->midi_message[0];
     }
 
+    void setDataByte(int nth_byte, unsigned char data_byte) {
+        this->midi_message[nth_byte] = data_byte;
+    }
+
     unsigned char getDataByte(int nth_byte = 1) const {
         return this->midi_message[nth_byte];
     }
@@ -165,11 +213,99 @@ public:
         return this->priority;
     }
 
-    const MidiDevice * const getDeviceID() const {
+    MidiDevice * const getDevice() const {
         return this->midi_device;
     }
 
+
+public:
+
+    size_t level = 0;   // VERY IMPORTANT TO AVOID EARLIER NOTE OFF
+
+    bool operator == (const MidiPin &midi_pin) {
+        if ((this->getStatusByte() & 0x0F) == (midi_pin.getStatusByte() & 0x0F)) {
+            if (this->getStatusByte() >= 0x80 && this->getStatusByte() < 0xC0)
+                if (this->getDataByte(1) == midi_pin.getDataByte(1))
+                    return true;
+            if (this->getStatusByte() >= 0xC0 && this->getStatusByte() < 0xF0)
+                return true;
+        }
+        return false;
+    }
+
+    // Prefix increment
+    MidiPin& operator++() {
+        ++level;
+        return *this;
+    }
+    // Postfix increment
+    MidiPin operator++(int) {
+        MidiPin temp = *this;
+        ++level;
+        return temp;
+    }
+    // Prefix decrement
+    MidiPin& operator--() {
+        --level;
+        return *this;
+    }
+    // Postfix decrement
+    MidiPin operator--(int) {
+        MidiPin temp = *this;
+        --level;
+        return temp;
+    }
+
 };
+
+
+
+// class MidiLastMessage {
+//     public:
+//         const unsigned char status_byte;
+//         unsigned char data_byte_1;
+//         unsigned char data_byte_2;
+//         size_t level = 1;   // VERY IMPORTANT TO AVOID EARLIER NOTE OFF
+
+//         MidiLastMessage(unsigned char status_byte, unsigned char data_byte_1, unsigned char data_byte_2):
+//                 status_byte(status_byte), data_byte_1(data_byte_1), data_byte_2(data_byte_2) { }
+
+//         bool operator == (const MidiPin &midi_pin) {
+//             if ((status_byte & 0x0F) == (midi_pin.getStatusByte() & 0x0F)) {
+//                 if (status_byte >= 0x80 && status_byte < 0xC0)
+//                     if (data_byte_1 == midi_pin.getDataByte(1))
+//                         return true;
+//                 if (status_byte >= 0xC0 && status_byte < 0xF0)
+//                     return true;
+//             }
+//             return false;
+//         }
+
+//         // Prefix increment
+//         MidiLastMessage& operator++() {
+//             ++level;
+//             return *this;
+//         }
+//         // Postfix increment
+//         MidiLastMessage operator++(int) {
+//             MidiLastMessage temp = *this;
+//             ++level;
+//             return temp;
+//         }
+//         // Prefix decrement
+//         MidiLastMessage& operator--() {
+//             --level;
+//             return *this;
+//         }
+//         // Postfix decrement
+//         MidiLastMessage operator--(int) {
+//             MidiLastMessage temp = *this;
+//             --level;
+//             return temp;
+//         }
+// };
+
+
 
 // Declare the function in the header file
 void disableBackgroundThrottling();

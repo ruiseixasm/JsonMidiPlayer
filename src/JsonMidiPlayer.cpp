@@ -278,40 +278,35 @@ int PlayList(const char* json_str, bool verbose) {
                                                 priority = 0x30 | status_byte & 0x0F;       // High priority 3
                                                 break;
                                             case system_song_pointer:
+                                            {
+                                                // This is already a try catch situation
+                                                unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                                unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                                if (data_byte_1 > 127 || data_byte_2 > 127)  // Makes sure it's inside the processing window
+                                                    continue;
 
-                                                if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
-
-                                                    unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                                    unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                                    if (data_byte_1 > 127 || data_byte_2 > 127)  // Makes sure it's inside the processing window
-                                                        continue;
-                                                    else {
-                                                        json_midi_message.push_back(data_byte_1);
-                                                        json_midi_message.push_back(data_byte_2);
-                                                        priority = 0xB0 | status_byte & 0x0F;       // Low priority 12
-                                                    }
-                                                }
+                                                json_midi_message.push_back(data_byte_1);
+                                                json_midi_message.push_back(data_byte_2);
+                                                priority = 0xB0 | status_byte & 0x0F;       // Low priority 12
                                                 break;
+                                            }
                                             case system_sysex_start:
-
-                                                if (jsonElement["midi_message"].contains("data_bytes")) {
-
-                                                    // sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
-                                                    
-                                                    nlohmann::json data_bytes = jsonElement["midi_message"]["data_bytes"];
-                                                    for (unsigned char sysex_data_byte : data_bytes) {
-                                                        // Makes sure it's SysEx valid data
-                                                        if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
-                                                            json_midi_message.push_back(sysex_data_byte);
-                                                        } else {
-                                                            continue;
-                                                        }
+                                            {
+                                                // sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
+                                                
+                                                nlohmann::json data_bytes = jsonElement["midi_message"]["data_bytes"];
+                                                for (unsigned char sysex_data_byte : data_bytes) {
+                                                    // Makes sure it's SysEx valid data
+                                                    if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
+                                                        json_midi_message.push_back(sysex_data_byte);
+                                                    } else {
+                                                        continue;
                                                     }
-                                                    json_midi_message.push_back(0xF7);  // End SysEx Data Byte
-                                                    priority = 0xF0 | status_byte & 0x0F;   // Lowest priority 16
                                                 }
+                                                json_midi_message.push_back(0xF7);  // End SysEx Data Byte
+                                                priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 16
                                                 break;
-                                            
+                                            }
                                             default:
                                                 // All other messages get a low priority
                                                 priority = 0xD0 | status_byte & 0x0F;       // Low priority 14
@@ -319,46 +314,30 @@ int PlayList(const char* json_str, bool verbose) {
                                         }
                                         break;
                                     case action_note_off:
-
-                                        if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
-
-                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                            if (data_byte_1 > 127 || data_byte_2 > 127) {
-                                                continue;
-                                            } else {
-                                                json_midi_message.push_back(data_byte_1);
-                                                json_midi_message.push_back(data_byte_2);
-                                                priority = 0x40 | status_byte & 0x0F;       // Normal priority 4
-                                            }
-                                        }
-                                        break;
                                     case action_note_on:
-
-                                        if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
-
-                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                            if (data_byte_1 > 127 || data_byte_2 > 127) {
-                                                continue;
-                                            } else {
-                                                json_midi_message.push_back(data_byte_1);
-                                                json_midi_message.push_back(data_byte_2);
-                                                priority = 0x50 | status_byte & 0x0F;       // Normal priority 5
-                                            }
-                                        }
-                                        break;
                                     case action_control_change:
+                                    case action_pitch_bend:
+                                    case action_key_pressure:
+                                    {
+                                        // This is already a try catch situation
+                                        unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                        unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                        if (data_byte_1 > 127 || data_byte_2 > 127)
+                                            continue;
 
-                                        if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
+                                        json_midi_message.push_back(data_byte_1);
+                                        json_midi_message.push_back(data_byte_2);
 
-                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                            if (data_byte_1 > 127 || data_byte_2 > 127) {
-                                                continue;
-                                            } else {
-                                                json_midi_message.push_back(data_byte_1);
-                                                json_midi_message.push_back(data_byte_2);
+                                        // Set the respective priorities
+                                        switch (message_action) {
+
+                                            case action_note_off:
+                                                priority = 0x40 | status_byte & 0x0F;       // Normal priority 4
+                                                break;
+                                            case action_note_on:
+                                                priority = 0x50 | status_byte & 0x0F;       // Normal priority 5
+                                                break;
+                                            case action_control_change:
                                                 if (data_byte_1 == 1) {             // Modulation
                                                     priority = 0x60 | status_byte & 0x0F;       // Low priority 6
                                                 } else if (data_byte_1 == 0 || data_byte_1 == 32) {
@@ -368,66 +347,37 @@ int PlayList(const char* json_str, bool verbose) {
                                                 } else {
                                                     priority = 0x20 | status_byte & 0x0F;       // High priority 2
                                                 }
-                                            }
-                                        }
-                                        break;
-                                    case action_program_change:
-
-                                        if (jsonElement["midi_message"].contains("data_byte")) {
-
-                                            unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
-                                            if (data_byte > 127) {
-                                                continue;
-                                            } else {
-                                                json_midi_message.push_back(data_byte);
-                                                priority = 0x10 | status_byte & 0x0F;       // High priority 1
-                                            }
-                                        }
-                                        break;
-                                    case action_pitch_bend:
-
-                                        if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
-
-                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                            if (data_byte_1 > 127 || data_byte_2 > 127) {
-                                                continue;
-                                            } else {
-                                                json_midi_message.push_back(data_byte_1);
-                                                json_midi_message.push_back(data_byte_2);
+                                                break;
+                                            case action_pitch_bend:
                                                 priority = 0x70 | status_byte & 0x0F;       // Low priority 7
-                                            }
-                                        }
-                                        break;
-                                    case action_channel_pressure:
-
-                                        if (jsonElement["midi_message"].contains("data_byte")) {
-
-                                            unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
-                                            if (data_byte > 127) {
-                                                continue;
-                                            } else {
-                                                json_midi_message.push_back(data_byte);
+                                                break;
+                                            case action_key_pressure:
                                                 priority = 0x80 | status_byte & 0x0F;       // Low priority 8
-                                            }
+                                                break;
                                         }
                                         break;
-                                    case action_key_pressure:
+                                    }
+                                    case action_program_change:
+                                    case action_channel_pressure:
+                                    {
+                                        unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
+                                        if (data_byte > 127)
+                                            continue;
+                                        
+                                        json_midi_message.push_back(data_byte);
+                                        // Set the respective priorities
+                                        switch (message_action) {
 
-                                        if (jsonElement["midi_message"].contains("data_byte_1") && jsonElement["midi_message"].contains("data_byte_2")) {
-
-                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                            if (data_byte_1 > 127 || data_byte_2 > 127) {
-                                                continue;
-                                            } else {
-                                                json_midi_message.push_back(data_byte_1);
-                                                json_midi_message.push_back(data_byte_2);
-                                                priority = 0x90 | status_byte & 0x0F;       // Low priority 9
-                                            }
+                                            case action_program_change:
+                                                priority = 0x10 | status_byte & 0x0F;       // High priority 1
+                                                break;
+                                            case action_channel_pressure:
+                                                priority = 0x80 | status_byte & 0x0F;       // Low priority 8
+                                                break;
                                         }
                                         break;
-                                    
+                                    }
+
                                     default:
                                         continue;
                                 }
@@ -856,7 +806,7 @@ int PlayList(const char* json_str, bool verbose) {
         #endif
 
         auto data_processing_finish = std::chrono::high_resolution_clock::now();
-        
+
         auto pre_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
         play_reporting.pre_processing = pre_processing_time.count();
 

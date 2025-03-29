@@ -416,6 +416,10 @@ int PlayList(const char* json_str, bool verbose) {
                                         continue;
                                 }
                             }
+
+                            midiToProcess.push_back( MidiPin(time_milliseconds, clip_midi_device, json_midi_message, priority) );
+                            play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
+
                         }
                         catch (const nlohmann::json::exception& e) {
                             if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
@@ -428,9 +432,6 @@ int PlayList(const char* json_str, bool verbose) {
                             continue;
                         }
 
-
-                        midiToProcess.push_back( MidiPin(time_milliseconds, clip_midi_device, json_midi_message, priority) );
-                        play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
 
 
 

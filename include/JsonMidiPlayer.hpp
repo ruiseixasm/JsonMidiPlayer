@@ -244,17 +244,16 @@ public:
     bool operator != (const MidiPin &midi_pin) {
         if (this->getStatusByte() == midi_pin.getStatusByte()) {
             switch (midi_pin.getAction()) {
+                case action_control_change:
                 case action_pitch_bend:
-                    if (this->getDataByte(1) == midi_pin.getDataByte(1) &&
-                        this->getDataByte(2) == midi_pin.getDataByte(2)) {
-
-                        return false;
-                    } else {
-                        return true;
-                    }
+                    return this->getDataByte(1) != midi_pin.getDataByte(1) ||
+                           this->getDataByte(2) != midi_pin.getDataByte(2);
+                break;
+                case action_note_on:
+                case action_channel_pressure:
+                    return this->getDataByte(1) != midi_pin.getDataByte(1);
                 break;
             }
-
         }
         return true;
     }

@@ -570,7 +570,7 @@ int PlayList(const char* json_str, bool verbose) {
                         auto note_on_it = dict_last.find(note_on_key);
 
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
-                            auto note_on_list = note_on_it->second;
+                            auto& note_on_list = note_on_it->second;
 
                             // Loop through the list and remove elements
                             for (auto note_on = note_on_list.begin(); note_on != note_on_list.end(); ++note_on) {
@@ -587,7 +587,7 @@ int PlayList(const char* json_str, bool verbose) {
                                         note_on = note_on_list.erase(note_on);
                                         ++pin_it; // Only increment if no removal
                                     } else {
-                                        --(*last_pin_note_on);    // Decrements level
+                                        --(*last_pin_note_on);  // Decrements level
                                         midiRedundant.push_back(pluck_pin);
                                         pin_it = midiToProcess.erase(pin_it);
                                     }
@@ -645,7 +645,7 @@ int PlayList(const char* json_str, bool verbose) {
                                         ++pin_it; // Only increment if no removal
                                     } else {
 
-                                        ++last_pin_note_on;    // Increments level
+                                        ++(*last_pin_note_on);  // Increments level
 
                                         std::vector<unsigned char> midi_message = {
                                             static_cast<unsigned char>(pluck_pin.getChannel() | action_note_off),

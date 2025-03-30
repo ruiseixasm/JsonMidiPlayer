@@ -647,7 +647,7 @@ int PlayList(const char* json_str, bool verbose) {
                     case action_pitch_bend:
                     {
                         unsigned char dict_key = pluck_pin.getStatusByte();
-                        auto dict_last = pluck_device.dict_last_pin_pb;
+                        auto dict_last = pluck_device.last_pin_byte_1;
 
                         if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
                             auto last_pin_pb = dict_last[dict_key];

@@ -104,8 +104,10 @@ public:
     MidiPin *last_pin_clock_message = nullptr;     // Midi clock messages 0xF0
 
 
-    std::unordered_map<unsigned char, MidiPin*> dict_last_pin_pb;          // Midi Pitch Bend 0xE0
-
+    std::unordered_map<unsigned char, MidiPin*> last_pin_byte_1;    // For Pitch Bend and Aftertouch alike
+    std::unordered_map<uint16_t, MidiPin*>      last_pin_byte_2;    // For Control Change and Note On alike
+    MidiPin *last_pin_clock = nullptr;          // Midi clock messages 0xF0
+    MidiPin *last_pin_song_pointer = nullptr;   // Midi clock messages 0xF2
 
 
 public:

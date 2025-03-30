@@ -106,8 +106,8 @@ public:
     
     std::unordered_map<unsigned char, std::list<MidiPin*>>
                                                 last_pin_note_on;   // For Note On tracking
-    std::unordered_map<unsigned char, MidiPin*> last_pin_byte_1;    // For Pitch Bend and Aftertouch alike
-    std::unordered_map<uint16_t, MidiPin*>      last_pin_byte_2;    // For Control Change and Key Pressure
+    std::unordered_map<unsigned char, MidiPin*> last_pin_byte_8;    // For Pitch Bend and Aftertouch alike
+    std::unordered_map<uint16_t, MidiPin*>      last_pin_byte_16;   // For Control Change and Key Pressure
     MidiPin *last_pin_clock = nullptr;          // Midi clock messages 0xF0
     MidiPin *last_pin_song_pointer = nullptr;   // Midi clock messages 0xF2
 
@@ -245,6 +245,8 @@ public:
         if (this->getStatusByte() == midi_pin.getStatusByte()) {
             switch (midi_pin.getAction()) {
                 case action_control_change:
+                case action_key_pressure:
+                    return this->getDataByte(2) != midi_pin.getDataByte(2);
                 case action_pitch_bend:
                     return this->getDataByte(1) != midi_pin.getDataByte(1) ||
                            this->getDataByte(2) != midi_pin.getDataByte(2);

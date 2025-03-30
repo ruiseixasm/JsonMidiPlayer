@@ -34,7 +34,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/JsonMidiPlayer.out",
-            "args": ["../linux_exported_lead_sheet_melody_jmp.json", "--verbose"],
+            "args": ["../_Linux_Export_4.1_control_change.json", "--verbose"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/",
             "environment": [],

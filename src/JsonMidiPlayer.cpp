@@ -572,15 +572,13 @@ int PlayList(const char* json_str, bool verbose) {
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
                             auto& note_on_list = note_on_it->second;
 
-                            // Loop through the list and remove elements
+                            // Loop through the list of a particular Channel
+                            // and remove elements (because midi pins may be removed)
                             for (auto note_on = note_on_list.begin(); note_on != note_on_list.end(); ++note_on) {
 
                                 MidiPin *last_pin_note_on = *note_on;
 
-                                if (*last_pin_note_on != pluck_pin) {
-                                    continue;
-                                    
-                                } else {
+                                if (*last_pin_note_on == pluck_pin) {
 
                                     if (last_pin_note_on->level == 1) {
 
@@ -608,11 +606,10 @@ int PlayList(const char* json_str, bool verbose) {
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
                             auto& note_on_list = note_on_it->second;
 
+                            // Loops the list of a particular Channel
                             for (MidiPin *last_pin_note_on : note_on_list) {
-                                if (*last_pin_note_on != pluck_pin) {
-                                    continue;
-                                    
-                                } else {
+
+                                if (*last_pin_note_on == pluck_pin) {
 
                                     // A special case for Note On with velocity 0!
                                     if (last_pin_note_on->getDataByte(2) == 0 && pluck_pin.getDataByte(2) > 0 ||

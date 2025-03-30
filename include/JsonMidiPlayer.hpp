@@ -221,6 +221,12 @@ public:
     // If this is a Note On pin, then, by definition, is already at level 1
     size_t level = 1;   // VERY IMPORTANT TO AVOID EARLIER NOTE OFF
 
+    // Intended for Note On only
+    bool operator == (const MidiPin &midi_pin) {
+        return this->getDataByte(1) == midi_pin.getDataByte(1); // Key number
+    }
+
+    // Intended for Automation messages only
     bool operator != (const MidiPin &midi_pin) {
         if (this->getStatusByte() == midi_pin.getStatusByte()) {
             switch (midi_pin.getAction()) {
@@ -230,12 +236,9 @@ public:
                 case action_pitch_bend:
                     return this->getDataByte(1) != midi_pin.getDataByte(1) ||
                            this->getDataByte(2) != midi_pin.getDataByte(2);
-                case action_note_on:
                 case action_channel_pressure:
                     return this->getDataByte(1) != midi_pin.getDataByte(1);
             }
-        } else if (this->getAction() == action_note_on && midi_pin.getAction() == action_note_off) {
-            return this->getChannel() != midi_pin.getChannel();
         }
         return true;
     }

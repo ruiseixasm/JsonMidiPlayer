@@ -883,14 +883,20 @@ int PlayList(const char* json_str, bool verbose) {
                 if (device.hasPortOpen()) {
 
                     // Add the needed note off for all those still on at the end!
-                    for (MidiPin *last_pin_note_on : device.last_pin_note_on_list) {
-                        // Transform midi on in midi off
-                        std::vector<unsigned char> midi_message = {
-                            static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte
-                            last_pin_note_on->getDataByte(1),
-                            last_pin_note_on->getDataByte(2)
-                        };
-                        midiToProcess.push_back( MidiPin(last_message_time_ms, &device, midi_message) );
+                    // Iterate over all keys and values
+                    for (const auto& pair : device.last_pin_note_on) {
+                        unsigned char channel_key = pair.first;
+                        auto& note_on_list = pair.second;
+
+                        for (MidiPin *last_pin_note_on : note_on_list) {
+                            // Transform midi on in midi off
+                            std::vector<unsigned char> midi_message = {
+                                static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte
+                                last_pin_note_on->getDataByte(1),
+                                last_pin_note_on->getDataByte(2)
+                            };
+                            midiToProcess.push_back( MidiPin(last_message_time_ms, &device, midi_message) );
+                        }
                     }
 
                     // MIDI CLOCK

@@ -597,29 +597,6 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         midiRedundant.push_back(pluck_pin);  // Note Off as no Note On pair
                         pin_it = midiToProcess.erase(pin_it);
-
-
-
-
-                        // // Loop through the list and remove elements
-                        // for (auto note_on = pluck_device.last_pin_note_on_list.begin(); note_on != pluck_device.last_pin_note_on_list.end(); ++note_on) {
-
-                        //     auto &last_pin_note_on = **note_on;
-                        //     if (last_pin_note_on == pluck_pin) {
-
-                        //         if (last_pin_note_on.level == 1) {
-                        //             note_on = pluck_device.last_pin_note_on_list.erase(note_on);
-                        //             ++pin_it; // Only increment if no removal
-                        //         } else {
-                        //             --last_pin_note_on;    // Decrements level
-                        //             midiRedundant.push_back(pluck_pin);
-                        //             pin_it = midiToProcess.erase(pin_it);
-                        //         }
-                        //         goto skip_to_2;
-                        //     }
-                        // }
-                        // midiRedundant.push_back(pluck_pin);  /// Note Off as no Note On pair
-                        // pin_it = midiToProcess.erase(pin_it);
                     }
                     break;
                     case action_note_on:
@@ -673,48 +650,10 @@ int PlayList(const char* json_str, bool verbose) {
                         // First timer Note On
                         dict_last[channel_key].push_back( &pluck_pin );
                         ++pin_it; // Only increment if no removal
-
-                        // for (MidiPin *last_pin_note_on : pluck_device.last_pin_note_on_list) {
-                        //     if (*last_pin_note_on == pluck_pin) {
-
-                        //         // A special case for Note On with velocity 0!
-                        //         if (last_pin_note_on->getDataByte(2) == 0 && pluck_pin.getDataByte(2) > 0 ||
-                        //             last_pin_note_on->getDataByte(2) > 0 && pluck_pin.getDataByte(2) == 0) {
-
-                        //             last_pin_note_on->setDataByte(2, pluck_pin.getDataByte(2));
-                        //             ++pin_it; // Only increment if no removal
-                        //         } else {
-
-                        //             ++last_pin_note_on;    // Increments level
-
-                        //             std::vector<unsigned char> midi_message = {
-                        //                 static_cast<unsigned char>(pluck_pin.getChannel() | action_note_off),
-                        //                 pluck_pin.getDataByte(1),
-                        //                 0
-                        //             };
-                        //             pin_it = midiToProcess.insert(pin_it,
-                        //                 MidiPin(
-                        //                         pluck_pin.getTime(),
-                        //                         pluck_pin.getMidiDevice(),
-                        //                         midi_message
-                        //                     )
-                        //                 );
-                        //             // THIS IS RIGHT, IT'S INTENDED TO BE TWO CONSECUTIVE SKIPS !!
-                        //             // Skips the previously inserted Note Off MidiPin
-                        //             ++pin_it;  // Move the iterator to the next element
-                        //             // Skips the Note On MidiPin
-                        //             ++pin_it;  // Move the iterator to the next element
-                        //         }
-                        //         goto skip_to_2;
-                        //     }
-                        // }
-                        
-                        // // First timer Note On
-                        // pluck_device.last_pin_note_on_list.push_back( &pluck_pin );
-                        // ++pin_it; // Only increment if no removal
                     }
                     break;
                     case action_control_change:
+                    case action_key_pressure:
                     {
                         uint16_t dict_key = pluck_pin.getStatusByte() << 8 | pluck_pin.getDataByte(1);
                         auto& dict_last = pluck_device.last_pin_byte_16;
@@ -733,27 +672,6 @@ int PlayList(const char* json_str, bool verbose) {
                             dict_last[dict_key] = &pluck_pin;
                             ++pin_it; // Only increment if no removal
                         }
-
-
-
-                        // for (MidiPin *last_pin_cc : pluck_device.last_pin_cc_list) {
-                        //     if (*last_pin_cc == pluck_pin) {
-
-                        //         if (last_pin_cc->getDataByte(2) != pluck_pin.getDataByte(2)) {
-
-                        //             last_pin_cc->setDataByte(2, pluck_pin.getDataByte(2));
-                        //             ++pin_it; // Only increment if no removal
-                        //         } else {
-
-                        //             midiRedundant.push_back(pluck_pin);
-                        //             pin_it = midiToProcess.erase(pin_it);
-                        //         }
-                        //         goto skip_to_2;
-                        //     }
-                        // }
-                        // // First timer Note On
-                        // pluck_device.last_pin_cc_list.push_back( &pluck_pin );
-                        // ++pin_it; // Only increment if no removal
                     }
                     break;
                     case action_pitch_bend:
@@ -778,49 +696,6 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                     }
                     break;
-                    case action_key_pressure:
-                    {
-                        uint16_t dict_key = pluck_pin.getStatusByte() << 8 | pluck_pin.getDataByte(1);
-                        auto& dict_last = pluck_device.last_pin_byte_16;
-
-                        if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
-                            auto last_pin_16 = dict_last[dict_key];
-                            if (*last_pin_16 != pluck_pin) {
-
-                                last_pin_16->setDataByte(2, pluck_pin.getDataByte(2));
-                                ++pin_it; // Only increment if no removal
-                            } else {
-                                midiRedundant.push_back(pluck_pin);
-                                pin_it = midiToProcess.erase(pin_it);
-                            }
-                        } else {
-                            dict_last[dict_key] = &pluck_pin;
-                            ++pin_it; // Only increment if no removal
-                        }
-                    }
-                    break;
-
-
-                        // for (MidiPin *last_pin_kp : pluck_device.last_pin_kp_list) {
-                        //     if (*last_pin_kp == pluck_pin) {
-
-                        //         if (last_pin_kp->getDataByte(2) != pluck_pin.getDataByte(2)) {
-
-                        //             last_pin_kp->setDataByte(2, pluck_pin.getDataByte(2));
-                        //             ++pin_it; // Only increment if no removal
-                        //         } else {
-
-                        //             midiRedundant.push_back(pluck_pin);
-                        //             pin_it = midiToProcess.erase(pin_it);
-                        //         }
-                        //         goto skip_to_2;
-                        //     }
-                        // }
-                        // // First timer Note On
-                        // pluck_device.last_pin_kp_list.push_back( &pluck_pin );
-                        // ++pin_it; // Only increment if no removal
-
-
                     case action_channel_pressure:
                     {
                         unsigned char dict_key = pluck_pin.getStatusByte();
@@ -840,28 +715,6 @@ int PlayList(const char* json_str, bool verbose) {
                             dict_last[dict_key] = &pluck_pin;
                             ++pin_it; // Only increment if no removal
                         }
-
-
-                        // for (MidiPin *last_pin_cp : pluck_device.last_pin_cp_list) {
-                        //     if (*last_pin_cp == pluck_pin) {
-
-                        //         if (last_pin_cp->getDataByte(1) != pluck_pin.getDataByte(1)) {
-
-                        //             last_pin_cp->setDataByte(1, pluck_pin.getDataByte(1));
-                        //             ++pin_it; // Only increment if no removal
-                        //         } else {
-
-                        //             midiRedundant.push_back(pluck_pin);
-                        //             pin_it = midiToProcess.erase(pin_it);
-                        //         }
-                        //         goto skip_to_2;
-                        //     }
-                        // }
-                        // // First timer Note On
-                        // pluck_device.last_pin_cp_list.push_back( &pluck_pin );
-                        // ++pin_it; // Only increment if no removal
-
-
                     }
                     break;
 

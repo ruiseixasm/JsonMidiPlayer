@@ -95,15 +95,6 @@ private:
 
 public:
 
-
-    // std::list<MidiPin*> last_pin_note_on_list;     // Midi Notes 0x80 and 0x90
-    // std::list<MidiPin*> last_pin_kp_list;          // Midi Key Aftertouch 0xA0
-    // std::list<MidiPin*> last_pin_cc_list;          // Midi Control Change 0xB0
-    // std::list<MidiPin*> last_pin_cp_list;          // Midi Channel Aftertouch 0xD0
-    // std::list<MidiPin*> last_pin_pb_list;          // Midi Pitch Bend 0xE0
-    // MidiPin *last_pin_clock_message = nullptr;     // Midi clock messages 0xF0
-
-    
     std::unordered_map<unsigned char, std::list<MidiPin*>>
                                                 last_pin_note_on;   // For Note On tracking
     std::unordered_map<unsigned char, MidiPin*> last_pin_byte_8;    // For Pitch Bend and Aftertouch alike
@@ -230,17 +221,6 @@ public:
     // If this is a Note On pin, then, by definition, is already at level 1
     size_t level = 1;   // VERY IMPORTANT TO AVOID EARLIER NOTE OFF
 
-    // bool operator == (const MidiPin &midi_pin) {
-    //     if ((this->getStatusByte() & 0x0F) == (midi_pin.getStatusByte() & 0x0F)) {
-    //         if (this->getStatusByte() >= 0x80 && this->getStatusByte() < 0xC0)
-    //             if (this->getDataByte(1) == midi_pin.getDataByte(1))
-    //                 return true;
-    //         if (this->getStatusByte() >= 0xC0 && this->getStatusByte() < 0xF0)
-    //             return true;
-    //     }
-    //     return false;
-    // }
-
     bool operator != (const MidiPin &midi_pin) {
         if (this->getStatusByte() == midi_pin.getStatusByte()) {
             switch (midi_pin.getAction()) {
@@ -284,7 +264,6 @@ public:
     }
 
 };
-
 
 
 

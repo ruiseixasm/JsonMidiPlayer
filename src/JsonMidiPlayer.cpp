@@ -599,7 +599,7 @@ int PlayList(const char* json_str, bool verbose) {
                                     ++last_pin_note_on;    // Increments level
 
                                     std::vector<unsigned char> midi_message = {
-                                        static_cast<unsigned char>(pluck_pin.getStatusByte() & 0x0F | 0x80),
+                                        static_cast<unsigned char>(pluck_pin.getChannel() | action_note_off),
                                         pluck_pin.getDataByte(1),
                                         0
                                     };
@@ -728,7 +728,7 @@ int PlayList(const char* json_str, bool verbose) {
                     for (MidiPin *last_pin_note_on : device.last_pin_note_on_list) {
                         // Transform midi on in midi off
                         std::vector<unsigned char> midi_message = {
-                            static_cast<unsigned char>(last_pin_note_on->getStatusByte() & 0x0F | action_note_off),    // note_off_status_byte
+                            static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte
                             last_pin_note_on->getDataByte(1),
                             last_pin_note_on->getDataByte(2)
                         };

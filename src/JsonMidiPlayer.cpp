@@ -594,12 +594,9 @@ int PlayList(const char* json_str, bool verbose) {
                                     goto skip_to_2;
                                 }
                             }
-
                         }
                         midiRedundant.push_back(pluck_pin);  // Note Off as no Note On pair
                         pin_it = midiToProcess.erase(pin_it);
-
-
 
 
 

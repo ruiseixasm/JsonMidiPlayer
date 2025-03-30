@@ -645,27 +645,27 @@ int PlayList(const char* json_str, bool verbose) {
                         ++pin_it; // Only increment if no removal
                     break;
                     case action_pitch_bend:
-                        for (MidiPin *last_pin_pb : pluck_device.last_pin_pb_list) {
-                            if (*last_pin_pb == pluck_pin) {
+                    {
+                        unsigned char dict_key = pluck_pin.getStatusByte();
+                        auto dict_last = pluck_device.dict_last_pin_pb;
 
-                                if (last_pin_pb->getDataByte(1) != pluck_pin.getDataByte(1) ||
-                                    last_pin_pb->getDataByte(2) != pluck_pin.getDataByte(2)) {
+                        if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
+                            auto last_pin_pb = dict_last[dict_key];
+                            if (*last_pin_pb != pluck_pin) {
 
-                                    last_pin_pb->setDataByte(1, pluck_pin.getDataByte(1));
-                                    last_pin_pb->setDataByte(2, pluck_pin.getDataByte(2));
-                                    ++pin_it; // Only increment if no removal
-                                } else {
-
-                                    midiRedundant.push_back(pluck_pin);
-                                    pin_it = midiToProcess.erase(pin_it);
-                                }
-                                goto skip_to_2;
+                                last_pin_pb->setDataByte(1, pluck_pin.getDataByte(1));
+                                last_pin_pb->setDataByte(2, pluck_pin.getDataByte(2));
+                                ++pin_it; // Only increment if no removal
+                            } else {
+                                midiRedundant.push_back(pluck_pin);
+                                pin_it = midiToProcess.erase(pin_it);
                             }
+                        } else {
+                            dict_last[dict_key] = &pluck_pin;
+                            ++pin_it; // Only increment if no removal
                         }
-                        // First timer Note On
-                        pluck_device.last_pin_pb_list.push_back( &pluck_pin );
-                        ++pin_it; // Only increment if no removal
-                        break;
+                    }
+                    break;
                     case action_key_pressure:
                         for (MidiPin *last_pin_kp : pluck_device.last_pin_kp_list) {
                             if (*last_pin_kp == pluck_pin) {

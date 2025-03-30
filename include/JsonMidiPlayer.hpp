@@ -100,8 +100,11 @@ public:
     std::list<MidiPin*> last_pin_kp_list;          // Midi Key Aftertouch 0xA0
     std::list<MidiPin*> last_pin_cc_list;          // Midi Control Change 0xB0
     std::list<MidiPin*> last_pin_cp_list;          // Midi Channel Aftertouch 0xD0
-    std::list<MidiPin*> last_pin_pb_list;          // Midi Pitch Bend 0xE0
+    // std::list<MidiPin*> last_pin_pb_list;          // Midi Pitch Bend 0xE0
     MidiPin *last_pin_clock_message = nullptr;     // Midi clock messages 0xF0
+
+
+    std::unordered_map<unsigned char, MidiPin*> dict_last_pin_pb;          // Midi Pitch Bend 0xE0
 
 
 
@@ -232,6 +235,24 @@ public:
                 return true;
         }
         return false;
+    }
+
+    bool operator != (const MidiPin &midi_pin) {
+        if (this->getStatusByte() == midi_pin.getStatusByte()) {
+            switch (midi_pin.getAction()) {
+                case action_pitch_bend:
+                    if (this->getDataByte(1) == midi_pin.getDataByte(1) &&
+                        this->getDataByte(2) == midi_pin.getDataByte(2)) {
+
+                        return false;
+                    } else {
+                        return true;
+                    }
+                break;
+            }
+
+        }
+        return true;
     }
 
     // Prefix increment

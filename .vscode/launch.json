@@ -34,7 +34,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/JsonMidiPlayer.out",
-            "args": ["../_debugging_file.json", "--verbose"],
+            "args": ["../_Linux_Export_4.2_pitch_bend.json", "--verbose"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/",
             "environment": [],

@@ -565,9 +565,9 @@ int PlayList(const char* json_str, bool verbose) {
                     break;
                     case action_note_off:
                     {
-                        unsigned char note_on_key = action_note_on | pluck_pin.getChannel();
+                        unsigned char channel_key = pluck_pin.getChannel();
                         auto& dict_last = pluck_device.last_pin_note_on;
-                        auto note_on_it = dict_last.find(note_on_key);
+                        auto note_on_it = dict_last.find(channel_key);
 
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
                             auto& note_on_list = note_on_it->second;
@@ -624,9 +624,9 @@ int PlayList(const char* json_str, bool verbose) {
                     break;
                     case action_note_on:
                     {
-                        unsigned char note_on_key = pluck_pin.getStatusByte();
+                        unsigned char channel_key = pluck_pin.getChannel();
                         auto& dict_last = pluck_device.last_pin_note_on;
-                        auto note_on_it = dict_last.find(note_on_key);
+                        auto note_on_it = dict_last.find(channel_key);
 
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
                             auto& note_on_list = note_on_it->second;
@@ -671,7 +671,7 @@ int PlayList(const char* json_str, bool verbose) {
 
                         }
                         // First timer Note On
-                        dict_last[note_on_key].push_back( &pluck_pin );
+                        dict_last[channel_key].push_back( &pluck_pin );
                         ++pin_it; // Only increment if no removal
 
                         // for (MidiPin *last_pin_note_on : pluck_device.last_pin_note_on_list) {

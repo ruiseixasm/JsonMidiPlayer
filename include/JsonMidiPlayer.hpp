@@ -252,10 +252,8 @@ public:
                 case action_channel_pressure:
                     return this->getDataByte(1) != midi_pin.getDataByte(1);
             }
-        } else if (this->getAction() == action_note_on) {
-            if (midi_pin.getAction() == action_note_off) {
-                return this->getChannel() != midi_pin.getChannel();
-            }
+        } else if (this->getAction() == action_note_on && midi_pin.getAction() == action_note_off) {
+            return this->getChannel() != midi_pin.getChannel();
         }
         return true;
     }

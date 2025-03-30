@@ -473,89 +473,89 @@ int PlayList(const char* json_str, bool verbose) {
                     case action_system:
                         switch (pluck_pin.getStatusByte()) {
                             case system_timing_clock:
-                                if (pluck_device.last_pin_clock_message != nullptr) {
-                                    if (pluck_device.last_pin_clock_message->getTime() == pluck_pin.getTime()) {
-                                        if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_stop) {      // Clock Stop
-                                            pluck_device.last_pin_clock_message->setStatusByte(system_timing_clock);
+                                if (pluck_device.last_pin_clock != nullptr) {
+                                    if (pluck_device.last_pin_clock->getTime() == pluck_pin.getTime()) {
+                                        if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
+                                            pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         }
                                         midiRedundant.push_back(pluck_pin);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
-                                    } else if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_stop) {   // Clock Stop
+                                    } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
                                         pluck_pin.setStatusByte(system_clock_continue);
                                     }
                                 } else {
                                     pluck_pin.setStatusByte(system_clock_start);
                                 }
-                                pluck_device.last_pin_clock_message = &pluck_pin;
+                                pluck_device.last_pin_clock = &pluck_pin;
                                 ++pin_it; // Only increment if no removal
                             break;
                             case system_clock_start:
-                                if (pluck_device.last_pin_clock_message != nullptr) {
-                                    if (pluck_device.last_pin_clock_message->getTime() == pluck_pin.getTime()) {
-                                        if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_stop) {      // Clock Stop
-                                            pluck_device.last_pin_clock_message->setStatusByte(system_timing_clock);
+                                if (pluck_device.last_pin_clock != nullptr) {
+                                    if (pluck_device.last_pin_clock->getTime() == pluck_pin.getTime()) {
+                                        if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
+                                            pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         }
                                         midiRedundant.push_back(pluck_pin);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
-                                    } else if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_stop) {   // Clock Stop
+                                    } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
                                         pluck_pin.setStatusByte(system_clock_continue);
                                     } else {
                                         pluck_pin.setStatusByte(system_timing_clock);
                                     }
                                 }
-                                pluck_device.last_pin_clock_message = &pluck_pin;
+                                pluck_device.last_pin_clock = &pluck_pin;
                                 ++pin_it; // Only increment if no removal
                             break;
                             case system_clock_stop:
-                                if (pluck_device.last_pin_clock_message != nullptr) {
-                                    if (pluck_device.last_pin_clock_message->getTime() == pluck_pin.getTime()) {
-                                        pluck_device.last_pin_clock_message->setStatusByte(system_clock_stop);
+                                if (pluck_device.last_pin_clock != nullptr) {
+                                    if (pluck_device.last_pin_clock->getTime() == pluck_pin.getTime()) {
+                                        pluck_device.last_pin_clock->setStatusByte(system_clock_stop);
                                         midiRedundant.push_back(pluck_pin);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
-                                    } else if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_stop) {   // Clock Stop
+                                    } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
                                         midiRedundant.push_back(pluck_pin);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
                                     }
                                 }
-                                pluck_device.last_pin_clock_message = &pluck_pin;
+                                pluck_device.last_pin_clock = &pluck_pin;
                                 ++pin_it; // Only increment if no removal
                             break;
                             case system_clock_continue:
-                                if (pluck_device.last_pin_clock_message != nullptr) {
-                                    if (pluck_device.last_pin_clock_message->getTime() == pluck_pin.getTime()) {
-                                        pluck_device.last_pin_clock_message->setStatusByte(system_timing_clock);
+                                if (pluck_device.last_pin_clock != nullptr) {
+                                    if (pluck_device.last_pin_clock->getTime() == pluck_pin.getTime()) {
+                                        pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         midiRedundant.push_back(pluck_pin);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
-                                    } else if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_start) {   // Clock Start
+                                    } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_start) {   // Clock Start
                                         pluck_pin.setStatusByte(system_timing_clock);
-                                    } else if (pluck_device.last_pin_clock_message->getStatusByte() == system_clock_continue) {   // Clock Continue
+                                    } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_continue) {   // Clock Continue
                                         pluck_pin.setStatusByte(system_timing_clock);
                                     } else {                                                    // NOT Clock Start or Continue
-                                        pluck_device.last_pin_clock_message->setStatusByte(system_clock_stop);
+                                        pluck_device.last_pin_clock->setStatusByte(system_clock_stop);
                                     }
                                 } else {
                                     pluck_pin.setStatusByte(system_clock_start);
                                 }
-                                pluck_device.last_pin_clock_message = &pluck_pin;
+                                pluck_device.last_pin_clock = &pluck_pin;
                                 ++pin_it; // Only increment if no removal
                             break;
                             case system_song_pointer:
-                                if (pluck_device.last_pin_clock_message != nullptr) {
-                                    if (pluck_device.last_pin_clock_message->getTime() == pluck_pin.getTime()
-                                            && pluck_device.last_pin_clock_message->getStatusByte() == system_song_pointer
-                                            && pluck_device.last_pin_clock_message->getDataByte(1) == pluck_pin.getDataByte(1)
-                                            && pluck_device.last_pin_clock_message->getDataByte(2) == pluck_pin.getDataByte(2)) {
+                                if (pluck_device.last_pin_song_pointer != nullptr) {
+                                    if (pluck_device.last_pin_song_pointer->getTime() == pluck_pin.getTime()
+                                            && pluck_device.last_pin_song_pointer->getStatusByte() == system_song_pointer
+                                            && pluck_device.last_pin_song_pointer->getDataByte(1) == pluck_pin.getDataByte(1)
+                                            && pluck_device.last_pin_song_pointer->getDataByte(2) == pluck_pin.getDataByte(2)) {
                                         midiRedundant.push_back(pluck_pin);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
                                     }
                                 }
-                                pluck_device.last_pin_clock_message = &pluck_pin;
+                                pluck_device.last_pin_song_pointer = &pluck_pin;
                                 ++pin_it; // Only increment if no removal
                             break;
                             default:
@@ -826,8 +826,8 @@ int PlayList(const char* json_str, bool verbose) {
                     }
 
                     // MIDI CLOCK
-                    if (device.last_pin_clock_message != nullptr && device.last_pin_clock_message->getStatusByte() == system_timing_clock)
-                        device.last_pin_clock_message->setStatusByte(system_clock_stop);    // Clock Stop
+                    if (device.last_pin_clock != nullptr && device.last_pin_clock->getStatusByte() == system_timing_clock)
+                        device.last_pin_clock->setStatusByte(system_clock_stop);    // Clock Stop
                 }
             }
         }

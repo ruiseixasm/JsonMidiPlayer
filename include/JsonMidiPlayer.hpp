@@ -101,7 +101,7 @@ public:
     std::list<MidiPin*> last_pin_cc_list;          // Midi Control Change 0xB0
     std::list<MidiPin*> last_pin_cp_list;          // Midi Channel Aftertouch 0xD0
     // std::list<MidiPin*> last_pin_pb_list;          // Midi Pitch Bend 0xE0
-    MidiPin *last_pin_clock_message = nullptr;     // Midi clock messages 0xF0
+    // MidiPin *last_pin_clock_message = nullptr;     // Midi clock messages 0xF0
 
     
     std::unordered_map<unsigned char, std::list<MidiPin*>>

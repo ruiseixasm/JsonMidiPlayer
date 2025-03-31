@@ -34,7 +34,7 @@
             "type": "cppdbg",
             "request": "launch",
             "program": "${workspaceFolder}/build/JsonMidiPlayer.out",
-            "args": ["../_Linux_Export_4.1_control_change.json", "--verbose"],
+            "args": ["../../JsonMidiCreator/json/Linux/_Export_Clock_basic.json", "--verbose"],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}/build/",
             "environment": [],

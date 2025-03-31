@@ -576,7 +576,7 @@ int PlayList(const char* json_str, bool verbose) {
 
             // Where the reporting is finally done
             if (verbose) std::cout << "Data stats reporting:" << std::endl;
-            if (verbose) std::cout << "\tJSON processing time (ms):                " << std::setw(10) << play_reporting.json_processing << std::endl;
+            if (verbose) std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << play_reporting.json_processing << std::endl;
             if (verbose) std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
             if (verbose) std::cout << "\tTotal validated Midi Messages (included): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
@@ -922,7 +922,7 @@ int PlayList(const char* json_str, bool verbose) {
 
             // Where the reporting is finally done
             if (verbose) std::cout << "Data stats reporting:" << std::endl;
-            if (verbose) std::cout << "\tJSON processing time (ms):                " << std::setw(10) << play_reporting.json_processing << std::endl;
+            if (verbose) std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << play_reporting.json_processing << std::endl;
             if (verbose) std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
             if (verbose) std::cout << "\tTotal validated Midi Messages (included): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;

@@ -75,15 +75,26 @@ Drag is the amount of time the entire playing got out of sync while Delay is jus
 ## Example of reported Drag and Delay
 Despite some delay, that didn't mean any drag in the example bellow.
 ```
+Available output Midi devices:
+        Midi device #0: Microsoft GS Wavetable Synth 0
+        Midi device #1: Studio 68c MIDI Out 1
+        Midi device #2: Blofeld 2
+        Midi device #3: loopMIDI Port 3
+        Midi device #4: Virtual Instrument 4
+        Midi device #5: Elektron Digitakt 5
+Devices connected:       Elektron Digitakt 5   Blofeld 2   Virtual Instrument 4
+Data stats reporting:
+        Midi Messages processing time (ms):                7
+        Total generated Midi Messages (included):       2310
+        Total validated Midi Messages (included):       2312
+        Total redundant Midi Messages (excluded):          0
+        Total incorrect Midi Messages (excluded):          0
+Devices disconnected:    Blofeld 2   Virtual Instrument 4   Elektron Digitakt 5
 Midi stats reporting:
-        Data pre-processing time (ms):                     3
-        Total processed Midi Messages (sent):            152
-        Total redundant Midi Messages (not sent):          0
-        Total excluded Midi Messages (not sent):           0
         Total drag (ms):                                   0.000 \
-        Total delay (ms):                                 12.203 /
-        Maximum delay (ms):                                0.357 \
-        Minimum delay (ms):                                0.001 /
-        Average delay (ms):                                0.080 \
-        Standard deviation of delays (ms):                 0.082 /
+        Cumulative delay (ms):                           581.065 /
+        Maximum delay (ms):                                1.489 \
+        Minimum delay (ms):                                0.000 /
+        Average delay (ms):                                0.251 \
+        Standard deviation of delays (ms):                 0.213 /
 ```

@@ -456,6 +456,14 @@ int PlayList(const char* json_str, bool verbose) {
             auto pre_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
             play_reporting.pre_processing = pre_processing_time.count();
 
+            // Where the reporting is finally done
+            if (verbose) std::cout << "Data stats reporting:" << std::endl;
+            if (verbose) std::cout << "\tJSON processing time (ms):                " << std::setw(10) << play_reporting.pre_processing << std::endl;
+            if (verbose) std::cout << "\tTotal validated Midi Messages (included): " << std::setw(10) << play_reporting.total_processed << std::endl;
+            if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
+            if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_excluded << std::endl;
+
+
         } else {
 
             //
@@ -789,9 +797,16 @@ int PlayList(const char* json_str, bool verbose) {
             auto data_processing_finish = std::chrono::high_resolution_clock::now();
 
             auto pre_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
-            play_reporting.pre_processing = pre_processing_time.count();
 
-            if (verbose) std::cout << "JSON processed in: " << play_reporting.pre_processing << " ms" << std::endl;
+            play_reporting.pre_processing = pre_processing_time.count();
+            play_reporting.total_processed = midiToProcess.size();
+
+            // Where the reporting is finally done
+            if (verbose) std::cout << "Data stats reporting:" << std::endl;
+            if (verbose) std::cout << "\tJSON processing time (ms):                " << std::setw(10) << play_reporting.pre_processing << std::endl;
+            if (verbose) std::cout << "\tTotal validated Midi Messages (included): " << std::setw(10) << play_reporting.total_processed << std::endl;
+            if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
+            if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_excluded << std::endl;
 
             //
             // Where the Midi messages are sent to each Device
@@ -839,8 +854,6 @@ int PlayList(const char* json_str, bool verbose) {
             // Where the final Statistics are calculated
             //
 
-            play_reporting.total_processed = midiProcessed.size();
-
             if (play_reporting.total_processed > 0) {
 
                 for (auto &midi_pin : midiProcessed) {
@@ -869,10 +882,6 @@ int PlayList(const char* json_str, bool verbose) {
 
     // Where the reporting is finally done
     if (verbose) std::cout << std::endl << "Midi stats reporting:" << std::endl;
-    if (verbose) std::cout << "\tTotal processed Midi Messages (sent):     " << std::setw(10) << play_reporting.total_processed << std::endl;
-    if (verbose) std::cout << "\tTotal redundant Midi Messages (not sent): " << std::setw(10) << play_reporting.total_redundant << std::endl;
-    if (verbose) std::cout << "\tTotal excluded Midi Messages (not sent):  " << std::setw(10) << play_reporting.total_excluded << std::endl;
-        
     // Set fixed floating-point notation and precision
     if (verbose) std::cout << std::fixed << std::setprecision(3);
     if (verbose) std::cout << "\tTotal drag (ms):      " << std::setw(34) << play_reporting.total_drag << " \\" << std::endl;

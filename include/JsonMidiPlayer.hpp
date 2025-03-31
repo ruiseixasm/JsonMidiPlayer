@@ -22,7 +22,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #include <vector>
 #include <list>
 #include <algorithm>
-#include <cmath>
+#include <cmath>                // For std::round
 #include <cstdlib>
 #include <thread>               // Include for std::this_thread::sleep_for
 #include <chrono>               // Include for std::chrono::seconds
@@ -30,6 +30,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #include "RtMidi.h"             // Includes the necessary MIDI library
 #include <unordered_map>
 #include <memory>
+#include <iomanip>              // For std::fixed and std::setprecision
 
 #ifdef _WIN32
     #define NOMINMAX    // disables the definition of min and max macros.

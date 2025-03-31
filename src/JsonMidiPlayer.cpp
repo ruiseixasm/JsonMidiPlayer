@@ -129,6 +129,15 @@ void setRealTimeScheduling() {
 #endif
 }
 
+
+double get_time_ms(int minutes_numerator, int minutes_denominator) {
+
+    double milliseconds = minutes_numerator * 60000.0 / minutes_denominator;
+    // Round to three decimal places
+    return std::round(milliseconds * 1000.0) / 1000.0;
+}
+
+
 int PlayList(const char* json_str, bool verbose) {
     
     disableBackgroundThrottling();
@@ -237,6 +246,10 @@ int PlayList(const char* json_str, bool verbose) {
                 MidiDevice *clip_midi_device = nullptr;
                 // Dictionary where the key is a JSON list
                 std::unordered_map<nlohmann::json, MidiDevice*, JsonHash, JsonEqual> devices_dict;        
+
+
+
+
 
                 for (auto jsonElement : jsonFileContent)
                 {

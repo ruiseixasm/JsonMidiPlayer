@@ -791,6 +791,8 @@ int PlayList(const char* json_str, bool verbose) {
             auto pre_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
             play_reporting.pre_processing = pre_processing_time.count();
 
+            if (verbose) std::cout << "JSON processed in: " << play_reporting.pre_processing << " ms" << std::endl;
+
             //
             // Where the Midi messages are sent to each Device
             //
@@ -867,7 +869,6 @@ int PlayList(const char* json_str, bool verbose) {
 
     // Where the reporting is finally done
     if (verbose) std::cout << std::endl << "Midi stats reporting:" << std::endl;
-    if (verbose) std::cout << "\tData pre-processing time (ms):            " << std::setw(10) << play_reporting.pre_processing << std::endl;
     if (verbose) std::cout << "\tTotal processed Midi Messages (sent):     " << std::setw(10) << play_reporting.total_processed << std::endl;
     if (verbose) std::cout << "\tTotal redundant Midi Messages (not sent): " << std::setw(10) << play_reporting.total_redundant << std::endl;
     if (verbose) std::cout << "\tTotal excluded Midi Messages (not sent):  " << std::setw(10) << play_reporting.total_excluded << std::endl;

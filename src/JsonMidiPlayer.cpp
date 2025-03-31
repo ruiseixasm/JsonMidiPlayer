@@ -130,8 +130,6 @@ void setRealTimeScheduling() {
 }
 
 
-
-
 double get_time_ms(int minutes_numerator, int minutes_denominator) {
 
     double milliseconds = minutes_numerator * 60000.0 / minutes_denominator;
@@ -251,8 +249,6 @@ int PlayList(const char* json_str, bool verbose) {
                 std::unordered_map<nlohmann::json, MidiDevice*, JsonHash, JsonEqual> devices_dict;
                 
 
-
-                
                 // Check if jsonFileContent is a non-empty array
                 if (jsonFileContent.is_array() && !jsonFileContent.empty()) {
 
@@ -352,8 +348,6 @@ int PlayList(const char* json_str, bool verbose) {
                 } else {
                     if (verbose) std::cerr << "JSON file is empty." << std::endl;
                 }
-
-
 
 
                 for (auto jsonElement : jsonFileContent)

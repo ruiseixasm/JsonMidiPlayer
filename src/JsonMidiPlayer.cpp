@@ -203,6 +203,8 @@ int PlayList(const char* json_str, bool verbose) {
         // Where the JSON content is processed and added up the Pluck midi messages
         //
 
+        if (verbose) std::cout << "Devices connected:    ";
+
         auto data_processing_start = std::chrono::high_resolution_clock::now();
 
         try {
@@ -235,8 +237,6 @@ int PlayList(const char* json_str, bool verbose) {
                 MidiDevice *clip_midi_device = nullptr;
                 // Dictionary where the key is a JSON list
                 std::unordered_map<nlohmann::json, MidiDevice*, JsonHash, JsonEqual> devices_dict;        
-
-                if (verbose) std::cout << "Devices connected:    ";
 
                 for (auto jsonElement : jsonFileContent)
                 {
@@ -438,6 +438,8 @@ int PlayList(const char* json_str, bool verbose) {
         } catch (const nlohmann::json::parse_error& e) {
             if (verbose) std::cerr << "JSON parse error: " << e.what() << std::endl;
         }
+
+        if (verbose) std::cout << std::endl;
 
         #ifdef DEBUGGING
         debugging_now = std::chrono::high_resolution_clock::now();
@@ -859,8 +861,8 @@ int PlayList(const char* json_str, bool verbose) {
             }
         }
         
-    if (verbose) std::cout << std::endl << "Devices disconnected: ";
-    // Exits devices scope, automatically disconnects them
+    if (verbose) std::cout << "Devices disconnected: ";
+    // Exiting devices scope automatically disconnects them
     }
 
     // Where the reporting is finally done

@@ -162,7 +162,6 @@ int PlayList(const char* json_str, bool verbose) {
         std::vector<MidiDevice> midi_devices;
         std::list<MidiPin> midiToProcess;
         std::list<MidiPin> midiProcessed;
-        std::list<MidiPin> midiRedundant;
 
         //
         // Where each Available Device is collected BUT NOT connected
@@ -486,7 +485,7 @@ int PlayList(const char* json_str, bool verbose) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
                                             pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         }
-                                        midiRedundant.push_back(pluck_pin);
+                                        ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
                                     } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
@@ -504,7 +503,7 @@ int PlayList(const char* json_str, bool verbose) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
                                             pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         }
-                                        midiRedundant.push_back(pluck_pin);
+                                        ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
                                     } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
@@ -520,11 +519,11 @@ int PlayList(const char* json_str, bool verbose) {
                                 if (pluck_device.last_pin_clock != nullptr) {
                                     if (pluck_device.last_pin_clock->getTime() == pluck_pin.getTime()) {
                                         pluck_device.last_pin_clock->setStatusByte(system_clock_stop);
-                                        midiRedundant.push_back(pluck_pin);
+                                        ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
                                     } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
-                                        midiRedundant.push_back(pluck_pin);
+                                        ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
                                     }
@@ -536,7 +535,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 if (pluck_device.last_pin_clock != nullptr) {
                                     if (pluck_device.last_pin_clock->getTime() == pluck_pin.getTime()) {
                                         pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
-                                        midiRedundant.push_back(pluck_pin);
+                                        ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
                                     } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_start) {   // Clock Start
@@ -558,7 +557,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             && pluck_device.last_pin_song_pointer->getStatusByte() == system_song_pointer
                                             && pluck_device.last_pin_song_pointer->getDataByte(1) == pluck_pin.getDataByte(1)
                                             && pluck_device.last_pin_song_pointer->getDataByte(2) == pluck_pin.getDataByte(2)) {
-                                        midiRedundant.push_back(pluck_pin);
+                                        ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
                                         goto skip_to_2;
                                     }
@@ -594,14 +593,14 @@ int PlayList(const char* json_str, bool verbose) {
                                         ++pin_it; // Only increment if no removal
                                     } else {
                                         --(*last_pin_note_on);  // Decrements level
-                                        midiRedundant.push_back(pluck_pin);
+                                        ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
                                     }
                                     goto skip_to_2;
                                 }
                             }
                         }
-                        midiRedundant.push_back(pluck_pin);  // Note Off as no Note On pair
+                        ++(play_reporting.total_redundant);  // Note Off as no Note On pair
                         pin_it = midiToProcess.erase(pin_it);
                     }
                     break;
@@ -663,7 +662,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 last_pin_16.setDataByte(2, pluck_pin.getDataByte(2));
                                 ++pin_it; // Only increment if no removal
                             } else {
-                                midiRedundant.push_back(pluck_pin);
+                                ++(play_reporting.total_redundant);
                                 pin_it = midiToProcess.erase(pin_it);
                             }
                         } else {
@@ -686,7 +685,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 last_pin_8.setDataByte(2, pluck_pin.getDataByte(2));
                                 ++pin_it; // Only increment if no removal
                             } else {
-                                midiRedundant.push_back(pluck_pin);
+                                ++(play_reporting.total_redundant);
                                 pin_it = midiToProcess.erase(pin_it);
                             }
                         } else {
@@ -708,7 +707,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
                                 ++pin_it; // Only increment if no removal
                             } else {
-                                midiRedundant.push_back(pluck_pin);
+                                ++(play_reporting.total_redundant);
                                 pin_it = midiToProcess.erase(pin_it);
                             }
                         } else {
@@ -800,8 +799,8 @@ int PlayList(const char* json_str, bool verbose) {
             );
             double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
             midi_pin.setDelayTime(delay_time_ms);
-            midiProcessed.push_back(midi_pin);
-            midiToProcess.pop_front();
+            midiProcessed.push_back(std::move(midiToProcess.front()));  // Move the object
+            midiToProcess.pop_front();  // Remove the first element
 
             // Process drag if existent
             if (delay_time_ms > DRAG_DURATION_MS)
@@ -820,8 +819,7 @@ int PlayList(const char* json_str, bool verbose) {
         // Where the final Statistics are calculated
         //
 
-        play_reporting.total_processed  = midiProcessed.size();
-        play_reporting.total_redundant  = midiRedundant.size();
+        play_reporting.total_processed = midiProcessed.size();
 
         if (play_reporting.total_processed > 0) {
 

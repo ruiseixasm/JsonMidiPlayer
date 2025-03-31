@@ -668,7 +668,6 @@ int PlayList(const char* json_str, bool verbose) {
                             }
                         } else {
                             // Needs to use a pin dummy copy given that their midi parameters may be changed
-                            // Adds a new MidiPin as a copy to the list of pins to be processed
                             dict_last.emplace(dict_key, MidiPin(pluck_pin));    // Just a dummy copy
                             ++pin_it; // Only increment if no removal
                         }
@@ -692,7 +691,6 @@ int PlayList(const char* json_str, bool verbose) {
                             }
                         } else {
                             // Needs to use a pin dummy copy given that their midi parameters may be changed
-                            // Adds a new MidiPin as a copy to the list of pins to be processed
                             dict_last.emplace(dict_key, MidiPin(pluck_pin));    // Just a dummy copy
                             ++pin_it; // Only increment if no removal
                         }
@@ -715,7 +713,6 @@ int PlayList(const char* json_str, bool verbose) {
                             }
                         } else {
                             // Needs to use a pin dummy copy given that their midi parameters may be changed
-                            // Adds a new MidiPin as a copy to the list of pins to be processed
                             dict_last.emplace(dict_key, MidiPin(pluck_pin));    // Just a dummy copy
                             ++pin_it; // Only increment if no removal
                         }

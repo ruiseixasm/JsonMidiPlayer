@@ -53,9 +53,11 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 // #define DEBUGGING true
 #define FILE_TYPE "Json Midi Player"
 #define FILE_URL  "https://github.com/ruiseixasm/JsonMidiPlayer"
-#define VERSION   "4.2.0"
+#define VERSION   "4.2.1"
 #define DRAG_DURATION_MS (1000.0/((120/60)*24))
 
+
+// Taken from: https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
 
 const unsigned char action_note_off         = 0x80; // Note off
 const unsigned char action_note_on          = 0x90; // Note on
@@ -81,62 +83,7 @@ const unsigned char system_system_reset     = 0xFF; // System Reset
 
 
 
-class MidiPin;
-
-
-class MidiDevice {
-private:
-    RtMidiOut midiOut;
-    const std::string name;
-    const unsigned int port;
-    const bool verbose;
-    bool opened_port = false;
-    bool unavailable_device = false;
-
-public:
-
-    std::unordered_map<unsigned char, std::list<MidiPin*>>
-                                                last_pin_note_on;   // For Note On tracking
-    std::unordered_map<unsigned char, MidiPin*> last_pin_byte_8;    // For Pitch Bend and Aftertouch alike
-    std::unordered_map<uint16_t, MidiPin*>      last_pin_byte_16;   // For Control Change and Key Pressure
-    MidiPin *last_pin_clock = nullptr;          // Midi clock messages 0xF0
-    MidiPin *last_pin_song_pointer = nullptr;   // Midi clock messages 0xF2
-
-
-public:
-    MidiDevice(std::string device_name, unsigned int device_port, bool verbose = false)
-                : name(device_name), port(device_port), verbose(verbose) { }
-    ~MidiDevice() { closePort(); }
-
-    // Move constructor
-    MidiDevice(MidiDevice &&other) noexcept : midiOut(std::move(other.midiOut)),
-            name(std::move(other.name)), port(other.port), verbose(other.verbose),
-            opened_port(other.opened_port) { }
-
-    // Delete the copy constructor and copy assignment operator
-    MidiDevice(const MidiDevice &) = delete;
-    MidiDevice &operator=(const MidiDevice &) = delete;
-
-    // Move assignment operator
-    MidiDevice &operator=(MidiDevice &&other) noexcept {
-        if (this != &other) {
-            // Since name and port are const, they cannot be assigned.
-            opened_port = other.opened_port;
-            // midiOut can't be assigned using the = assignment operator because has none.
-            // midiOut = std::move(other.midiOut);
-        }
-        std::cout << "Move assigned: " << name << std::endl;
-        return *this;
-    }
-
-    bool openPort();
-    void closePort();
-    bool hasPortOpen() const;
-    const std::string& getName() const;
-    unsigned int getDevicePort() const;
-    void sendMessage(const std::vector<unsigned char> *midi_message);
-};
-
+class MidiDevice;
 
 
 class MidiPin {
@@ -146,10 +93,22 @@ private:
     const unsigned char priority;
     MidiDevice * const midi_device = nullptr;
     std::vector<unsigned char> midi_message;  // Replaces midi_message[3]
-    // https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
+    // Auxiliary variable for the final playing loop!!
     double delay_time_ms = -1;
 
 public:
+    // Pin DEFAULT constructor, no arguments,
+    // needed for emplace and insert of the std::unordered_map inside MidiDevice class !!
+    MidiPin()
+        : time_ms(0),                   // Default to 0
+        priority(0),                    // Default to 0
+        midi_device(nullptr),           // Default to nullptr
+        midi_message(),                 // Default to an empty vector
+        delay_time_ms(-1),              // Default to -1
+        level(1)                        // Default to 1
+    { }
+
+    // Pin constructor
     MidiPin(double time_milliseconds, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
             : time_ms(time_milliseconds),
@@ -157,6 +116,16 @@ public:
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
         { }
+
+    // Pin copy constructor
+    MidiPin(const MidiPin& other)
+        : time_ms(other.time_ms),                     // Copy the time_ms
+          midi_device(other.midi_device),             // Copy the pointer to the MidiDevice
+          midi_message(other.midi_message),           // Copy the midi_message vector
+          priority(other.priority),                   // Copy the priority
+          delay_time_ms(other.delay_time_ms),         // Copy the delay_time_ms
+          level(other.level)                          // Copy the level
+    { }
 
     double getTime() const {
         return time_ms;
@@ -166,14 +135,7 @@ public:
         return midi_device;
     }
 
-    unsigned int getDevicePort() const {
-        return midi_device->getDevicePort();
-    }
-
-    void pluckTooth() {
-        if (midi_device != nullptr)
-            midi_device->sendMessage(&midi_message);
-    }
+    void pluckTooth();
 
     void setDelayTime(double delay_time_ms) {
         this->delay_time_ms = delay_time_ms;
@@ -181,6 +143,10 @@ public:
 
     double getDelayTime() const {
         return this->delay_time_ms;
+    }
+
+    std::vector<unsigned char> getMessage() const {
+        return this->midi_message; // Returns a copy
     }
 
     void setStatusByte(unsigned char status_byte) {
@@ -268,6 +234,67 @@ public:
 
 };
 
+
+class MidiDevice {
+    private:
+        RtMidiOut midiOut;
+        const std::string name;
+        const unsigned int port;
+        const bool verbose;
+        bool opened_port = false;
+        bool unavailable_device = false;
+    
+    public:
+    
+        // Keeps MidiPin pointers
+        std::unordered_map<unsigned char, std::list<MidiPin*>>
+                                                    last_pin_note_on;   // For Note On tracking
+        
+        // Keeps MidiPin dummy copies
+        std::unordered_map<unsigned char, MidiPin>  last_pin_byte_8;    // For Pitch Bend and Aftertouch alike
+        std::unordered_map<uint16_t, MidiPin>       last_pin_byte_16;   // For Control Change and Key Pressure
+
+        // Keeps MidiPin pointers
+        MidiPin *last_pin_clock = nullptr;          // Midi clock messages 0xF0
+        MidiPin *last_pin_song_pointer = nullptr;   // Midi clock messages 0xF2
+    
+    
+    public:
+        MidiDevice(std::string device_name, unsigned int device_port, bool verbose = false)
+                    : name(device_name), port(device_port), verbose(verbose) { }
+        ~MidiDevice() { closePort(); }
+    
+        // Move constructor
+        MidiDevice(MidiDevice &&other) noexcept : midiOut(std::move(other.midiOut)),
+                name(std::move(other.name)), port(other.port), verbose(other.verbose),
+                opened_port(other.opened_port) { }
+    
+        // Delete the copy constructor and copy assignment operator
+        MidiDevice(const MidiDevice &) = delete;
+        MidiDevice &operator=(const MidiDevice &) = delete;
+    
+        // Move assignment operator
+        MidiDevice &operator=(MidiDevice &&other) noexcept {
+            if (this != &other) {
+                // Since name and port are const, they cannot be assigned.
+                opened_port = other.opened_port;
+                // midiOut can't be assigned using the = assignment operator because has none.
+                // midiOut = std::move(other.midiOut);
+            }
+            std::cout << "Move assigned: " << name << std::endl;
+            return *this;
+        }
+    
+        bool openPort();
+        void closePort();
+        bool hasPortOpen() const;
+        const std::string& getName() const;
+        unsigned int getDevicePort() const;
+        void sendMessage(const std::vector<unsigned char> *midi_message);
+    };
+    
+
+    
 
 
 // Declare the function in the header file

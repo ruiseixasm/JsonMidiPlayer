@@ -28,7 +28,7 @@ bool MidiDevice::openPort() {
         try {
             midiOut.openPort(port);
             opened_port = true;
-            if (verbose) std::cout << "Midi device connected: " << name << std::endl;
+            if (verbose) std::cout << "   " << name;
         } catch (RtMidiError &error) {
             unavailable_device = true;
             error.printMessage();
@@ -41,7 +41,7 @@ void MidiDevice::closePort() {
     if (opened_port) {
         midiOut.closePort();
         opened_port = false;
-        if (verbose) std::cout << "Midi device disconnected: " << name << std::endl;
+        if (verbose) std::cout << "   " << name;
     }
 }
 
@@ -235,6 +235,8 @@ int PlayList(const char* json_str, bool verbose) {
                 MidiDevice *clip_midi_device = nullptr;
                 // Dictionary where the key is a JSON list
                 std::unordered_map<nlohmann::json, MidiDevice*, JsonHash, JsonEqual> devices_dict;        
+
+                if (verbose) std::cout << "Devices connected:    ";
 
                 for (auto jsonElement : jsonFileContent)
                 {
@@ -856,10 +858,13 @@ int PlayList(const char* json_str, bool verbose) {
                 play_reporting.sd_delay = std::sqrt(play_reporting.sd_delay);
             }
         }
+        
+    if (verbose) std::cout << std::endl << "Devices disconnected: ";
+    // Exits devices scope, automatically disconnects them
     }
 
     // Where the reporting is finally done
-    if (verbose) std::cout << "Midi stats reporting:" << std::endl;
+    if (verbose) std::cout << std::endl << "Midi stats reporting:" << std::endl;
     if (verbose) std::cout << "\tData pre-processing time (ms):            " << std::setw(10) << play_reporting.pre_processing << std::endl;
     if (verbose) std::cout << "\tTotal processed Midi Messages (sent):     " << std::setw(10) << play_reporting.total_processed << std::endl;
     if (verbose) std::cout << "\tTotal redundant Midi Messages (not sent): " << std::setw(10) << play_reporting.total_redundant << std::endl;

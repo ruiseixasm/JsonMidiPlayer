@@ -454,7 +454,7 @@ int PlayList(const char* json_str, bool verbose) {
         
             // Then sort by Priority (Ascendent)
             // Must be "<" instead of "<=" due to the mysterious "strict weak ordering"
-            // Explanation here: https://youtu.be/fi0CQ7laiXE?si=cAv_1vFW2sEP4Ueq
+            // Explanation here: https://youtu.be/fi0CQ7laiXE?si=fysJC-UdG2lJytjU&t=1542
             return a.getPriority() < b.getPriority();      // Secondary: Sort by priority (ascending)
             
         });

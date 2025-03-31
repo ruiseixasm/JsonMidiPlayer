@@ -159,6 +159,8 @@ int PlayList(const char* json_str, bool verbose) {
 
     // Where the playing happens
     {
+        // Under it's how scope in order the release all devices before the stats reporting !
+
         std::vector<MidiDevice> midi_devices;
         std::list<MidiPin> midiToProcess;
         std::list<MidiPin> midiProcessed;
@@ -452,7 +454,7 @@ int PlayList(const char* json_str, bool verbose) {
         
             // Then sort by Priority (Ascendent)
             // Must be "<" instead of "<=" due to the mysterious "strict weak ordering"
-            // Explanation: https://youtu.be/fi0CQ7laiXE?si=cAv_1vFW2sEP4Ueq
+            // Explanation here: https://youtu.be/fi0CQ7laiXE?si=cAv_1vFW2sEP4Ueq
             return a.getPriority() < b.getPriority();      // Secondary: Sort by priority (ascending)
             
         });
@@ -472,6 +474,7 @@ int PlayList(const char* json_str, bool verbose) {
         // Loop through the list and remove elements
         for (auto pin_it = midiToProcess.begin(); pin_it != midiToProcess.end(); ) {
 
+            // Auxiliary variables
             MidiPin &pluck_pin = *pin_it;
             MidiDevice &pluck_device = *pluck_pin.getDevice();
 
@@ -725,15 +728,15 @@ int PlayList(const char* json_str, bool verbose) {
         skip_to_2: continue;
         }
 
-        // MIDI NOTES SHALL NOT BE LEFT PRESSED !!
         // Get time_ms of last message
         auto last_message_time_ms = midiToProcess.back().getTime();
-
-
+        
+        
         for (auto &device : midi_devices) {
-
+            
             if (device.hasPortOpen()) {
-
+                
+                // MIDI NOTES SHALL NOT BE LEFT PRESSED !!
                 // Add the needed note off for all those still on at the end!
                 // Iterate over all keys and values
                 for (const auto& pair : device.last_pin_note_on) {
@@ -752,7 +755,7 @@ int PlayList(const char* json_str, bool verbose) {
                     }
                 }
 
-                // MIDI CLOCK
+                // LAST MIDI CLOCK MESSAGE SHALL BE STOP
                 if (device.last_pin_clock != nullptr && device.last_pin_clock->getStatusByte() == system_timing_clock)
                     device.last_pin_clock->setStatusByte(system_clock_stop);    // Clock Stop
             }
@@ -860,6 +863,8 @@ int PlayList(const char* json_str, bool verbose) {
 
     return 0;
 }
+
+
 
 void disableBackgroundThrottling() {
 #ifdef _WIN32

@@ -266,14 +266,13 @@ int PlayList(const char* json_str, bool verbose) {
                         
                         try
                         {
-
                             unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
-                            unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
-                            unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
-                            unsigned int stop_mode = clockValue["stop_mode"];
 
                             if (total_clock_pulses > 0) {
 
+                                unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
+                                unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
+                                unsigned int stop_mode = clockValue["stop_mode"];
                                 // The devices JSON list key
                                 nlohmann::json clockDevices = clockValue["devices"];
 
@@ -293,10 +292,27 @@ int PlayList(const char* json_str, bool verbose) {
                                                 if (device.openPort()) {
                                                     devices_dict[clockDevices] = &device;
                                                     
-                                                    
+                                                    std::vector<unsigned char> json_midi_message = { system_clock_start };
+                                                    midiToProcess.push_back( MidiPin(0.0, &device, json_midi_message, 0x30) );
 
+                                                    for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
 
+                                                        json_midi_message = { system_timing_clock };
+                                                        midiToProcess.push_back(MidiPin(
+                                                            get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
+                                                            &device,
+                                                            json_midi_message,
+                                                            0x30)
+                                                        );
+                                                    }
 
+                                                    json_midi_message = { system_clock_stop };
+                                                    midiToProcess.push_back(MidiPin(
+                                                        get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator),
+                                                        &device,
+                                                        json_midi_message,
+                                                        0x30)
+                                                    );
                                                 }
                                             }
                                         }

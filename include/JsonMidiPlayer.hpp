@@ -53,7 +53,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 // #define DEBUGGING true
 #define FILE_TYPE "Json Midi Player"
 #define FILE_URL  "https://github.com/ruiseixasm/JsonMidiPlayer"
-#define VERSION   "4.2.2"
+#define VERSION   "4.2.3"
 #define DRAG_DURATION_MS (1000.0/((120/60)*24))
 
 
@@ -189,22 +189,22 @@ public:
 
     // Intended for Note On only
     bool operator == (const MidiPin &midi_pin) {
+        // mapped by Channel, so, with the same Channel for sure
         return this->getDataByte(1) == midi_pin.getDataByte(1); // Key number
     }
 
     // Intended for Automation messages only
     bool operator != (const MidiPin &midi_pin) {
-        if (this->getStatusByte() == midi_pin.getStatusByte()) {
-            switch (midi_pin.getAction()) {
-                case action_control_change:
-                case action_key_pressure:
-                    return this->getDataByte(2) != midi_pin.getDataByte(2);
-                case action_pitch_bend:
-                    return this->getDataByte(1) != midi_pin.getDataByte(1) ||
-                           this->getDataByte(2) != midi_pin.getDataByte(2);
-                case action_channel_pressure:
-                    return this->getDataByte(1) != midi_pin.getDataByte(1);
-            }
+        // mapped by status byte, so, with the same action type for sure
+        switch (this->getAction()) {
+            case action_control_change:
+            case action_key_pressure:
+                return this->getDataByte(2) != midi_pin.getDataByte(2);
+            case action_pitch_bend:
+                return this->getDataByte(1) != midi_pin.getDataByte(1) ||
+                        this->getDataByte(2) != midi_pin.getDataByte(2);
+            case action_channel_pressure:
+                return this->getDataByte(1) != midi_pin.getDataByte(1);
         }
         return true;
     }

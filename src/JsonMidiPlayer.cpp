@@ -266,15 +266,20 @@ int PlayList(const char* json_str, bool verbose) {
                         
                         try
                         {
-                            unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
+                            const unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
 
                             if (total_clock_pulses > 0) {
 
-                                unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
-                                unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
-                                unsigned int stop_mode = clockValue["stop_mode"];
+                                const unsigned char clock_stop      = 0;
+                                const unsigned char clock_pause     = 1;
+                                const unsigned char clock_continue  = 2;
+                                const unsigned char clock_total     = 3;
+
+                                const unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
+                                const unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
+                                const unsigned int stop_mode = clockValue["stop_mode"];
                                 // The devices JSON list key
-                                nlohmann::json clockDevices = clockValue["devices"];
+                                const nlohmann::json clockDevices = clockValue["devices"];
 
                                 if (devices_dict.find(clockDevices) != devices_dict.end()) {
                                 
@@ -292,27 +297,35 @@ int PlayList(const char* json_str, bool verbose) {
                                                 if (device.openPort()) {
                                                     devices_dict[clockDevices] = &device;
                                                     
-                                                    std::vector<unsigned char> json_midi_message = { system_clock_start };
-                                                    midiToProcess.push_back( MidiPin(0.0, &device, json_midi_message, 0x30) );
+                                                    if (stop_mode == clock_continue)
+                                                        midiToProcess.push_back( MidiPin(0.0, &device, { system_clock_continue }, 0x30) );
+                                                    else
+                                                        midiToProcess.push_back( MidiPin(0.0, &device, { system_clock_start }, 0x30) );
 
                                                     for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
 
-                                                        json_midi_message = { system_timing_clock };
                                                         midiToProcess.push_back(MidiPin(
                                                             get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
                                                             &device,
-                                                            json_midi_message,
-                                                            0x30)
-                                                        );
+                                                            { system_timing_clock },
+                                                            0x30
+                                                        ));
                                                     }
 
-                                                    json_midi_message = { system_clock_stop };
-                                                    midiToProcess.push_back(MidiPin(
-                                                        get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator),
-                                                        &device,
-                                                        json_midi_message,
-                                                        0x30)
-                                                    );
+                                                    auto last_position_ms = get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator);
+                                                    midiToProcess.push_back(MidiPin(last_position_ms, &device, { system_clock_stop }, 0x30));
+
+                                                    if (stop_mode == clock_stop || stop_mode == clock_total)
+                                                        midiToProcess.push_back(MidiPin(last_position_ms, &device, { system_song_pointer, 0, 0 }, 0xB0));
+
+                                                    if (stop_mode == clock_total) {
+                                                        midiToProcess.push_back(MidiPin(
+                                                            last_position_ms,
+                                                            &device,
+                                                            { system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end },
+                                                            0xF0    // Lowest priority 16
+                                                        ));
+                                                    }
                                                 }
                                             }
                                         }

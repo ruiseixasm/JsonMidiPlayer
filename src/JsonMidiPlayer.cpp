@@ -238,7 +238,163 @@ int PlayList(const char* json_str, bool verbose) {
 
                 for (auto jsonElement : jsonFileContent)
                 {
-                    if (jsonElement.contains("devices")) {
+                    // Most of the time it's a midi_message being processed, so it makes sense to be the first to check
+                    if (jsonElement.contains("midi_message")) {
+
+                        if (clip_midi_device != nullptr) {
+
+                            play_reporting.total_excluded++;
+                            double time_milliseconds = jsonElement["time_ms"];
+
+                            // Create an API with the default API
+                            try
+                            {
+                                if (time_milliseconds < 0) {
+
+                                    continue;
+                                    
+                                } else {
+
+                                    unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
+                                    std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
+                                    unsigned char priority = 0xFF;  // Lowest priority 16 by default
+                                    
+                                    unsigned char message_action = status_byte & 0xF0;
+                                    switch (message_action) {
+                                        case action_system:
+                                            switch (status_byte) {
+                                                case system_timing_clock:
+                                                case system_clock_start:
+                                                case system_clock_stop:
+                                                case system_clock_continue:
+                                                    // Any clock message falls here
+                                                    priority = 0x30 | status_byte & 0x0F;       // High priority 3
+                                                    break;
+                                                case system_song_pointer:
+                                                {
+                                                    // This is already a try catch situation
+                                                    unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                                    unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                                    if (data_byte_1 & 128 | data_byte_2 & 128)  // Makes sure it's inside the processing window
+                                                        continue;
+
+                                                    json_midi_message.push_back(data_byte_1);
+                                                    json_midi_message.push_back(data_byte_2);
+                                                    priority = 0xB0 | status_byte & 0x0F;       // Low priority 12
+                                                    break;
+                                                }
+                                                case system_sysex_start:
+                                                {
+                                                    // sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
+                                                    
+                                                    nlohmann::json data_bytes = jsonElement["midi_message"]["data_bytes"];
+                                                    for (unsigned char sysex_data_byte : data_bytes) {
+                                                        // Makes sure it's SysEx valid data
+                                                        if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
+                                                            json_midi_message.push_back(sysex_data_byte);
+                                                        } else {
+                                                            continue;
+                                                        }
+                                                    }
+                                                    if (json_midi_message.size() < 2)
+                                                        continue;
+                                                    
+                                                    json_midi_message.push_back(0xF7);  // End SysEx Data Byte
+                                                    priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 16
+                                                    break;
+                                                }
+                                                default:
+                                                    // All other messages get a low priority
+                                                    priority = 0xD0 | status_byte & 0x0F;       // Low priority 14
+                                                    break;
+                                            }
+                                            break;
+                                        case action_note_off:
+                                        case action_note_on:
+                                        case action_control_change:
+                                        case action_pitch_bend:
+                                        case action_key_pressure:
+                                        {
+                                            // This is already a try catch situation
+                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+                                            if (data_byte_1 & 128 | data_byte_2 & 128)
+                                                continue;
+
+                                            json_midi_message.push_back(data_byte_1);
+                                            json_midi_message.push_back(data_byte_2);
+
+                                            // Set the respective priorities
+                                            switch (message_action) {
+
+                                                case action_note_off:
+                                                    priority = 0x40 | status_byte & 0x0F;       // Normal priority 4
+                                                    break;
+                                                case action_note_on:
+                                                    priority = 0x50 | status_byte & 0x0F;       // Normal priority 5
+                                                    break;
+                                                case action_control_change:
+                                                    if (data_byte_1 == 1) {             // Modulation
+                                                        priority = 0x60 | status_byte & 0x0F;       // Low priority 6
+                                                    } else if (data_byte_1 == 0 || data_byte_1 == 32) {
+                                                        // 0 -  Bank Select (MSB)
+                                                        // 32 - Bank Select (LSB)
+                                                        priority = 0x00 | status_byte & 0x0F;       // Top priority 0
+                                                    } else {
+                                                        priority = 0x20 | status_byte & 0x0F;       // High priority 2
+                                                    }
+                                                    break;
+                                                case action_pitch_bend:
+                                                    priority = 0x70 | status_byte & 0x0F;       // Low priority 7
+                                                    break;
+                                                case action_key_pressure:
+                                                    priority = 0x80 | status_byte & 0x0F;       // Low priority 8
+                                                    break;
+                                            }
+                                            break;
+                                        }
+                                        case action_program_change:
+                                        case action_channel_pressure:
+                                        {
+                                            unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
+                                            if (data_byte & 128)
+                                                continue;
+                                            
+                                            json_midi_message.push_back(data_byte);
+                                            // Set the respective priorities
+                                            switch (message_action) {
+
+                                                case action_program_change:
+                                                    priority = 0x10 | status_byte & 0x0F;       // High priority 1
+                                                    break;
+                                                case action_channel_pressure:
+                                                    priority = 0x80 | status_byte & 0x0F;       // Low priority 8
+                                                    break;
+                                            }
+                                            break;
+                                        }
+
+                                        default:
+                                            continue;
+                                    }
+
+                                    midiToProcess.push_back( MidiPin(time_milliseconds, clip_midi_device, json_midi_message, priority) );
+                                    play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
+                                }
+                            }
+                            catch (const nlohmann::json::exception& e) {
+                                if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+                                continue;
+                            } catch (const std::exception& e) {
+                                if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+                                continue;
+                            } catch (...) {
+                                if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+                                continue;
+                            }
+                        }
+
+                    } else if (jsonElement.contains("devices")) {
 
                         // The devices JSON list key
                         nlohmann::json jsonDevicesNames = jsonElement["devices"];
@@ -271,158 +427,6 @@ int PlayList(const char* json_str, bool verbose) {
                                 }
                             }
                             clip_midi_device = nullptr; // No available device found
-                        }
-
-                    } else if (clip_midi_device != nullptr && jsonElement.contains("midi_message")) {
-
-                        play_reporting.total_excluded++;
-                        double time_milliseconds = jsonElement["time_ms"];
-
-                        // Create an API with the default API
-                        try
-                        {
-                            if (time_milliseconds < 0) {
-
-                                continue;
-                                
-                            } else {
-
-                                unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
-                                std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
-                                unsigned char priority = 0xFF;  // Lowest priority 16 by default
-                                
-                                unsigned char message_action = status_byte & 0xF0;
-                                switch (message_action) {
-                                    case action_system:
-                                        switch (status_byte) {
-                                            case system_timing_clock:
-                                            case system_clock_start:
-                                            case system_clock_stop:
-                                            case system_clock_continue:
-                                                // Any clock message falls here
-                                                priority = 0x30 | status_byte & 0x0F;       // High priority 3
-                                                break;
-                                            case system_song_pointer:
-                                            {
-                                                // This is already a try catch situation
-                                                unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                                unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                                if (data_byte_1 & 128 | data_byte_2 & 128)  // Makes sure it's inside the processing window
-                                                    continue;
-
-                                                json_midi_message.push_back(data_byte_1);
-                                                json_midi_message.push_back(data_byte_2);
-                                                priority = 0xB0 | status_byte & 0x0F;       // Low priority 12
-                                                break;
-                                            }
-                                            case system_sysex_start:
-                                            {
-                                                // sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
-                                                
-                                                nlohmann::json data_bytes = jsonElement["midi_message"]["data_bytes"];
-                                                for (unsigned char sysex_data_byte : data_bytes) {
-                                                    // Makes sure it's SysEx valid data
-                                                    if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
-                                                        json_midi_message.push_back(sysex_data_byte);
-                                                    } else {
-                                                        continue;
-                                                    }
-                                                }
-                                                if (json_midi_message.size() < 2)
-                                                    continue;
-                                                
-                                                json_midi_message.push_back(0xF7);  // End SysEx Data Byte
-                                                priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 16
-                                                break;
-                                            }
-                                            default:
-                                                // All other messages get a low priority
-                                                priority = 0xD0 | status_byte & 0x0F;       // Low priority 14
-                                                break;
-                                        }
-                                        break;
-                                    case action_note_off:
-                                    case action_note_on:
-                                    case action_control_change:
-                                    case action_pitch_bend:
-                                    case action_key_pressure:
-                                    {
-                                        // This is already a try catch situation
-                                        unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                        unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                        if (data_byte_1 & 128 | data_byte_2 & 128)
-                                            continue;
-
-                                        json_midi_message.push_back(data_byte_1);
-                                        json_midi_message.push_back(data_byte_2);
-
-                                        // Set the respective priorities
-                                        switch (message_action) {
-
-                                            case action_note_off:
-                                                priority = 0x40 | status_byte & 0x0F;       // Normal priority 4
-                                                break;
-                                            case action_note_on:
-                                                priority = 0x50 | status_byte & 0x0F;       // Normal priority 5
-                                                break;
-                                            case action_control_change:
-                                                if (data_byte_1 == 1) {             // Modulation
-                                                    priority = 0x60 | status_byte & 0x0F;       // Low priority 6
-                                                } else if (data_byte_1 == 0 || data_byte_1 == 32) {
-                                                    // 0 -  Bank Select (MSB)
-                                                    // 32 - Bank Select (LSB)
-                                                    priority = 0x00 | status_byte & 0x0F;       // Top priority 0
-                                                } else {
-                                                    priority = 0x20 | status_byte & 0x0F;       // High priority 2
-                                                }
-                                                break;
-                                            case action_pitch_bend:
-                                                priority = 0x70 | status_byte & 0x0F;       // Low priority 7
-                                                break;
-                                            case action_key_pressure:
-                                                priority = 0x80 | status_byte & 0x0F;       // Low priority 8
-                                                break;
-                                        }
-                                        break;
-                                    }
-                                    case action_program_change:
-                                    case action_channel_pressure:
-                                    {
-                                        unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
-                                        if (data_byte & 128)
-                                            continue;
-                                        
-                                        json_midi_message.push_back(data_byte);
-                                        // Set the respective priorities
-                                        switch (message_action) {
-
-                                            case action_program_change:
-                                                priority = 0x10 | status_byte & 0x0F;       // High priority 1
-                                                break;
-                                            case action_channel_pressure:
-                                                priority = 0x80 | status_byte & 0x0F;       // Low priority 8
-                                                break;
-                                        }
-                                        break;
-                                    }
-
-                                    default:
-                                        continue;
-                                }
-
-                                midiToProcess.push_back( MidiPin(time_milliseconds, clip_midi_device, json_midi_message, priority) );
-                                play_reporting.total_excluded--;    // Cancels out the initial ++ increase at the beginning of the loop
-                            }
-                        }
-                        catch (const nlohmann::json::exception& e) {
-                            if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
-                            continue;
-                        } catch (const std::exception& e) {
-                            if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-                            continue;
-                        } catch (...) {
-                            if (verbose) std::cerr << "Unknown error occurred." << std::endl;
-                            continue;
                         }
                     }
 

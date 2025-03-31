@@ -156,6 +156,7 @@ int PlayList(const char* json_str, bool verbose) {
 
     struct PlayReporting {
         size_t json_processing  = 0;    // milliseconds
+        size_t total_generated  = 0;
         size_t total_validated  = 0;
         size_t total_redundant  = 0;
         size_t total_incorrect  = 0;
@@ -301,6 +302,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                         midiToProcess.push_back( MidiPin(0.0, &device, { system_clock_continue }, 0x30) );
                                                     else
                                                         midiToProcess.push_back( MidiPin(0.0, &device, { system_clock_start }, 0x30) );
+                                                    play_reporting.total_generated++;
 
                                                     for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
 
@@ -310,13 +312,17 @@ int PlayList(const char* json_str, bool verbose) {
                                                             { system_timing_clock },
                                                             0x30
                                                         ));
+                                                        play_reporting.total_generated++;
                                                     }
 
                                                     auto last_position_ms = get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator);
                                                     midiToProcess.push_back(MidiPin(last_position_ms, &device, { system_clock_stop }, 0x30));
+                                                    play_reporting.total_generated++;
 
-                                                    if (stop_mode == clock_stop || stop_mode == clock_total)
+                                                    if (stop_mode == clock_stop || stop_mode == clock_total) {
                                                         midiToProcess.push_back(MidiPin(last_position_ms, &device, { system_song_pointer, 0, 0 }, 0xB0));
+                                                        play_reporting.total_generated++;
+                                                    }
 
                                                     if (stop_mode == clock_total) {
                                                         midiToProcess.push_back(MidiPin(
@@ -325,6 +331,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                             { system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end },
                                                             0xF0    // Lowest priority 16
                                                         ));
+                                                        play_reporting.total_generated++;
                                                     }
                                                 }
                                             }
@@ -570,6 +577,7 @@ int PlayList(const char* json_str, bool verbose) {
             // Where the reporting is finally done
             if (verbose) std::cout << "Data stats reporting:" << std::endl;
             if (verbose) std::cout << "\tJSON processing time (ms):                " << std::setw(10) << play_reporting.json_processing << std::endl;
+            if (verbose) std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
             if (verbose) std::cout << "\tTotal validated Midi Messages (included): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
             if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;
@@ -915,6 +923,7 @@ int PlayList(const char* json_str, bool verbose) {
             // Where the reporting is finally done
             if (verbose) std::cout << "Data stats reporting:" << std::endl;
             if (verbose) std::cout << "\tJSON processing time (ms):                " << std::setw(10) << play_reporting.json_processing << std::endl;
+            if (verbose) std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
             if (verbose) std::cout << "\tTotal validated Midi Messages (included): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
             if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;

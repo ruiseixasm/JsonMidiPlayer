@@ -18,7 +18,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 # Run cmake with a specific generator selected: cmake -g "MinGW Makefiles" ..
 cmake_minimum_required(VERSION 3.15)
 project(JsonMidiPlayer
-        VERSION 4.2.3
+        VERSION 5.0.0
         DESCRIPTION "Very simple MIDI Player of JSON files"
         HOMEPAGE_URL "https://github.com/ruiseixasm/JsonMidiPlayer"
         LANGUAGES CXX)

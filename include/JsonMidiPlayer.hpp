@@ -53,7 +53,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 // #define DEBUGGING true
 #define FILE_TYPE "Json Midi Player"
 #define FILE_URL  "https://github.com/ruiseixasm/JsonMidiPlayer"
-#define VERSION   "4.2.1"
+#define VERSION   "4.2.2"
 #define DRAG_DURATION_MS (1000.0/((120/60)*24))
 
 

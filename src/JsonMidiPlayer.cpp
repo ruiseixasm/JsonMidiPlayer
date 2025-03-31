@@ -159,7 +159,7 @@ int PlayList(const char* json_str, bool verbose) {
 
     // Where the playing happens
     {
-        // Under it's how scope in order the release all devices before the stats reporting !
+        // Under its own scope in order to release all devices before the stats reporting !
 
         std::vector<MidiDevice> midi_devices;
         std::list<MidiPin> midiToProcess;

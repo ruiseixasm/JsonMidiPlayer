@@ -130,6 +130,8 @@ void setRealTimeScheduling() {
 }
 
 
+
+
 double get_time_ms(int minutes_numerator, int minutes_denominator) {
 
     double milliseconds = minutes_numerator * 60000.0 / minutes_denominator;
@@ -245,8 +247,75 @@ int PlayList(const char* json_str, bool verbose) {
 
                 MidiDevice *clip_midi_device = nullptr;
                 // Dictionary where the key is a JSON list
-                std::unordered_map<nlohmann::json, MidiDevice*, JsonHash, JsonEqual> devices_dict;        
+                std::unordered_map<nlohmann::json, MidiDevice*, JsonHash, JsonEqual> devices_dict;
+                
 
+
+                
+                // Check if jsonFileContent is a non-empty array
+                if (jsonFileContent.is_array() && !jsonFileContent.empty()) {
+
+                    // Access the first element
+                    const auto& firstElement = jsonFileContent.front();
+
+                    // Check if the first element is an object and contains the key "clock"
+                    if (firstElement.is_object() && firstElement.contains("clock")) {
+                        
+                        // Access the value associated with the key "clock"
+                        auto clockValue = firstElement.at("clock");
+                        
+                        try
+                        {
+
+                            unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
+                            unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
+                            unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
+                            unsigned int stop_mode = clockValue["stop_mode"];
+
+                            if (total_clock_pulses > 0) {
+
+                                // The devices JSON list key
+                                nlohmann::json clockDevices = clockValue["devices"];
+
+                                if (devices_dict.find(clockDevices) != devices_dict.end()) {
+                                
+                                    clip_midi_device = devices_dict[clockDevices];
+        
+                                } else {
+        
+                                    // It's a list of Devices that is given as Device
+                                    for (std::string deviceName : clockDevices) {
+                                        for (auto &device : midi_devices) {
+                                            if (device.getName().find(deviceName) != std::string::npos) {
+                                                //
+                                                // Where the Device Port is connected/opened (Main reason for errors)
+                                                //
+                                                if (device.openPort()) {
+                                                    devices_dict[clockDevices] = &device;
+                                                    
+                                                    
+
+
+
+                                                }
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+
+                        } catch (const std::exception& e) {
+                            if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+                        }
+
+                        clip_midi_device = nullptr;
+
+                    } else {
+                        if (verbose) std::cerr << "No Clock given!" << std::endl;
+                    }
+                } else {
+                    if (verbose) std::cerr << "JSON file is empty." << std::endl;
+                }
 
 
 

@@ -156,8 +156,8 @@ int PlayList(const char* json_str, bool verbose) {
         size_t json_processing  = 0;    // milliseconds
         size_t total_generated  = 0;
         size_t total_validated  = 0;
-        size_t total_redundant  = 0;
         size_t total_incorrect  = 0;
+        size_t total_redundant  = 0;
         double total_drag       = 0.0;
         double total_delay      = 0.0;
         double maximum_delay    = 0.0;
@@ -486,6 +486,7 @@ int PlayList(const char* json_str, bool verbose) {
 
                                     midiToProcess.push_back( MidiPin(time_milliseconds, clip_midi_device, json_midi_message, priority) );
                                     play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
+                                    play_reporting.total_validated++;
                                 }
                             }
                             catch (const nlohmann::json::exception& e) {
@@ -564,10 +565,10 @@ int PlayList(const char* json_str, bool verbose) {
             if (verbose) std::cout << "Data stats reporting:" << std::endl;
             if (verbose) std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << play_reporting.json_processing << std::endl;
             if (verbose) std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
-            if (verbose) std::cout << "\tTotal validated Midi Messages (included): " << std::setw(10) << play_reporting.total_validated << std::endl;
-            if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
+            if (verbose) std::cout << "\tTotal validated Midi Messages (accepted): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;
-
+            if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
+            if (verbose) std::cout << "\tTotal resultant Midi Messages (included): " << std::setw(10) << midiToProcess.size() << std::endl;
 
         } else {
 
@@ -903,15 +904,15 @@ int PlayList(const char* json_str, bool verbose) {
             auto data_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
 
             play_reporting.json_processing = data_processing_time.count();
-            play_reporting.total_validated = midiToProcess.size();
 
             // Where the reporting is finally done
             if (verbose) std::cout << "Data stats reporting:" << std::endl;
             if (verbose) std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << play_reporting.json_processing << std::endl;
             if (verbose) std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
-            if (verbose) std::cout << "\tTotal validated Midi Messages (included): " << std::setw(10) << play_reporting.total_validated << std::endl;
-            if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
+            if (verbose) std::cout << "\tTotal validated Midi Messages (accepted): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;
+            if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
+            if (verbose) std::cout << "\tTotal resultant Midi Messages (included): " << std::setw(10) << midiToProcess.size() << std::endl;
 
             MidiPin *last_pin = &midiToProcess.back();
             size_t duration_time_sec = std::round(last_pin->getTime() / 1000);
@@ -964,7 +965,7 @@ int PlayList(const char* json_str, bool verbose) {
             // Where the final Statistics are calculated
             //
 
-            if (play_reporting.total_validated > 0) {
+            if (midiProcessed.size() > 0) {
 
                 for (auto &midi_pin : midiProcessed) {
                     auto delay_time_ms = midi_pin.getDelayTime();
@@ -973,7 +974,7 @@ int PlayList(const char* json_str, bool verbose) {
                 }
 
                 play_reporting.minimum_delay = play_reporting.maximum_delay;
-                play_reporting.average_delay = play_reporting.total_delay / play_reporting.total_validated;
+                play_reporting.average_delay = play_reporting.total_delay / midiProcessed.size();
 
                 for (auto &midi_pin : midiProcessed) {
                     auto delay_time_ms = midi_pin.getDelayTime();
@@ -981,7 +982,7 @@ int PlayList(const char* json_str, bool verbose) {
                     play_reporting.sd_delay += std::pow(delay_time_ms - play_reporting.average_delay, 2);
                 }
 
-                play_reporting.sd_delay /= play_reporting.total_validated;
+                play_reporting.sd_delay /= midiProcessed.size();
                 play_reporting.sd_delay = std::sqrt(play_reporting.sd_delay);
             }
         }

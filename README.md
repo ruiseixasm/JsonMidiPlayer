@@ -81,20 +81,21 @@ Available output Midi devices:
         Midi device #2: Blofeld 2
         Midi device #3: loopMIDI Port 3
         Midi device #4: Virtual Instrument 4
-        Midi device #5: Elektron Digitakt 5
-Devices connected:       Elektron Digitakt 5   Blofeld 2   Virtual Instrument 4
+Devices connected:       Blofeld 2
 Data stats reporting:
-        Midi Messages processing time (ms):                7
-        Total generated Midi Messages (included):       2310
-        Total validated Midi Messages (included):       2312
-        Total redundant Midi Messages (excluded):          0
+        Midi Messages processing time (ms):                1
+        Total generated Midi Messages (included):        482
+        Total validated Midi Messages (accepted):         30
         Total incorrect Midi Messages (excluded):          0
-Devices disconnected:    Blofeld 2   Virtual Instrument 4   Elektron Digitakt 5
+        Total redundant Midi Messages (excluded):          0
+        Total resultant Midi Messages (included):        512
+The data will now be played during 0 minutes and 9 seconds...
+Devices disconnected:    Blofeld 2
 Midi stats reporting:
         Total drag (ms):                                   0.000 \
-        Cumulative delay (ms):                           581.065 /
-        Maximum delay (ms):                                1.489 \
-        Minimum delay (ms):                                0.000 /
-        Average delay (ms):                                0.251 \
-        Standard deviation of delays (ms):                 0.213 /
+        Cumulative delay (ms):                            21.923 /
+        Maximum delay (ms):                                1.260 \
+        Minimum delay (ms):                                0.001 /
+        Average delay (ms):                                0.043 \
+        Standard deviation of delays (ms):                 0.172 /
 ```

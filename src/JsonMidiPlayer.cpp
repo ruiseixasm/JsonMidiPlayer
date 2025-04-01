@@ -248,7 +248,6 @@ int PlayList(const char* json_str, bool verbose) {
                 // Dictionary where the key is a JSON list
                 std::unordered_map<nlohmann::json, MidiDevice*, JsonHash, JsonEqual> devices_dict;
                 
-
                 // Check if jsonFileContent is a non-empty array
                 if (jsonFileContent.is_array() && !jsonFileContent.empty()) {
 
@@ -268,16 +267,16 @@ int PlayList(const char* json_str, bool verbose) {
                             if (clockDevices.size() > 0) {
 
                                 const unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
+                                const unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
+                                const unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
 
-                                if (total_clock_pulses > 0) {
+                                if (total_clock_pulses > 0 && pulse_duration_min_numerator > 0 && pulse_duration_min_denominator > 0) {
 
                                     const unsigned char clock_stop      = 0;
                                     const unsigned char clock_pause     = 1;
                                     const unsigned char clock_continue  = 2;
                                     const unsigned char clock_total     = 3;
 
-                                    const unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
-                                    const unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
                                     const unsigned int stop_mode = clockValue["stop_mode"];
 
                                     // First time any Device is tried to be connected, so, none is connected at this moment
@@ -342,7 +341,6 @@ int PlayList(const char* json_str, bool verbose) {
                 } else {
                     if (verbose) std::cerr << "JSON file is empty." << std::endl;
                 }
-
 
                 for (auto jsonElement : jsonFileContent)
                 {

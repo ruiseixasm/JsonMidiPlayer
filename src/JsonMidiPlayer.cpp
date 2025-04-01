@@ -900,10 +900,9 @@ int PlayList(const char* json_str, bool verbose) {
             #endif
 
             auto data_processing_finish = std::chrono::high_resolution_clock::now();
+            auto data_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
 
-            auto pre_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
-
-            play_reporting.json_processing = pre_processing_time.count();
+            play_reporting.json_processing = data_processing_time.count();
             play_reporting.total_validated = midiToProcess.size();
 
             // Where the reporting is finally done
@@ -913,6 +912,11 @@ int PlayList(const char* json_str, bool verbose) {
             if (verbose) std::cout << "\tTotal validated Midi Messages (included): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
             if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;
+
+            MidiPin *last_pin = &midiToProcess.back();
+            size_t duration_time_sec = std::round(last_pin->getTime() / 1000);
+            if (verbose) std::cout << "The data will now be played during "
+                << duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
 
             //
             // Where the Midi messages are sent to each Device

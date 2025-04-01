@@ -63,59 +63,6 @@ void MidiDevice::sendMessage(const std::vector<unsigned char> *midi_message) {
 
 
 
-// #include <iostream>
-// #ifdef _WIN32
-// #include <windows.h>
-// #include <mmsystem.h> // For timeBeginPeriod and timeEndPeriod
-// #pragma comment(lib, "winmm.lib")
-// #else
-// #include <pthread.h>
-// #include <sched.h>
-// #include <errno.h>
-// #endif
-
-// // Function to set real-time scheduling
-// void setRealTimeScheduling() {
-// #ifdef _WIN32
-//     // Increase system timer resolution
-//     if (timeBeginPeriod(1) != TIMERR_NOERROR) {
-//         std::cerr << "Failed to increase timer resolution." << std::endl;
-//     }
-
-//     // Set the process priority to REALTIME_PRIORITY_CLASS
-//     if (!SetPriorityClass(GetCurrentProcess(), REALTIME_PRIORITY_CLASS)) {
-//         std::cerr << "Failed to set process priority class to REALTIME_PRIORITY_CLASS. Error: " 
-//                   << GetLastError() << std::endl;
-//     }
-
-//     // Set the thread priority to THREAD_PRIORITY_TIME_CRITICAL
-//     if (!SetThreadPriority(GetCurrentThread(), THREAD_PRIORITY_TIME_CRITICAL)) {
-//         std::cerr << "Failed to set thread priority to THREAD_PRIORITY_TIME_CRITICAL. Error: " 
-//                   << GetLastError() << std::endl;
-//     } else {
-//         std::cout << "Real-time scheduling successfully set on Windows." << std::endl;
-//     }
-// #else
-//     // Set real-time scheduling on Linux
-//     struct sched_param param;
-//     param.sched_priority = sched_get_priority_max(SCHED_FIFO);
-
-//     int result = pthread_setschedparam(pthread_self(), SCHED_FIFO, &param);
-//     if (result != 0) {
-//         if (result == EPERM) {
-//             std::cerr << "Failed to set real-time scheduling: Insufficient privileges. Run as root." 
-//                       << std::endl;
-//         } else {
-//             std::cerr << "Failed to set real-time scheduling. Error: " << strerror(result) << std::endl;
-//         }
-//     } else {
-//         std::cout << "Real-time scheduling successfully set on Linux." << std::endl;
-//     }
-// #endif
-// }
-
-
-
 // Function to set real-time scheduling
 void setRealTimeScheduling() {
 #ifdef _WIN32
@@ -446,6 +393,10 @@ int PlayList(const char* json_str, bool verbose) {
                                                         // 0 -  Bank Select (MSB)
                                                         // 32 - Bank Select (LSB)
                                                         priority = 0x00 | status_byte & 0x0F;       // Top priority 0
+                                                    } else if (data_byte_1 == 123) {
+                                                        // 123 - All notes off (0x7B)
+                                                        // shall come after Notes On and Off
+                                                        priority = 0x90 | status_byte & 0x0F;       // Low priority 9
                                                     } else {
                                                         priority = 0x20 | status_byte & 0x0F;       // High priority 2
                                                     }

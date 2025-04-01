@@ -36,16 +36,6 @@ https://github.com/ruiseixasm/JsonMidiPlayer
     #define NOMINMAX    // disables the definition of min and max macros.
     #include <Windows.h>
     #include <processthreadsapi.h> // For SetProcessInformation
-
-    // // Disable background throttling
-    // void disableBackgroundThrottling() {
-    //     PROCESS_POWER_THROTTLING_STATE PowerThrottling;
-    //     PowerThrottling.Version = PROCESS_POWER_THROTTLING_CURRENT_VERSION;
-    //     PowerThrottling.ControlMask = PROCESS_POWER_THROTTLING_EXECUTION_SPEED;
-    //     PowerThrottling.StateMask = 0;
-
-    //     SetProcessInformation(GetCurrentProcess(), ProcessPowerThrottling, &PowerThrottling, sizeof(PowerThrottling));
-    // }
 #else
     #include <pthread.h>
     #include <time.h>
@@ -296,7 +286,6 @@ class MidiDevice {
     
 
     
-
 
 // Declare the function in the header file
 void disableBackgroundThrottling();

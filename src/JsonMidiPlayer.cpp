@@ -224,6 +224,7 @@ int PlayList(const char* json_str, bool verbose) {
                                     const unsigned char clock_total     = 3;
 
                                     const unsigned int stop_mode = clockValue["stop_mode"];
+                                    std::unordered_set<MidiDevice*> connected_devices;
 
                                     // First time any Device is tried to be connected, so, none is connected at this moment
                                     // It's a list of Devices that is given as Device
@@ -239,6 +240,10 @@ int PlayList(const char* json_str, bool verbose) {
                                                 // Where the Device Port is connected/opened (Main reason for errors)
                                                 //
                                                 if (available_device.openPort()) {
+
+                                                    if (connected_devices.find(&available_device) != connected_devices.end())
+                                                        continue;   // Already clocked!
+
                                                     if (stop_mode == clock_continue)
                                                         midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_continue }, 0x30) );
                                                     else
@@ -274,7 +279,8 @@ int PlayList(const char* json_str, bool verbose) {
                                                         ));
                                                         play_reporting.total_generated++;
                                                     }
-                                                    connected_devices_by_name[device_name] = &available_device;                                                    
+                                                    connected_devices_by_name[device_name] = &available_device;
+                                                    connected_devices.insert(&available_device);
                                                 } else {
                                                     connected_devices_by_name[device_name] = nullptr;
                                                 }

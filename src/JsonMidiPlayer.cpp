@@ -117,8 +117,7 @@ int PlayList(const char* json_str, bool verbose) {
     // Where the playing happens
     {
         // Under its own scope in order to disconnect all devices before the stats reporting !
-
-        std::vector<MidiDevice> midi_devices;
+        std::vector<MidiDevice> available_midi_devices;
         std::list<MidiPin> midiToProcess;
         std::list<MidiPin> midiProcessed;
 
@@ -137,9 +136,9 @@ int PlayList(const char* json_str, bool verbose) {
             for (unsigned int i = 0; i < nPorts; i++) {
                 std::string portName = midiOut.getPortName(i);
                 if (verbose) std::cout << "\tMidi device #" << i << ": " << portName << std::endl;
-                midi_devices.push_back(MidiDevice(portName, i, verbose));   // The object is copied
+                available_midi_devices.push_back(MidiDevice(portName, i, verbose));   // The object is copied
             }
-            if (midi_devices.size() == 0) {
+            if (available_midi_devices.size() == 0) {
                 if (verbose) std::cout << "\tNo output Midi devices available.\n";
                 return 1;
             }
@@ -191,9 +190,8 @@ int PlayList(const char* json_str, bool verbose) {
                     continue;
                 }
 
-                MidiDevice *clip_midi_device = nullptr;
                 // Dictionary where the key is a JSON list
-                std::unordered_map<nlohmann::json, MidiDevice*, JsonHash, JsonEqual> devices_dict;
+                std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
                 
                 // Check if jsonFileContent is a non-empty array
                 if (jsonFileContent.is_array() && !jsonFileContent.empty()) {
@@ -209,9 +207,9 @@ int PlayList(const char* json_str, bool verbose) {
                             // Access the value associated with the key "clock"
                             auto clockValue = firstElement.at("clock");
                             // The devices JSON list key
-                            const nlohmann::json clockDevices = clockValue["devices"];
+                            const nlohmann::json clocked_devices = clockValue["devices"];
 
-                            if (clockDevices.size() > 0) {
+                            if (clocked_devices.size() > 0) {
 
                                 const unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
                                 const unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
@@ -228,15 +226,17 @@ int PlayList(const char* json_str, bool verbose) {
 
                                     // First time any Device is tried to be connected, so, none is connected at this moment
                                     // It's a list of Devices that is given as Device
-                                    for (std::string deviceName : clockDevices) {
-                                        for (auto &device : midi_devices) {
-                                            if (device.getName().find(deviceName) != std::string::npos) {
+                                    for (std::string clocked_device_name : clocked_devices) {
+
+                                        if (connected_devices_by_name.find(clocked_device_name) != connected_devices_by_name.end())
+                                            continue;
+                                        
+                                        for (auto &device : available_midi_devices) {
+                                            if (device.getName().find(clocked_device_name) != std::string::npos) {
                                                 //
                                                 // Where the Device Port is connected/opened (Main reason for errors)
                                                 //
                                                 if (device.openPort()) {
-                                                    devices_dict[clockDevices] = &device;
-                                                    
                                                     if (stop_mode == clock_continue)
                                                         midiToProcess.push_back( MidiPin(0.0, &device, { system_clock_continue }, 0x30) );
                                                     else
@@ -272,7 +272,12 @@ int PlayList(const char* json_str, bool verbose) {
                                                         ));
                                                         play_reporting.total_generated++;
                                                     }
+                                                    connected_devices_by_name[clocked_device_name] = &device;                                                    
+                                                } else {
+                                                    connected_devices_by_name[clocked_device_name] = nullptr;
                                                 }
+                                            } else {
+                                                connected_devices_by_name[clocked_device_name] = nullptr;
                                             }
                                         }
                                     }
@@ -289,12 +294,15 @@ int PlayList(const char* json_str, bool verbose) {
                     if (verbose) std::cerr << "JSON file is empty." << std::endl;
                 }
 
+                // Keeps the last called device in the JsonMidiPlayer file
+                MidiDevice *last_called_midi_device = nullptr;
+
                 for (auto jsonElement : jsonFileContent)
                 {
                     // Most of the time it's a midi_message being processed, so it makes sense to be the first to check
                     if (jsonElement.contains("midi_message")) {
 
-                        if (clip_midi_device != nullptr) {
+                        if (last_called_midi_device != nullptr) {
 
                             play_reporting.total_incorrect++;
                             double time_milliseconds = jsonElement["time_ms"];
@@ -435,7 +443,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             continue;
                                     }
 
-                                    midiToProcess.push_back( MidiPin(time_milliseconds, clip_midi_device, json_midi_message, priority) );
+                                    midiToProcess.push_back( MidiPin(time_milliseconds, last_called_midi_device, json_midi_message, priority) );
                                     play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
                                     play_reporting.total_validated++;
                                 }
@@ -455,39 +463,36 @@ int PlayList(const char* json_str, bool verbose) {
                     } else if (jsonElement.contains("devices")) {
 
                         // The devices JSON list key
-                        nlohmann::json jsonDevicesNames = jsonElement["devices"];
+                        nlohmann::json json_device_names = jsonElement["devices"];
 
-                        if (devices_dict.find(jsonDevicesNames) != devices_dict.end()) {
+                        last_called_midi_device = nullptr; // No available device found at start
+                        // It's a list of Devices that is given as Device
+                        for (std::string device_name : json_device_names) {
                             
-                            clip_midi_device = devices_dict[jsonDevicesNames];
-
-                        } else {
-
-                            // It's a list of Devices that is given as Device
-                            for (std::string deviceName : jsonDevicesNames) {
-                                for (auto &device : midi_devices) {
-                                    if (device.getName().find(deviceName) != std::string::npos) {
-                                        //
-                                        // Where the Device Port is connected/opened (Main reason for errors)
-                                        //
-                                        try {
-                                            if (device.openPort()) {
-                                                clip_midi_device = &device;
-                                                devices_dict[jsonDevicesNames] = clip_midi_device;
-                                                goto skip_to_1;
-                                            }
-                                        } catch (const std::exception& e) {
-                                            if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-                                            clip_midi_device = nullptr;
+                            if (connected_devices_by_name.find(device_name) != connected_devices_by_name.end()) {
+                                last_called_midi_device = connected_devices_by_name[device_name];
+                                goto skip_to_1;
+                            }
+                    
+                            for (auto &available_device : available_midi_devices) {
+                                if (available_device.getName().find(device_name) != std::string::npos) {
+                                    //
+                                    // Where the Device Port is connected/opened (Main reason for errors)
+                                    //
+                                    try {
+                                        if (available_device.openPort()) {
+                                            connected_devices_by_name[device_name] = &available_device; 
+                                            last_called_midi_device = &available_device;
                                             goto skip_to_1;
                                         }
+                                    } catch (const std::exception& e) {
+                                        if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+                                        goto skip_to_1;
                                     }
                                 }
                             }
-                            clip_midi_device = nullptr; // No available device found
                         }
                     }
-
                 skip_to_1: continue;
                 }
             }
@@ -814,7 +819,7 @@ int PlayList(const char* json_str, bool verbose) {
             auto last_message_time_ms = midiToProcess.back().getTime();
             
             
-            for (auto &device : midi_devices) {
+            for (auto &device : available_midi_devices) {
                 
                 if (device.hasPortOpen()) {
                     

@@ -276,8 +276,6 @@ int PlayList(const char* json_str, bool verbose) {
                                                 } else {
                                                     connected_devices_by_name[clocked_device_name] = nullptr;
                                                 }
-                                            } else {
-                                                connected_devices_by_name[clocked_device_name] = nullptr;
                                             }
                                         }
                                     }

@@ -484,8 +484,10 @@ int PlayList(const char* json_str, bool verbose) {
                                         if (available_device.openPort()) {
                                             connected_devices_by_name[device_name] = &available_device; 
                                             last_called_midi_device = &available_device;
-                                            goto skip_to_1;
+                                        } else {
+                                            connected_devices_by_name[device_name] = nullptr; 
                                         }
+                                        goto skip_to_1;
                                     } catch (const std::exception& e) {
                                         if (verbose) std::cerr << "Error: " << e.what() << std::endl;
                                         goto skip_to_1;

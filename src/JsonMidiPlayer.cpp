@@ -192,6 +192,7 @@ int PlayList(const char* json_str, bool verbose) {
 
                 // Dictionary where the key is a JSON list
                 std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
+                std::unordered_set<std::string> unavailable_devices;
                 
                 // Check if jsonFileContent is a non-empty array
                 if (jsonFileContent.is_array() && !jsonFileContent.empty()) {
@@ -226,13 +227,14 @@ int PlayList(const char* json_str, bool verbose) {
 
                                     // First time any Device is tried to be connected, so, none is connected at this moment
                                     // It's a list of Devices that is given as Device
-                                    for (std::string clocked_device_name : clocked_device_names) {
+                                    for (std::string device_name : clocked_device_names) {
 
-                                        if (connected_devices_by_name.find(clocked_device_name) != connected_devices_by_name.end())
+                                        if (connected_devices_by_name.find(device_name) != connected_devices_by_name.end()
+                                                || unavailable_devices.find(device_name) != unavailable_devices.end())
                                             continue;
                                         
                                         for (auto &available_device : available_midi_devices) {
-                                            if (available_device.getName().find(clocked_device_name) != std::string::npos) {
+                                            if (available_device.getName().find(device_name) != std::string::npos) {
                                                 //
                                                 // Where the Device Port is connected/opened (Main reason for errors)
                                                 //
@@ -272,12 +274,13 @@ int PlayList(const char* json_str, bool verbose) {
                                                         ));
                                                         play_reporting.total_generated++;
                                                     }
-                                                    connected_devices_by_name[clocked_device_name] = &available_device;                                                    
+                                                    connected_devices_by_name[device_name] = &available_device;                                                    
                                                 } else {
-                                                    connected_devices_by_name[clocked_device_name] = nullptr;
+                                                    connected_devices_by_name[device_name] = nullptr;
                                                 }
                                             }
                                         }
+                                        unavailable_devices.insert(device_name);
                                     }
                                 }
                             }
@@ -473,6 +476,10 @@ int PlayList(const char* json_str, bool verbose) {
                                 goto skip_to_1;
                             }
                     
+                            if (unavailable_devices.find(device_name) != unavailable_devices.end()) {
+                                continue;
+                            }
+                    
                             for (auto &available_device : available_midi_devices) {
                                 if (available_device.getName().find(device_name) != std::string::npos) {
                                     //
@@ -492,6 +499,7 @@ int PlayList(const char* json_str, bool verbose) {
                                     }
                                 }
                             }
+                            unavailable_devices.insert(device_name);
                         }
                     }
                 skip_to_1: continue;

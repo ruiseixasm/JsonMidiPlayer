@@ -29,6 +29,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #include <nlohmann/json.hpp>    // Include the JSON library
 #include "RtMidi.h"             // Includes the necessary MIDI library
 #include <unordered_map>
+#include <unordered_set>
 #include <memory>
 #include <iomanip>              // For std::fixed and std::setprecision
 

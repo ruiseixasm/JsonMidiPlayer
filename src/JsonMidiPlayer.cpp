@@ -231,23 +231,23 @@ int PlayList(const char* json_str, bool verbose) {
                                         if (connected_devices_by_name.find(clocked_device_name) != connected_devices_by_name.end())
                                             continue;
                                         
-                                        for (auto &device : available_midi_devices) {
-                                            if (device.getName().find(clocked_device_name) != std::string::npos) {
+                                        for (auto &available_device : available_midi_devices) {
+                                            if (available_device.getName().find(clocked_device_name) != std::string::npos) {
                                                 //
                                                 // Where the Device Port is connected/opened (Main reason for errors)
                                                 //
-                                                if (device.openPort()) {
+                                                if (available_device.openPort()) {
                                                     if (stop_mode == clock_continue)
-                                                        midiToProcess.push_back( MidiPin(0.0, &device, { system_clock_continue }, 0x30) );
+                                                        midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_continue }, 0x30) );
                                                     else
-                                                        midiToProcess.push_back( MidiPin(0.0, &device, { system_clock_start }, 0x30) );
+                                                        midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x30) );
                                                     play_reporting.total_generated++;
 
                                                     for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
 
                                                         midiToProcess.push_back(MidiPin(
                                                             get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
-                                                            &device,
+                                                            &available_device,
                                                             { system_timing_clock },
                                                             0x30
                                                         ));
@@ -255,24 +255,24 @@ int PlayList(const char* json_str, bool verbose) {
                                                     }
 
                                                     auto last_position_ms = get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator);
-                                                    midiToProcess.push_back(MidiPin(last_position_ms, &device, { system_clock_stop }, 0x30));
+                                                    midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_clock_stop }, 0x30));
                                                     play_reporting.total_generated++;
 
                                                     if (stop_mode == clock_stop || stop_mode == clock_total) {
-                                                        midiToProcess.push_back(MidiPin(last_position_ms, &device, { system_song_pointer, 0, 0 }, 0xB0));
+                                                        midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB0));
                                                         play_reporting.total_generated++;
                                                     }
 
                                                     if (stop_mode == clock_total) {
                                                         midiToProcess.push_back(MidiPin(
                                                             last_position_ms,
-                                                            &device,
+                                                            &available_device,
                                                             { system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end },
                                                             0xF0    // Lowest priority 16
                                                         ));
                                                         play_reporting.total_generated++;
                                                     }
-                                                    connected_devices_by_name[clocked_device_name] = &device;                                                    
+                                                    connected_devices_by_name[clocked_device_name] = &available_device;                                                    
                                                 } else {
                                                     connected_devices_by_name[clocked_device_name] = nullptr;
                                                 }

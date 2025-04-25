@@ -295,20 +295,4 @@ void highResolutionSleep(long long microseconds);
 int PlayList(const char* json_str, bool verbose = false);
 
 
-// Custom hash function for nlohmann::json (required for unordered_map keys)
-struct JsonHash {
-    std::size_t operator()(const nlohmann::json& jsonKey) const {
-        return std::hash<std::string>{}(jsonKey.dump()); // Hash the JSON as a string
-    }
-};
-
-// Custom equality function for JSON keys
-struct JsonEqual {
-    bool operator()(const nlohmann::json& lhs, const nlohmann::json& rhs) const {
-        return lhs == rhs; // Compare JSON objects directly
-    }
-};
-
-
-
 #endif // MIDI_JSON_PLAYER_HPP

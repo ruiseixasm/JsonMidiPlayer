@@ -207,9 +207,9 @@ int PlayList(const char* json_str, bool verbose) {
                             // Access the value associated with the key "clock"
                             auto clockValue = firstElement.at("clock");
                             // The devices JSON list key
-                            const nlohmann::json clocked_devices = clockValue["devices"];
+                            const nlohmann::json clocked_device_names = clockValue["devices"];
 
-                            if (clocked_devices.size() > 0) {
+                            if (clocked_device_names.size() > 0) {
 
                                 const unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
                                 const unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
@@ -226,7 +226,7 @@ int PlayList(const char* json_str, bool verbose) {
 
                                     // First time any Device is tried to be connected, so, none is connected at this moment
                                     // It's a list of Devices that is given as Device
-                                    for (std::string clocked_device_name : clocked_devices) {
+                                    for (std::string clocked_device_name : clocked_device_names) {
 
                                         if (connected_devices_by_name.find(clocked_device_name) != connected_devices_by_name.end())
                                             continue;
@@ -460,6 +460,7 @@ int PlayList(const char* json_str, bool verbose) {
                             }
                         }
 
+                    // Where the last device is set based on the json "device" input
                     } else if (jsonElement.contains("devices")) {
 
                         // The devices JSON list key

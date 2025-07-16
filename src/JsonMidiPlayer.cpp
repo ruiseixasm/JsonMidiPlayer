@@ -396,10 +396,8 @@ int PlayList(const char* json_str, bool verbose) {
                                             switch (message_action) {
 
                                                 case action_note_off:
-                                                    priority = 0x40 | status_byte & 0x0F;       // Normal priority 4
-                                                    break;
                                                 case action_note_on:
-                                                    priority = 0x50 | status_byte & 0x0F;       // Normal priority 5
+                                                    priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On and Off
                                                     break;
                                                 case action_control_change:
                                                     if (data_byte_1 == 1) {             // Modulation

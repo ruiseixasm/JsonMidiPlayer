@@ -271,10 +271,31 @@ int PlayList(const char* json_str, bool verbose) {
                                                     }
 
                                                     if (stop_mode == clock_total) {
+
+														// Action			MMC	SysEx
+														// Stop				F0 7F 7F 06 01 F7
+														// Play				F0 7F 7F 06 02 F7
+														// Deferred Play	F0 7F 7F 06 03 F7
+														// Fast Forward		F0 7F 7F 06 04 F7
+														// Rewind			F0 7F 7F 06 05 F7
+														// Record Strobe	F0 7F 7F 06 06 F7
+														// Record Exit		F0 7F 7F 06 07 F7
+														// Pause			F0 7F 7F 06 09 F7
+														// Locate			F0 7F 7F 06 44 … F7
+
+														// MMC - Stop
                                                         midiToProcess.push_back(MidiPin(
                                                             last_position_ms,
                                                             &available_device,
                                                             { system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end },
+                                                            0xF0    // Lowest priority 16
+                                                        ));
+                                                        play_reporting.total_generated++;
+														// MMC - Rewind
+                                                        midiToProcess.push_back(MidiPin(
+                                                            last_position_ms,
+                                                            &available_device,
+                                                            { system_sysex_start, 0x7F, 0x7F, 0x06, 0x05, system_sysex_end },
                                                             0xF0    // Lowest priority 16
                                                         ));
                                                         play_reporting.total_generated++;

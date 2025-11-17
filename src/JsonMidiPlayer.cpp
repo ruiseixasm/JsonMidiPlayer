@@ -242,27 +242,11 @@ int PlayList(const char* json_str, bool verbose) {
                                                     if (connected_devices.find(&available_device) != connected_devices.end())
                                                         continue;   // Already clocked!
 
-                                                    midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x30) );
-                                                    play_reporting.total_generated++;
-
-                                                    for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
-
-                                                        midiToProcess.push_back(MidiPin(
-                                                            get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
-                                                            &available_device,
-                                                            { system_timing_clock },
-                                                            0x30
-                                                        ));
-                                                        play_reporting.total_generated++;
-                                                    }
-
-                                                    auto last_position_ms = get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator);
-                                                    midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_clock_stop }, 0x30));
-                                                    play_reporting.total_generated++;
-
-													midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB0));
-													play_reporting.total_generated++;
-
+                                                    connected_devices_by_name[device_name] = &available_device;
+                                                    connected_devices.insert(&available_device);
+													auto last_position_ms = get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator);
+													
+													// MMC DAW Transport Controls here
                                                     if (mmc_mode) {
 
 														// Action			MMC	SysEx
@@ -302,9 +286,31 @@ int PlayList(const char* json_str, bool verbose) {
                                                             0xF0    // Lowest priority 16
                                                         ));
                                                         play_reporting.total_generated++;
-                                                    }
-                                                    connected_devices_by_name[device_name] = &available_device;
-                                                    connected_devices.insert(&available_device);
+
+													// Normal Clocking here
+                                                    } else {
+														
+														midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x30) );
+														play_reporting.total_generated++;
+
+														for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
+
+															midiToProcess.push_back(MidiPin(
+																get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
+																&available_device,
+																{ system_timing_clock },
+																0x30
+															));
+															play_reporting.total_generated++;
+														}
+
+														midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_clock_stop }, 0x30));
+														play_reporting.total_generated++;
+
+														midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB0));
+														play_reporting.total_generated++;
+
+													}
                                                 } else {
                                                     connected_devices_by_name[device_name] = nullptr;
                                                 }

@@ -114,6 +114,9 @@ int PlayList(const char* json_str, bool verbose) {
     };
     PlayReporting play_reporting;
 
+    
+    if (verbose) std::cout << "JsonMidiPlayer version: " << VERSION << std::endl;
+
     // Where the playing happens
     {
         // Under its own scope in order to disconnect all devices before the stats reporting !
@@ -218,7 +221,7 @@ int PlayList(const char* json_str, bool verbose) {
 
                                 if (total_clock_pulses > 0 && pulse_duration_min_numerator > 0 && pulse_duration_min_denominator > 0) {
 
-                                    const bool mmc_mode = clockValue["mmc_mode"];
+                                    const unsigned int mmc_mode = clockValue["mmc_mode"];
                                     std::unordered_set<MidiDevice*> connected_devices;
 
                                     // First time any Device is tried to be connected, so, none is connected at this moment

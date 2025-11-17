@@ -218,12 +218,7 @@ int PlayList(const char* json_str, bool verbose) {
 
                                 if (total_clock_pulses > 0 && pulse_duration_min_numerator > 0 && pulse_duration_min_denominator > 0) {
 
-                                    const unsigned char clock_stop      = 0;
-                                    const unsigned char clock_pause     = 1;
-                                    const unsigned char clock_continue  = 2;
-                                    const unsigned char clock_total     = 3;
-
-                                    const unsigned int stop_mode = clockValue["stop_mode"];
+                                    const bool mmc_mode = clockValue["mmc_mode"];
                                     std::unordered_set<MidiDevice*> connected_devices;
 
                                     // First time any Device is tried to be connected, so, none is connected at this moment
@@ -244,10 +239,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                     if (connected_devices.find(&available_device) != connected_devices.end())
                                                         continue;   // Already clocked!
 
-                                                    if (stop_mode == clock_continue)
-                                                        midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_continue }, 0x30) );
-                                                    else
-                                                        midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x30) );
+                                                    midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x30) );
                                                     play_reporting.total_generated++;
 
                                                     for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
@@ -265,12 +257,10 @@ int PlayList(const char* json_str, bool verbose) {
                                                     midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_clock_stop }, 0x30));
                                                     play_reporting.total_generated++;
 
-                                                    if (stop_mode == clock_stop || stop_mode == clock_total) {
-                                                        midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB0));
-                                                        play_reporting.total_generated++;
-                                                    }
+													midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB0));
+													play_reporting.total_generated++;
 
-                                                    if (stop_mode == clock_total) {
+                                                    if (mmc_mode) {
 
 														// Action			MMC	SysEx
 														// Stop				F0 7F 7F 06 01 F7
@@ -283,6 +273,15 @@ int PlayList(const char* json_str, bool verbose) {
 														// Pause			F0 7F 7F 06 09 F7
 														// Locate			F0 7F 7F 06 44 … F7
 
+														// MMC - Play
+                                                        midiToProcess.push_back(MidiPin(
+                                                            0.0,
+                                                            &available_device,
+                                                            { system_sysex_start, 0x7F, 0x7F, 0x06, 0x02, system_sysex_end },
+                                                            0x00    // Highest priority 0
+                                                        ));
+                                                        play_reporting.total_generated++;
+
 														// MMC - Stop
                                                         midiToProcess.push_back(MidiPin(
                                                             last_position_ms,
@@ -291,6 +290,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                             0xF0    // Lowest priority 16
                                                         ));
                                                         play_reporting.total_generated++;
+														
 														// MMC - Rewind
                                                         midiToProcess.push_back(MidiPin(
                                                             last_position_ms,

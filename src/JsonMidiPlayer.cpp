@@ -195,7 +195,7 @@ int PlayList(const char* json_str, bool verbose) {
 
                 // Dictionary where the key is a JSON list
                 std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
-                std::unordered_set<std::string> unavailable_devices;
+                std::unordered_set<std::string> processed_devices;
                 
                 // Check if jsonFileContent is a non-empty array
                 if (jsonFileContent.is_array() && !jsonFileContent.empty()) {
@@ -229,7 +229,7 @@ int PlayList(const char* json_str, bool verbose) {
                                     for (std::string device_name : clocked_device_names) {
 
                                         if (connected_devices_by_name.find(device_name) != connected_devices_by_name.end()
-                                                || unavailable_devices.find(device_name) != unavailable_devices.end())
+                                                || processed_devices.find(device_name) != processed_devices.end())
                                             continue;
                                         
                                         for (auto &available_device : available_midi_devices) {
@@ -316,7 +316,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                 }
                                             }
                                         }
-                                        unavailable_devices.insert(device_name);
+                                        processed_devices.insert(device_name);
                                     }
                                 }
                             }
@@ -510,7 +510,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 goto skip_to_1;
                             }
                     
-                            if (unavailable_devices.find(device_name) != unavailable_devices.end()) {
+                            if (processed_devices.find(device_name) != processed_devices.end()) {
                                 continue;
                             }
                     
@@ -533,7 +533,7 @@ int PlayList(const char* json_str, bool verbose) {
                                     }
                                 }
                             }
-                            unavailable_devices.insert(device_name);
+                            processed_devices.insert(device_name);
                         }
                     }
                 skip_to_1: continue;

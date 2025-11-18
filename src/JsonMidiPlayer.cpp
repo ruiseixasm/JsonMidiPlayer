@@ -195,7 +195,7 @@ int PlayList(const char* json_str, bool verbose) {
 
                 // Dictionary where the key is a JSON list
                 std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
-                std::unordered_set<std::string> processed_devices;
+                std::unordered_set<std::string> unavailable_devices;
                 
                 // Check if jsonFileContent is a non-empty array
                 if (jsonFileContent.is_array() && !jsonFileContent.empty()) {
@@ -211,112 +211,128 @@ int PlayList(const char* json_str, bool verbose) {
                             // Access the value associated with the key "clock"
                             auto clockValue = firstElement.at("clock");
                             // The devices JSON list key
-                            const nlohmann::json clocked_device_names = clockValue["devices"];
+                            const unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
+                            const unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
+                            const unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
+							auto last_position_ms = get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator);
+                            const nlohmann::json clocked_device_names = clockValue["clocked_devices"];
+                            const nlohmann::json controlled_device_names = clockValue["controlled_devices"];
 
-                            if (clocked_device_names.size() > 0) {
+                            if (total_clock_pulses > 0 && pulse_duration_min_numerator > 0 && pulse_duration_min_denominator > 0) {
 
-                                const unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
-                                const unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
-                                const unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
+                                std::unordered_set<MidiDevice*> clocked_devices;
 
-                                if (total_clock_pulses > 0 && pulse_duration_min_numerator > 0 && pulse_duration_min_denominator > 0) {
+                                // First time any Device is tried to be connected, so, none is connected at this moment
+                                // It's a list of Devices that is given as Device
+                                for (std::string device_name : clocked_device_names) {
 
-                                    const unsigned int mmc_mode = clockValue["mmc_mode"];
-                                    std::unordered_set<MidiDevice*> connected_devices;
+                                    for (auto &available_device : available_midi_devices) {
+                                        if (available_device.getName().find(device_name) != std::string::npos) {
+                                            //
+                                            // Where the Device Port is connected/opened (Main reason for errors)
+                                            //
+                                            if (available_device.openPort()) {
 
-                                    // First time any Device is tried to be connected, so, none is connected at this moment
-                                    // It's a list of Devices that is given as Device
-                                    for (std::string device_name : clocked_device_names) {
+                                                if (clocked_devices.find(&available_device) != clocked_devices.end())
+                                                    continue;   // Already clocked!
 
-                                        if (connected_devices_by_name.find(device_name) != connected_devices_by_name.end()
-                                                || processed_devices.find(device_name) != processed_devices.end())
-                                            continue;
-                                        
-                                        for (auto &available_device : available_midi_devices) {
-                                            if (available_device.getName().find(device_name) != std::string::npos) {
-                                                //
-                                                // Where the Device Port is connected/opened (Main reason for errors)
-                                                //
-                                                if (available_device.openPort()) {
+                                                connected_devices_by_name[device_name] = &available_device;
+                                                clocked_devices.insert(&available_device);
+                                                    
+                                                midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x30) );
+                                                play_reporting.total_generated++;
 
-                                                    if (connected_devices.find(&available_device) != connected_devices.end())
-                                                        continue;   // Already clocked!
+                                                for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
 
-                                                    connected_devices_by_name[device_name] = &available_device;
-                                                    connected_devices.insert(&available_device);
-													auto last_position_ms = get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator);
-													
-													// MMC DAW Transport Controls here
-                                                    if (mmc_mode) {
-
-														// Action			MMC	SysEx
-														// Stop				F0 7F 7F 06 01 F7
-														// Play				F0 7F 7F 06 02 F7
-														// Deferred Play	F0 7F 7F 06 03 F7
-														// Fast Forward		F0 7F 7F 06 04 F7
-														// Rewind			F0 7F 7F 06 05 F7
-														// Record Strobe	F0 7F 7F 06 06 F7
-														// Record Exit		F0 7F 7F 06 07 F7
-														// Pause			F0 7F 7F 06 09 F7
-														// Locate			F0 7F 7F 06 44 … F7
-
-														// MMC - Play
-                                                        midiToProcess.push_back(MidiPin(
-                                                            0.0,
-                                                            &available_device,
-                                                            { system_sysex_start, 0x7F, 0x7F, 0x06, 0x02, system_sysex_end },
-                                                            0x00    // Highest priority 0
-                                                        ));
-                                                        play_reporting.total_generated++;
-
-														// MMC - Stop
-                                                        midiToProcess.push_back(MidiPin(
-                                                            last_position_ms,
-                                                            &available_device,
-                                                            { system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end },
-                                                            0xF0    // Lowest priority 16
-                                                        ));
-                                                        play_reporting.total_generated++;
-														
-														// MMC - Rewind
-                                                        midiToProcess.push_back(MidiPin(
-                                                            last_position_ms,
-                                                            &available_device,
-                                                            { system_sysex_start, 0x7F, 0x7F, 0x06, 0x05, system_sysex_end },
-                                                            0xF0    // Lowest priority 16
-                                                        ));
-                                                        play_reporting.total_generated++;
-
-													// Normal Clocking here
-                                                    } else {
-														
-														midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x30) );
-														play_reporting.total_generated++;
-
-														for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
-
-															midiToProcess.push_back(MidiPin(
-																get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
-																&available_device,
-																{ system_timing_clock },
-																0x30
-															));
-															play_reporting.total_generated++;
-														}
-
-														midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_clock_stop }, 0xB0));
-														play_reporting.total_generated++;
-
-														midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB0));
-														play_reporting.total_generated++;
-
-													}
-                                                } else {
-                                                    connected_devices_by_name[device_name] = nullptr;
+                                                    midiToProcess.push_back(MidiPin(
+                                                        get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
+                                                        &available_device,
+                                                        { system_timing_clock },
+                                                        0x30
+                                                    ));
+                                                    play_reporting.total_generated++;
                                                 }
+
+                                                midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_clock_stop }, 0xB0));
+                                                play_reporting.total_generated++;
+
+                                                midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB0));
+                                                play_reporting.total_generated++;
+
+                                            } else {
+                                                connected_devices_by_name[device_name] = nullptr;
                                             }
+                                        } else {
+                                            // Just adds it as a processed device
+                                            unavailable_devices.insert(device_name);
                                         }
-                                        processed_devices.insert(device_name);
+                                    }
+                                }
+
+                                std::unordered_set<MidiDevice*> controlled_devices;
+
+                                // First time any Device is tried to be connected, so, none is connected at this moment
+                                // It's a list of Devices that is given as Device
+                                for (std::string device_name : controlled_device_names) {
+
+                                    for (auto &available_device : available_midi_devices) {
+                                        if (available_device.getName().find(device_name) != std::string::npos) {
+                                            //
+                                            // Where the Device Port is connected/opened (Main reason for errors)
+                                            //
+                                            if (available_device.openPort()) {
+
+                                                if (controlled_devices.find(&available_device) != controlled_devices.end())
+                                                    continue;   // Already controlled!
+
+                                                connected_devices_by_name[device_name] = &available_device;
+                                                controlled_devices.insert(&available_device);
+                                                
+                                                // Action			MMC	SysEx
+                                                // Stop				F0 7F 7F 06 01 F7
+                                                // Play				F0 7F 7F 06 02 F7
+                                                // Deferred Play	F0 7F 7F 06 03 F7
+                                                // Fast Forward		F0 7F 7F 06 04 F7
+                                                // Rewind			F0 7F 7F 06 05 F7
+                                                // Record Strobe	F0 7F 7F 06 06 F7
+                                                // Record Exit		F0 7F 7F 06 07 F7
+                                                // Pause			F0 7F 7F 06 09 F7
+                                                // Locate			F0 7F 7F 06 44 … F7
+
+                                                // MMC - Play
+                                                midiToProcess.push_back(MidiPin(
+                                                    0.0,
+                                                    &available_device,
+                                                    { system_sysex_start, 0x7F, 0x7F, 0x06, 0x02, system_sysex_end },
+                                                    0x00    // Highest priority 0
+                                                ));
+                                                play_reporting.total_generated++;
+
+                                                // MMC - Stop
+                                                midiToProcess.push_back(MidiPin(
+                                                    last_position_ms,
+                                                    &available_device,
+                                                    { system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end },
+                                                    0xF0    // Lowest priority 16
+                                                ));
+                                                play_reporting.total_generated++;
+                                                
+                                                // MMC - Rewind
+                                                midiToProcess.push_back(MidiPin(
+                                                    last_position_ms,
+                                                    &available_device,
+                                                    { system_sysex_start, 0x7F, 0x7F, 0x06, 0x05, system_sysex_end },
+                                                    0xF0    // Lowest priority 16
+                                                ));
+                                                play_reporting.total_generated++;
+
+                                            } else {
+                                                connected_devices_by_name[device_name] = nullptr;
+                                            }
+                                        } else {
+                                            // Just adds it as a processed device
+                                            unavailable_devices.insert(device_name);
+                                        }
                                     }
                                 }
                             }
@@ -510,7 +526,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 goto skip_to_1;
                             }
                     
-                            if (processed_devices.find(device_name) != processed_devices.end()) {
+                            if (unavailable_devices.find(device_name) != unavailable_devices.end()) {
                                 continue;
                             }
                     
@@ -519,21 +535,16 @@ int PlayList(const char* json_str, bool verbose) {
                                     //
                                     // Where the Device Port is connected/opened (Main reason for errors)
                                     //
-                                    try {
-                                        if (available_device.openPort()) {
-                                            connected_devices_by_name[device_name] = &available_device; 
-                                            last_called_midi_device = &available_device;
-                                        } else {
-                                            connected_devices_by_name[device_name] = nullptr; 
-                                        }
-                                        goto skip_to_1;
-                                    } catch (const std::exception& e) {
-                                        if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-                                        goto skip_to_1;
+                                    if (available_device.openPort()) {
+                                        connected_devices_by_name[device_name] = &available_device; 
+                                        last_called_midi_device = &available_device;
+                                    } else {
+                                        connected_devices_by_name[device_name] = nullptr; 
                                     }
+                                } else {
+                                    unavailable_devices.insert(device_name);
                                 }
                             }
-                            processed_devices.insert(device_name);
                         }
                     }
                 skip_to_1: continue;

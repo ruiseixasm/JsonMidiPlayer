@@ -750,9 +750,9 @@ int PlayList(const char* json_str, bool verbose) {
                     break;
                     case action_note_on:
                     {
-                        unsigned char channel_key = pluck_pin.getChannel();
+                        unsigned char channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
                         auto& dict_last = pluck_device.channelpitch_last_pins_note_on;
-                        auto note_on_it = dict_last.find(channel_key);
+                        auto note_on_it = dict_last.find(channel_pitch);
 
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
                             auto& note_on_list = note_on_it->second;
@@ -789,18 +789,18 @@ int PlayList(const char* json_str, bool verbose) {
                         }
                         // First timer Note On
                         // It's safe to use a direct reference given that the Note On midi_pin note parameters are never changed
-                        dict_last[channel_key].push_back( &pluck_pin );
+                        dict_last[channel_pitch].push_back( &pluck_pin );
                         ++pin_it; // Only increment if no removal
                     }
                     break;
                     case action_control_change:
                     case action_key_pressure:
                     {
-                        uint16_t dict_key = pluck_pin.getStatusByte() << 8 | pluck_pin.getDataByte(1);
+                        uint16_t status_data_byte = pluck_pin.getStatusByte() << 8 | pluck_pin.getDataByte(1);
                         auto& dict_last = pluck_device.statusdatabyte_last_pin_controlchange;
 
-                        if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
-                            auto &last_pin_16 = dict_last[dict_key];
+                        if (dict_last.find(status_data_byte) != dict_last.end()) {  // Key found
+                            auto &last_pin_16 = dict_last[status_data_byte];
                             if (last_pin_16 != pluck_pin) {
 
                                 last_pin_16.setDataByte(2, pluck_pin.getDataByte(2));
@@ -811,18 +811,18 @@ int PlayList(const char* json_str, bool verbose) {
                             }
                         } else {
                             // Needs to use a pin dummy copy given that their midi parameters may be changed
-                            dict_last.emplace(dict_key, MidiPin(pluck_pin));    // Just a dummy copy
+                            dict_last.emplace(status_data_byte, MidiPin(pluck_pin));    // Just a dummy copy
                             ++pin_it; // Only increment if no removal
                         }
                     }
                     break;
                     case action_pitch_bend:
                     {
-                        unsigned char dict_key = pluck_pin.getStatusByte();
+                        unsigned char status_byte = pluck_pin.getStatusByte();
                         auto& dict_last = pluck_device.statusbyte_last_pins_pitchbend;
 
-                        if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
-                            auto &last_pin_8 = dict_last[dict_key];
+                        if (dict_last.find(status_byte) != dict_last.end()) {  // Key found
+                            auto &last_pin_8 = dict_last[status_byte];
                             if (last_pin_8 != pluck_pin) {
 
                                 last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
@@ -834,7 +834,7 @@ int PlayList(const char* json_str, bool verbose) {
                             }
                         } else {
                             // Needs to use a pin dummy copy given that their midi parameters may be changed
-                            dict_last.emplace(dict_key, MidiPin(pluck_pin));    // Just a dummy copy
+                            dict_last.emplace(status_byte, MidiPin(pluck_pin));    // Just a dummy copy
                             ++pin_it; // Only increment if no removal
                         }
                     }

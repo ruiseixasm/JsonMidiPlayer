@@ -747,9 +747,9 @@ int PlayList(const char* json_str, bool verbose) {
 								const double last_note_time_ms = last_note_on_pin->getTime();
 								const double this_note_time_ms = pluck_pin.getTime();
 
+								last_note_on_pin->increaseNotePressedTimes();	// Because the remaining EXTRA note off
 								if (this_note_time_ms == last_note_time_ms) {
 									
-									last_note_on_pin->increaseNotePressedTimes();	// Because the remaining EXTRA note off
 									pin_it = midiToProcess.erase(pin_it);	// Can't trigger the same note twice at the same time
 									++(play_reporting.total_redundant);	// STATS
 									// By erasing a pin above, there is no need to increase the pin iterator

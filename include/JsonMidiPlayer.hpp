@@ -238,9 +238,9 @@ class MidiDevice {
     
     public:
     
-        // Keeps MidiPin pointers
-        std::unordered_map<unsigned char, std::list<MidiPin*>>
-                                                    last_pin_note_on;   // For Note On tracking
+        // Keeps MidiPin pointers by Channel_Pitch (uint16_t) (similar to byte_16)
+        std::unordered_map<uint16_t, std::list<MidiPin*>>
+                                                    last_pins_note_on_per_channel_pitch;   // For Note On tracking
         
         // Keeps MidiPin dummy copies
         std::unordered_map<unsigned char, MidiPin>  last_pin_byte_8;    // For Pitch Bend and Aftertouch alike

@@ -716,7 +716,7 @@ int PlayList(const char* json_str, bool verbose) {
                     case action_note_off:
                     {
                         unsigned char channel_key = pluck_pin.getChannel();
-                        auto& dict_last = pluck_device.last_pin_note_on;
+                        auto& dict_last = pluck_device.last_pins_note_on_per_channel_pitch;
                         auto note_on_it = dict_last.find(channel_key);
 
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
@@ -750,7 +750,7 @@ int PlayList(const char* json_str, bool verbose) {
                     case action_note_on:
                     {
                         unsigned char channel_key = pluck_pin.getChannel();
-                        auto& dict_last = pluck_device.last_pin_note_on;
+                        auto& dict_last = pluck_device.last_pins_note_on_per_channel_pitch;
                         auto note_on_it = dict_last.find(channel_key);
 
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
@@ -880,7 +880,7 @@ int PlayList(const char* json_str, bool verbose) {
                     // MIDI NOTES SHALL NOT BE LEFT PRESSED !!
                     // Add the needed note off for all those still on at the end!
                     // Iterate over all keys and values
-                    for (const auto& pair : device.last_pin_note_on) {
+                    for (const auto& pair : device.last_pins_note_on_per_channel_pitch) {
                         unsigned char channel_key = pair.first;
                         auto& note_on_list = pair.second;
 

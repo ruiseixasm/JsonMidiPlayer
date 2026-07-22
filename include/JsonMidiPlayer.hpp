@@ -182,7 +182,7 @@ public:
     // Intended for Note On only
     bool operator == (const MidiPin &midi_pin) {
         // mapped by Channel, so, with the same Channel for sure
-        return this->getDataByte(1) == midi_pin.getDataByte(1); // Key number
+        return this->getDataByte(1) == midi_pin.getDataByte(1); // Note pitch
     }
 
     // Intended for Automation messages only
@@ -191,12 +191,12 @@ public:
         switch (this->getAction()) {
             case action_control_change:
             case action_key_pressure:
-                return this->getDataByte(2) != midi_pin.getDataByte(2);
+                return this->getDataByte(2) != midi_pin.getDataByte(2);		// Value or Pressure
             case action_pitch_bend:
                 return this->getDataByte(1) != midi_pin.getDataByte(1) ||
-                        this->getDataByte(2) != midi_pin.getDataByte(2);
+                        this->getDataByte(2) != midi_pin.getDataByte(2);	// LSB and MSB
             case action_channel_pressure:
-                return this->getDataByte(1) != midi_pin.getDataByte(1);
+                return this->getDataByte(1) != midi_pin.getDataByte(1);		// Pressure
         }
         return true;
     }

@@ -88,6 +88,9 @@ private:
     // Auxiliary variable for the final playing loop!!
     double delay_time_ms = -1;
 
+	// needed to recognize and already released Note !!
+    size_t note_pressed_times = 1;   // BY DEFAULT THE NOTE ON IS 1 TIME PRESSED
+
 public:
     // Pin DEFAULT constructor, no arguments,
     // needed for emplace and insert of the std::unordered_map inside MidiDevice class !!
@@ -97,7 +100,7 @@ public:
         midi_device(nullptr),           // Default to nullptr
         midi_message(),                 // Default to an empty vector
         delay_time_ms(-1),              // Default to -1
-        note_released(true)             // Default to true
+        note_pressed_times(1)           // Default to 1
     { }
 
     // Pin constructor
@@ -116,7 +119,7 @@ public:
           midi_message(other.midi_message),           // Copy the midi_message vector
           priority(other.priority),                   // Copy the priority
           delay_time_ms(other.delay_time_ms),         // Copy the delay_time_ms
-          note_released(other.note_released)          // Copy the note_released
+          note_pressed_times(other.note_pressed_times)          // Copy the note_released
     { }
 
     double getTime() const {
@@ -173,11 +176,20 @@ public:
         return this->midi_device;
     }
 
+	size_t getNotePressedTimes() const {
+		return this->note_pressed_times;
+	}
+
+	void increaseNotePressedTimes() {
+		this->note_pressed_times++;
+	}
+
+	void decreaseNotePressedTimes() {
+		if (this->note_pressed_times > 0)
+			this->note_pressed_times--;
+	}
 
 public:
-
-	// needed to recognize and already released Note !!
-    bool note_released = false;   // BY DEFAULT THE NOTE ON ISN'T RELEASED
 
     // Intended for Automation messages only
     bool operator != (const MidiPin &midi_pin) {

@@ -745,7 +745,7 @@ int PlayList(const char* json_str, bool verbose) {
 							const double this_note_time_ms = pluck_pin.getTime();
 
 							if (this_note_time_ms == last_note_time_ms) {
-								
+
                         		pin_it = midiToProcess.erase(pin_it);	// Can't trigger the same note twice at the same time
 								++(play_reporting.total_redundant);	// STATS
 								// By erasing a pin above, there is no need to increase the pin iterator
@@ -767,6 +767,7 @@ int PlayList(const char* json_str, bool verbose) {
 											midi_pin_message
 										)
 									);
+                                play_reporting.total_generated++;
 								// THIS IS RIGHT, NEW PIN ADDED, IT'S INTENDED TO BE TWO CONSECUTIVE SKIPS !!
 								// Skips the previously inserted Note Off MidiPin
 								++pin_it;  // Move the iterator to the next element
@@ -791,8 +792,8 @@ int PlayList(const char* json_str, bool verbose) {
                                 last_pin_16.setDataByte(2, pluck_pin.getDataByte(2));
                                 ++pin_it; // Only increment if no removal
                             } else {
+								pin_it = midiToProcess.erase(pin_it);
                                 ++(play_reporting.total_redundant);
-                                pin_it = midiToProcess.erase(pin_it);
                             }
                         } else {
                             // Needs to use a pin dummy copy given that their midi parameters may be changed
@@ -814,8 +815,8 @@ int PlayList(const char* json_str, bool verbose) {
                                 last_pin_8.setDataByte(2, pluck_pin.getDataByte(2));
                                 ++pin_it; // Only increment if no removal
                             } else {
+								pin_it = midiToProcess.erase(pin_it);
                                 ++(play_reporting.total_redundant);
-                                pin_it = midiToProcess.erase(pin_it);
                             }
                         } else {
                             // Needs to use a pin dummy copy given that their midi parameters may be changed
@@ -836,8 +837,8 @@ int PlayList(const char* json_str, bool verbose) {
                                 last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
                                 ++pin_it; // Only increment if no removal
                             } else {
+								pin_it = midiToProcess.erase(pin_it);
                                 ++(play_reporting.total_redundant);
-                                pin_it = midiToProcess.erase(pin_it);
                             }
                         } else {
                             // Needs to use a pin dummy copy given that their midi parameters may be changed
@@ -879,6 +880,7 @@ int PlayList(const char* json_str, bool verbose) {
                             };
                             // Adds a new MidiPin as a copy to the list of pins to be processed
                             midiToProcess.push_back( MidiPin(last_message_time_ms, &device, midi_pin_message) );
+                            play_reporting.total_generated++;
                         }
                     }
 

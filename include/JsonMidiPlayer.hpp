@@ -240,11 +240,13 @@ class MidiDevice {
     
         // Keeps MidiPin pointers by Channel_Pitch (uint16_t) (similar to byte_16)
         std::unordered_map<uint16_t, std::list<MidiPin*>>
-                                                    channel_pitch_last_pins_note_on;   // For Note On tracking
+                                                    channel_pitch_last_pins_note_on;	// For Note On tracking
         
         // Keeps MidiPin dummy copies
-        std::unordered_map<unsigned char, MidiPin>  channel_last_pins_pitchbend;    // For Pitch Bend and Aftertouch alike
-        std::unordered_map<uint16_t, MidiPin>       channel_number_last_pin_controlchange;   // For Control Change and Key Pressure
+        std::unordered_map<unsigned char, MidiPin>  channel_last_pins_pitchbend;    		// For Pitch Bend
+        std::unordered_map<unsigned char, MidiPin>  channel_last_pins_aftertouch;    		// For Aftertouch
+        std::unordered_map<uint16_t, MidiPin>       channel_number_last_pin_controlchange;  // For Control Change
+        std::unordered_map<uint16_t, MidiPin>       channel_number_last_pin_keypressure;   	// For Key Pressure
 
         // Keeps MidiPin pointers
         MidiPin *last_pin_clock = nullptr;          // Midi clock messages 0xF0

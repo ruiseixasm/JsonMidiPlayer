@@ -97,7 +97,7 @@ public:
         midi_device(nullptr),           // Default to nullptr
         midi_message(),                 // Default to an empty vector
         delay_time_ms(-1),              // Default to -1
-        level(1)                        // Default to 1
+        note_released(true)             // Default to true
     { }
 
     // Pin constructor
@@ -116,7 +116,7 @@ public:
           midi_message(other.midi_message),           // Copy the midi_message vector
           priority(other.priority),                   // Copy the priority
           delay_time_ms(other.delay_time_ms),         // Copy the delay_time_ms
-          level(other.level)                          // Copy the level
+          note_released(other.note_released)          // Copy the note_released
     { }
 
     double getTime() const {
@@ -176,14 +176,8 @@ public:
 
 public:
 
-    // If this is a Note On pin, then, by definition, is already at level 1
-    size_t level = 1;   // VERY IMPORTANT TO AVOID EARLIER NOTE OFF
-
-    // Intended for Note On only
-    bool operator == (const MidiPin &midi_pin) {
-        // mapped by Channel, so, with the same Channel for sure
-        return this->getDataByte(1) == midi_pin.getDataByte(1); // Note pitch
-    }
+	// needed to recognize and already released Note !!
+    bool note_released = false;   // BY DEFAULT THE NOTE ON ISN'T RELEASED
 
     // Intended for Automation messages only
     bool operator != (const MidiPin &midi_pin) {
@@ -201,29 +195,6 @@ public:
         return true;
     }
 
-    // Prefix increment
-    MidiPin& operator++() {
-        ++level;
-        return *this;
-    }
-    // Postfix increment
-    MidiPin operator++(int) {
-        MidiPin temp = *this;
-        ++level;
-        return temp;
-    }
-    // Prefix decrement
-    MidiPin& operator--() {
-        --level;
-        return *this;
-    }
-    // Postfix decrement
-    MidiPin operator--(int) {
-        MidiPin temp = *this;
-        --level;
-        return temp;
-    }
-
 };
 
 
@@ -239,10 +210,9 @@ class MidiDevice {
     public:
     
         // Keeps MidiPin pointers by Channel_Pitch (uint16_t) (similar to byte_16)
-        std::unordered_map<uint16_t, std::list<MidiPin*>>
-                                                    channelpitch_last_pins_note_on;			// For Note On tracking
+        std::unordered_map<uint16_t, MidiPin*>		channelpitch_last_pins_note_on;			// For Note On tracking
         
-        // Keeps MidiPin dummy copies
+        // Keeps MidiPin dummy copies, thus NOT pointers of MidiPin
         std::unordered_map<unsigned char, MidiPin>  statusbyte_last_pins_pitchbend;    		// For Pitch Bend and Aftertouch
         std::unordered_map<uint16_t, MidiPin>       statusdatabyte_last_pin_controlchange;	// For Control Changeand Key Pressure
 

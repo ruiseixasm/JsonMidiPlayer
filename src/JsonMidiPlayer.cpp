@@ -717,86 +717,51 @@ int PlayList(const char* json_str, bool verbose) {
                     {
                         auto& dict_last = pluck_device.channelpitch_last_pins_note_on;
                         uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
-                        auto note_on_it = dict_last.find(channel_pitch);
+						
+                        if (dict_last.find(channel_pitch) != dict_last.end()) { // Note On in the dict found
 
-                        if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
-                            auto& note_on_list = note_on_it->second;
+							auto &last_note_on_pin = dict_last[channel_pitch];	// It's a MidiPin*&
 
-                            // Loop through the list of a particular Channel
-                            // and remove elements (because midi pins may be removed)
-                            for (auto note_on = note_on_list.begin(); note_on != note_on_list.end(); ++note_on) {
-
-                                MidiPin *last_pin_note_on = *note_on;
-
-                                if (*last_pin_note_on == pluck_pin) {
-
-                                    if (last_pin_note_on->level == 1) {
-
-                                        note_on = note_on_list.erase(note_on);
-                                        ++pin_it; // Only increment if no removal
-                                    } else {
-                                        --(*last_pin_note_on);  // Decrements level
-                                        ++(play_reporting.total_redundant);
-                                        pin_it = midiToProcess.erase(pin_it);
-                                    }
-                                    goto skip_to_2;
-                                }
-                            }
+							if (last_note_on_pin->note_released) {	// Note already released
+								pin_it = midiToProcess.erase(pin_it);
+                        		++(play_reporting.total_redundant);  // Note Off as no Note On pair (STATS)
+								// By erasing a pin above, there is no need to increase the pin iterator
+								goto skip_to_2;
+							}
+							last_note_on_pin->note_released = true;
                         }
-                        ++(play_reporting.total_redundant);  // Note Off as no Note On pair
-                        pin_it = midiToProcess.erase(pin_it);
+                        ++pin_it; // Only increments if no removal
                     }
                     break;
                     case action_note_on:
                     {
                         auto& dict_last = pluck_device.channelpitch_last_pins_note_on;
                         uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
-                        auto note_on_it = dict_last.find(channel_pitch);
 
-                        if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
-                            auto& note_on_list = note_on_it->second;
+                        if (dict_last.find(channel_pitch) != dict_last.end()) {	// Note On in the dict found
 
-                            // Loops the list of a particular Channel
-                            for (MidiPin *last_pin_note_on : note_on_list) {
+							auto &last_note_on_pin = dict_last[channel_pitch];	// It's a MidiPin*&
+							const double last_note_time_ms = last_note_on_pin->getTime();
+							const double this_note_time_ms = pluck_pin.getTime();
 
-                                if (*last_pin_note_on == pluck_pin) {
-
-                                    ++(*last_pin_note_on);  // Increments level
-
-                                    // New note off message
-                                    std::vector<unsigned char> midi_message = {
-                                        static_cast<unsigned char>(pluck_pin.getChannel() | action_note_off),
-                                        pluck_pin.getDataByte(1),
-                                        0
-                                    };
-                                    pin_it = midiToProcess.insert(pin_it,   // Makes a copy to the place given by pin_it
-                                        MidiPin(
-                                                pluck_pin.getTime(),
-                                                pluck_pin.getMidiDevice(),
-                                                midi_message
-                                            )
-                                        );
-                                    // THIS IS RIGHT, NEW PIN ADDED, IT'S INTENDED TO BE TWO CONSECUTIVE SKIPS !!
-                                    // Skips the previously inserted Note Off MidiPin
-                                    ++pin_it;  // Move the iterator to the next element
-                                    // Skips the default Note On MidiPin
-                                    ++pin_it;  // Move the iterator to the next element
-                                    goto skip_to_2;
-                                }
-                            }
-
+							if (this_note_time_ms == last_note_time_ms) {
+                        		pin_it = midiToProcess.erase(pin_it);	// Can't trigger the same note twice at the same time
+								++(play_reporting.total_redundant);	// STATS
+								// By erasing a pin above, there is no need to increase the pin iterator
+								goto skip_to_2;
+							}
                         }
                         // First timer Note On
                         // It's safe to use a direct reference given that the Note On midi_pin note parameters are never changed
-                        dict_last[channel_pitch].push_back( &pluck_pin );
-                        ++pin_it; // Only increment if no removal
+						dict_last[channel_pitch] = &pluck_pin;
+                        ++pin_it; // Only increments if no removal
                     }
                     break;
                     case action_control_change:
                     case action_key_pressure:
                     {
-                        uint16_t status_data_byte = pluck_pin.getStatusByte() << 8 | pluck_pin.getDataByte(1);
                         auto& dict_last = pluck_device.statusdatabyte_last_pin_controlchange;
+                        uint16_t status_data_byte = pluck_pin.getStatusByte() << 8 | pluck_pin.getDataByte(1);
 
                         if (dict_last.find(status_data_byte) != dict_last.end()) {  // Key found
                             auto &last_pin_16 = dict_last[status_data_byte];
@@ -882,9 +847,9 @@ int PlayList(const char* json_str, bool verbose) {
                     // Iterate over all keys and values
                     for (const auto& pair : device.channelpitch_last_pins_note_on) {
                         // uint16_t channel_pitch = pair.first;
-                        auto& note_on_list = pair.second;
+                        auto& last_pin_note_on = pair.second;
 
-                        for (MidiPin *last_pin_note_on : note_on_list) {
+                        if (!last_pin_note_on->note_released) {
                             // Transform midi on in midi off
                             std::vector<unsigned char> midi_message = {
                                 static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte

@@ -723,7 +723,7 @@ int PlayList(const char* json_str, bool verbose) {
 							auto &last_note_on_pin = dict_last_on[channel_pitch];	// It's a MidiPin*&
 
 							last_note_on_pin->decreaseNotePressedTimes();
-							if (last_note_on_pin->getNotePressedTimes() > 0) {	// The Only configuration to release Note is 1
+							if (last_note_on_pin->getNotePressedTimes() != 0) {	// The Only configuration to release Note is 1
 								pin_it = midiToProcess.erase(pin_it);
                         		++(play_reporting.total_redundant);  // Note Off as no Note On pair (STATS)
 								// By erasing a pin above, there is no need to increase the pin iterator
@@ -741,36 +741,40 @@ int PlayList(const char* json_str, bool verbose) {
                         if (dict_last_on.find(channel_pitch) != dict_last_on.end()) {	// Note On in the dict found
 
 							auto &last_note_on_pin = dict_last_on[channel_pitch];	// It's a MidiPin*&
-							const double last_note_time_ms = last_note_on_pin->getTime();
-							const double this_note_time_ms = pluck_pin.getTime();
 
-							if (this_note_time_ms == last_note_time_ms) {
+							if (last_note_on_pin->getNotePressedTimes() > 0) {
 
-                        		pin_it = midiToProcess.erase(pin_it);	// Can't trigger the same note twice at the same time
-								++(play_reporting.total_redundant);	// STATS
-								// By erasing a pin above, there is no need to increase the pin iterator
-								goto skip_to_2;
+								const double last_note_time_ms = last_note_on_pin->getTime();
+								const double this_note_time_ms = pluck_pin.getTime();
 
-							} else {	// It's still triggerable
-								
-								last_note_on_pin->decreaseNotePressedTimes();	// The next inserted note_off decreases implicitly
-								// New note off message
-								std::vector<unsigned char> midi_pin_message = {
-									static_cast<unsigned char>(pluck_pin.getChannel() | action_note_off),
-									pluck_pin.getDataByte(1),
-									0	// Priority
-								};
-								pin_it = midiToProcess.insert(pin_it,   // Makes a copy to the place given by pin_it
-									MidiPin(
-											pluck_pin.getTime(),
-											pluck_pin.getMidiDevice(),
-											midi_pin_message
-										)
-									);
-                                play_reporting.total_generated++;
-								// THIS IS RIGHT, NEW PIN ADDED, IT'S INTENDED TO BE TWO CONSECUTIVE SKIPS !!
-								// Skips the previously inserted Note Off MidiPin
-								++pin_it;  // Move the iterator to the next element
+								if (this_note_time_ms == last_note_time_ms) {
+									
+									last_note_on_pin->increaseNotePressedTimes();	// Because the remaining EXTRA note off
+									pin_it = midiToProcess.erase(pin_it);	// Can't trigger the same note twice at the same time
+									++(play_reporting.total_redundant);	// STATS
+									// By erasing a pin above, there is no need to increase the pin iterator
+									goto skip_to_2;
+
+								} else {	// It's still triggerable
+									
+									// New note off message
+									std::vector<unsigned char> midi_pin_message = {
+										static_cast<unsigned char>(pluck_pin.getChannel() | action_note_off),
+										pluck_pin.getDataByte(1),
+										0	// Note off has value 0
+									};
+									pin_it = midiToProcess.insert(pin_it,   // Makes a copy to the place given by pin_it
+										MidiPin(
+												pluck_pin.getTime(),
+												pluck_pin.getMidiDevice(),
+												midi_pin_message
+											)
+										);
+									play_reporting.total_generated++;
+									// THIS IS RIGHT, NEW PIN ADDED, IT'S INTENDED TO BE TWO CONSECUTIVE SKIPS !!
+									// Skips the previously inserted Note Off MidiPin
+									++pin_it;  // Move the iterator to the next element
+								}
 							}
                         }
                         // First timer Note On
@@ -876,7 +880,7 @@ int PlayList(const char* json_str, bool verbose) {
                             std::vector<unsigned char> midi_pin_message = {
                                 static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte
                                 last_pin_note_on->getDataByte(1),
-                                last_pin_note_on->getDataByte(2)
+                                0	// Note off has value 0
                             };
                             // Adds a new MidiPin as a copy to the list of pins to be processed
                             midiToProcess.push_back( MidiPin(last_message_time_ms, &device, midi_pin_message) );

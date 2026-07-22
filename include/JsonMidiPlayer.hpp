@@ -185,8 +185,7 @@ public:
 	}
 
 	void decreaseNotePressedTimes() {
-		if (this->note_pressed_times > 0)
-			this->note_pressed_times--;
+		this->note_pressed_times--;
 	}
 
 public:

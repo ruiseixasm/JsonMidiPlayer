@@ -796,7 +796,7 @@ int PlayList(const char* json_str, bool verbose) {
                     case action_key_pressure:
                     {
                         uint16_t dict_key = pluck_pin.getStatusByte() << 8 | pluck_pin.getDataByte(1);
-                        auto& dict_last = pluck_device.last_pin_byte_16;
+                        auto& dict_last = pluck_device.channel_number_last_pin_controlchange;
 
                         if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
                             auto &last_pin_16 = dict_last[dict_key];
@@ -818,7 +818,7 @@ int PlayList(const char* json_str, bool verbose) {
                     case action_pitch_bend:
                     {
                         unsigned char dict_key = pluck_pin.getStatusByte();
-                        auto& dict_last = pluck_device.last_pin_byte_8;
+                        auto& dict_last = pluck_device.channel_last_pins_pitchbend;
 
                         if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
                             auto &last_pin_8 = dict_last[dict_key];
@@ -841,7 +841,7 @@ int PlayList(const char* json_str, bool verbose) {
                     case action_channel_pressure:
                     {
                         unsigned char dict_key = pluck_pin.getStatusByte();
-                        auto& dict_last = pluck_device.last_pin_byte_8;
+                        auto& dict_last = pluck_device.channel_last_pins_pitchbend;
 
                         if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
                             auto &last_pin_8 = dict_last[dict_key];

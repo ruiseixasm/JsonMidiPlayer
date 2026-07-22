@@ -92,10 +92,11 @@
         "cinttypes": "cpp"
     },
     "cSpell.words": [
-        "Aftertouch",
-        "Monteiro",
-        "Seixas",
-        "sysex",
-        "winmm"
-    ]
+		"Aftertouch",
+		"Monteiro",
+		"pitchbend",
+		"Seixas",
+		"sysex",
+		"winmm"
+	]
 }

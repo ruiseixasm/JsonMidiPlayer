@@ -93,9 +93,12 @@
     },
     "cSpell.words": [
 		"Aftertouch",
+		"channelpitch",
 		"Monteiro",
 		"pitchbend",
 		"Seixas",
+		"statusbyte",
+		"statusdatabyte",
 		"sysex",
 		"winmm"
 	]

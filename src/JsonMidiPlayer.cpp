@@ -716,7 +716,8 @@ int PlayList(const char* json_str, bool verbose) {
                     case action_note_off:
                     {
                         unsigned char channel_key = pluck_pin.getChannel();
-                        auto& dict_last = pluck_device.channel_pitch_last_pins_note_on;
+
+                        auto& dict_last = pluck_device.channelpitch_last_pins_note_on;
                         auto note_on_it = dict_last.find(channel_key);
 
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
@@ -750,7 +751,7 @@ int PlayList(const char* json_str, bool verbose) {
                     case action_note_on:
                     {
                         unsigned char channel_key = pluck_pin.getChannel();
-                        auto& dict_last = pluck_device.channel_pitch_last_pins_note_on;
+                        auto& dict_last = pluck_device.channelpitch_last_pins_note_on;
                         auto note_on_it = dict_last.find(channel_key);
 
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
@@ -793,31 +794,10 @@ int PlayList(const char* json_str, bool verbose) {
                     }
                     break;
                     case action_control_change:
-                    {
-                        uint16_t dict_key = pluck_pin.getStatusByte() << 8 | pluck_pin.getDataByte(1);
-                        auto& dict_last = pluck_device.channel_number_last_pin_controlchange;
-
-                        if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
-                            auto &last_pin_16 = dict_last[dict_key];
-                            if (last_pin_16 != pluck_pin) {
-
-                                last_pin_16.setDataByte(2, pluck_pin.getDataByte(2));
-                                ++pin_it; // Only increment if no removal
-                            } else {
-                                ++(play_reporting.total_redundant);
-                                pin_it = midiToProcess.erase(pin_it);
-                            }
-                        } else {
-                            // Needs to use a pin dummy copy given that their midi parameters may be changed
-                            dict_last.emplace(dict_key, MidiPin(pluck_pin));    // Just a dummy copy
-                            ++pin_it; // Only increment if no removal
-                        }
-                    }
-                    break;
                     case action_key_pressure:
                     {
                         uint16_t dict_key = pluck_pin.getStatusByte() << 8 | pluck_pin.getDataByte(1);
-                        auto& dict_last = pluck_device.channel_number_last_pin_keypressure;
+                        auto& dict_last = pluck_device.statusdatabyte_last_pin_controlchange;
 
                         if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
                             auto &last_pin_16 = dict_last[dict_key];
@@ -839,7 +819,7 @@ int PlayList(const char* json_str, bool verbose) {
                     case action_pitch_bend:
                     {
                         unsigned char dict_key = pluck_pin.getStatusByte();
-                        auto& dict_last = pluck_device.channel_last_pins_pitchbend;
+                        auto& dict_last = pluck_device.statusbyte_last_pins_pitchbend;
 
                         if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
                             auto &last_pin_8 = dict_last[dict_key];
@@ -862,7 +842,7 @@ int PlayList(const char* json_str, bool verbose) {
                     case action_channel_pressure:
                     {
                         unsigned char dict_key = pluck_pin.getStatusByte();
-                        auto& dict_last = pluck_device.channel_last_pins_aftertouch;
+                        auto& dict_last = pluck_device.statusbyte_last_pins_pitchbend;
 
                         if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
                             auto &last_pin_8 = dict_last[dict_key];
@@ -901,7 +881,7 @@ int PlayList(const char* json_str, bool verbose) {
                     // MIDI NOTES SHALL NOT BE LEFT PRESSED !!
                     // Add the needed note off for all those still on at the end!
                     // Iterate over all keys and values
-                    for (const auto& pair : device.channel_pitch_last_pins_note_on) {
+                    for (const auto& pair : device.channelpitch_last_pins_note_on) {
                         unsigned char channel_key = pair.first;
                         auto& note_on_list = pair.second;
 

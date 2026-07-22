@@ -753,7 +753,6 @@ int PlayList(const char* json_str, bool verbose) {
 									pin_it = midiToProcess.erase(pin_it);	// Can't trigger the same note twice at the same time
 									++(play_reporting.total_redundant);	// STATS
 									// By erasing a pin above, there is no need to increase the pin iterator
-									goto skip_to_2;
 
 								} else {	// It's still triggerable
 									
@@ -774,7 +773,10 @@ int PlayList(const char* json_str, bool verbose) {
 									// THIS IS RIGHT, NEW PIN ADDED, IT'S INTENDED TO BE TWO CONSECUTIVE SKIPS !!
 									// Skips the previously inserted Note Off MidiPin
 									++pin_it;  // Move the iterator to the next element
+									// The usual increment given that it jumps the steps bellow
+                        			++pin_it; // Only increments if no removal
 								}
+								goto skip_to_2;
 							}
                         }
                         // First timer Note On

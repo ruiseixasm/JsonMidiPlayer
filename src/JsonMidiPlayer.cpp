@@ -715,10 +715,9 @@ int PlayList(const char* json_str, bool verbose) {
                     break;
                     case action_note_off:
                     {
-                        unsigned char channel_key = pluck_pin.getChannel();
-
                         auto& dict_last = pluck_device.channelpitch_last_pins_note_on;
-                        auto note_on_it = dict_last.find(channel_key);
+                        uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
+                        auto note_on_it = dict_last.find(channel_pitch);
 
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
                             auto& note_on_list = note_on_it->second;
@@ -750,8 +749,8 @@ int PlayList(const char* json_str, bool verbose) {
                     break;
                     case action_note_on:
                     {
-                        unsigned char channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
                         auto& dict_last = pluck_device.channelpitch_last_pins_note_on;
+                        uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
                         auto note_on_it = dict_last.find(channel_pitch);
 
                         if (note_on_it != dict_last.end() && !note_on_it->second.empty()) { // Note On list found
@@ -882,7 +881,7 @@ int PlayList(const char* json_str, bool verbose) {
                     // Add the needed note off for all those still on at the end!
                     // Iterate over all keys and values
                     for (const auto& pair : device.channelpitch_last_pins_note_on) {
-                        unsigned char channel_key = pair.first;
+                        // uint16_t channel_pitch = pair.first;
                         auto& note_on_list = pair.second;
 
                         for (MidiPin *last_pin_note_on : note_on_list) {

@@ -206,349 +206,363 @@ int PlayList(const char* json_str, bool verbose) {
                     // Check if the first element is an object and contains the key "clock"
                     if (firstElement.is_object() && firstElement.contains("clock")) {
 
-                        try
-                        {
-                            // Access the value associated with the key "clock"
-                            auto clockValue = firstElement.at("clock");
-                            // The devices JSON list key
-                            const unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
-                            const unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
-                            const unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
-							auto last_position_ms = get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator);
-                            const nlohmann::json clocked_device_names = clockValue["clocked_devices"];
-                            const nlohmann::json controlled_device_names = clockValue["controlled_devices"];
 
-                            if (total_clock_pulses > 0 && pulse_duration_min_numerator > 0 && pulse_duration_min_denominator > 0) {
 
-                                std::unordered_set<MidiDevice*> clocked_devices;
 
-                                // First time any Device is tried to be connected, so, none is connected at this moment
-                                // It's a list of Devices that is given as Device
-                                for (std::string device_name : clocked_device_names) {
 
-                                    for (auto &available_device : available_midi_devices) {
-                                        if (available_device.getName().find(device_name) != std::string::npos) {
-                                            //
-                                            // Where the Device Port is connected/opened (Main reason for errors)
-                                            //
-                                            if (available_device.openPort()) {
-
-                                                if (clocked_devices.find(&available_device) != clocked_devices.end())
-                                                    continue;   // Already clocked!
-
-                                                connected_devices_by_name[device_name] = &available_device;
-                                                clocked_devices.insert(&available_device);
-                                                    
-                                                midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x30) );
-                                                play_reporting.total_generated++;
-
-                                                for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
-
-                                                    midiToProcess.push_back(MidiPin(
-                                                        get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
-                                                        &available_device,
-                                                        { system_timing_clock },
-                                                        0x30
-                                                    ));
-                                                    play_reporting.total_generated++;
-                                                }
-
-                                                midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_clock_stop }, 0xB0));
-                                                play_reporting.total_generated++;
-
-                                                midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB0));
-                                                play_reporting.total_generated++;
-
-                                            } else {
-                                                connected_devices_by_name[device_name] = nullptr;
-                                            }
-                                        } else {
-                                            // Just adds it as a processed device
-                                            unavailable_devices.insert(device_name);
-                                        }
-                                    }
-                                }
-
-                                std::unordered_set<MidiDevice*> controlled_devices;
-
-                                // First time any Device is tried to be connected, so, none is connected at this moment
-                                // It's a list of Devices that is given as Device
-                                for (std::string device_name : controlled_device_names) {
-
-                                    for (auto &available_device : available_midi_devices) {
-                                        if (available_device.getName().find(device_name) != std::string::npos) {
-                                            //
-                                            // Where the Device Port is connected/opened (Main reason for errors)
-                                            //
-                                            if (available_device.openPort()) {
-
-                                                if (controlled_devices.find(&available_device) != controlled_devices.end())
-                                                    continue;   // Already controlled!
-
-                                                connected_devices_by_name[device_name] = &available_device;
-                                                controlled_devices.insert(&available_device);
-                                                
-                                                // Action			MMC	SysEx
-                                                // Stop				F0 7F 7F 06 01 F7
-                                                // Play				F0 7F 7F 06 02 F7
-                                                // Deferred Play	F0 7F 7F 06 03 F7
-                                                // Fast Forward		F0 7F 7F 06 04 F7
-                                                // Rewind			F0 7F 7F 06 05 F7
-                                                // Record Strobe	F0 7F 7F 06 06 F7
-                                                // Record Exit		F0 7F 7F 06 07 F7
-                                                // Pause			F0 7F 7F 06 09 F7
-                                                // Locate			F0 7F 7F 06 44 … F7
-
-                                                // MMC - Play
-                                                midiToProcess.push_back(MidiPin(
-                                                    0.0,
-                                                    &available_device,
-                                                    { system_sysex_start, 0x7F, 0x7F, 0x06, 0x02, system_sysex_end },
-                                                    0x00    // Highest priority 0
-                                                ));
-                                                play_reporting.total_generated++;
-
-                                                // MMC - Stop
-                                                midiToProcess.push_back(MidiPin(
-                                                    last_position_ms,
-                                                    &available_device,
-                                                    { system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end },
-                                                    0xF0    // Lowest priority 16
-                                                ));
-                                                play_reporting.total_generated++;
-                                                
-                                                // MMC - Rewind
-                                                midiToProcess.push_back(MidiPin(
-                                                    last_position_ms,
-                                                    &available_device,
-                                                    { system_sysex_start, 0x7F, 0x7F, 0x06, 0x05, system_sysex_end },
-                                                    0xF0    // Lowest priority 16
-                                                ));
-                                                play_reporting.total_generated++;
-
-                                            } else {
-                                                connected_devices_by_name[device_name] = nullptr;
-                                            }
-                                        } else {
-                                            // Just adds it as a processed device
-                                            unavailable_devices.insert(device_name);
-                                        }
-                                    }
-                                }
-                            }
-                        } catch (const std::exception& e) {
-                            if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-                        }
 
                     } else {
-                        if (verbose) std::cerr << "No Clock given!" << std::endl;
+                        if (verbose) std::cout << "No Clock given!" << std::endl;
                     }
+
+					// Keeps the last called device in the JsonMidiPlayer file
+					MidiDevice *last_called_midi_device = nullptr;
+
+					for (auto jsonElement : jsonFileContent)
+					{
+						// Most of the time it's a midi_message being processed, so it makes sense to be the first to check
+						if (jsonElement.contains("midi_message")) {
+
+							if (last_called_midi_device != nullptr) {
+
+								play_reporting.total_incorrect++;
+								double time_milliseconds = jsonElement["time_ms"];
+
+								// Create an API with the default API
+								try
+								{
+									if (time_milliseconds < 0) {
+
+										continue;
+										
+									} else {
+
+										unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
+										std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
+										unsigned char priority = 0xFF;  // Lowest priority 16 by default
+										
+										unsigned char message_action = status_byte & 0xF0;
+										switch (message_action) {
+											case action_system:
+												switch (status_byte) {
+													case system_timing_clock:
+													case system_clock_start:
+													case system_clock_stop:
+													case system_clock_continue:
+														// Any clock message falls here
+														priority = 0x30 | status_byte & 0x0F;       // High priority 3
+														break;
+													case system_song_pointer:
+													{
+														// This is already a try catch situation
+														unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+														unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+														if (data_byte_1 & 128 | data_byte_2 & 128)  // Makes sure it's inside the processing window
+															continue;
+
+														json_midi_message.push_back(data_byte_1);
+														json_midi_message.push_back(data_byte_2);
+														priority = 0xB0 | status_byte & 0x0F;       // Low priority 12
+														break;
+													}
+													case system_sysex_start:
+													{
+														// sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
+														
+														nlohmann::json data_bytes = jsonElement["midi_message"]["data_bytes"];
+														for (unsigned char sysex_data_byte : data_bytes) {
+															// Makes sure it's SysEx valid data
+															if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
+																json_midi_message.push_back(sysex_data_byte);
+															} else {
+																continue;
+															}
+														}
+														if (json_midi_message.size() < 2)
+															continue;
+														
+														json_midi_message.push_back(0xF7);  // End SysEx Data Byte
+														priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 16
+														break;
+													}
+													default:
+														// All other messages get a low priority
+														priority = 0xD0 | status_byte & 0x0F;       // Low priority 14
+														break;
+												}
+												break;
+											case action_note_off:
+											case action_note_on:
+											case action_control_change:
+											case action_pitch_bend:
+											case action_key_pressure:
+											{
+												// This is already a try catch situation
+												unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+												unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+												if (data_byte_1 & 128 | data_byte_2 & 128)
+													continue;
+
+												json_midi_message.push_back(data_byte_1);
+												json_midi_message.push_back(data_byte_2);
+
+												// Set the respective priorities
+												switch (message_action) {
+
+													case action_note_off:
+													case action_note_on:
+														priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On and Off
+														break;
+													case action_control_change:
+														if (data_byte_1 == 1) {             // Modulation
+															priority = 0x60 | status_byte & 0x0F;       // Low priority 6
+														} else if (data_byte_1 == 0 || data_byte_1 == 32) {
+															// 0 -  Bank Select (MSB)
+															// 32 - Bank Select (LSB)
+															priority = 0x00 | status_byte & 0x0F;       // Top priority 0
+														} else if (data_byte_1 == 123) {
+															// 123 - All notes off (0x7B)
+															// shall come after Notes On and Off
+															priority = 0x90 | status_byte & 0x0F;       // Low priority 9
+														} else {
+															priority = 0x20 | status_byte & 0x0F;       // High priority 2
+														}
+														break;
+													case action_pitch_bend:
+														priority = 0x70 | status_byte & 0x0F;       // Low priority 7
+														break;
+													case action_key_pressure:
+														priority = 0x80 | status_byte & 0x0F;       // Low priority 8
+														break;
+												}
+												break;
+											}
+											case action_program_change:
+											case action_channel_pressure:
+											{
+												unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
+												if (data_byte & 128)
+													continue;
+												
+												json_midi_message.push_back(data_byte);
+												// Set the respective priorities
+												switch (message_action) {
+
+													case action_program_change:
+														priority = 0x10 | status_byte & 0x0F;       // High priority 1
+														break;
+													case action_channel_pressure:
+														priority = 0x80 | status_byte & 0x0F;       // Low priority 8
+														break;
+												}
+												break;
+											}
+
+											default:
+												continue;
+										}
+
+										midiToProcess.push_back( MidiPin(time_milliseconds, last_called_midi_device, json_midi_message, priority) );
+										play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
+										play_reporting.total_validated++;
+									}
+								}
+								catch (const nlohmann::json::exception& e) {
+									if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+									continue;
+								} catch (const std::exception& e) {
+									if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+									continue;
+								} catch (...) {
+									if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+									continue;
+								}
+							}
+
+						// Where the last device is set based on the json "device" input
+						} else if (jsonElement.contains("devices")) {
+
+							// The devices JSON list key
+							nlohmann::json json_device_names = jsonElement["devices"];
+
+							last_called_midi_device = nullptr; // No available device found at start
+							// It's a list of Devices that is given as Device
+							for (std::string device_name : json_device_names) {
+								
+								if (connected_devices_by_name.find(device_name) != connected_devices_by_name.end()) {
+									last_called_midi_device = connected_devices_by_name[device_name];
+									goto skip_to_next_content;
+								}
+						
+								if (unavailable_devices.find(device_name) != unavailable_devices.end()) {
+									continue;
+								}
+						
+								for (auto &available_device : available_midi_devices) {
+									if (available_device.getName().find(device_name) != std::string::npos) {
+										//
+										// Where the Device Port is connected/opened (Main reason for errors)
+										//
+										if (available_device.openPort()) {	// Where the connection happens
+											connected_devices_by_name[device_name] = &available_device; 
+											last_called_midi_device = &available_device;
+
+											goto skip_to_next_content; // For Message devices only the first one found is connected and NOT all of them
+
+										} else {
+											connected_devices_by_name[device_name] = nullptr; 
+										}
+									} else {
+										unavailable_devices.insert(device_name);
+									}
+								}
+							}
+
+						// Where the clock is processed
+						} else if (jsonElement.contains("clock")) {
+
+							try
+							{
+								// Access the value associated with the key "clock"
+								auto clockValue = jsonElement.at("clock");	// Same as jsonElement["clock"]
+								// The devices JSON list key
+								const unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
+								const unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
+								const unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
+								auto last_position_ms = get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator);
+								const nlohmann::json clocked_device_names = clockValue["clocked_devices"];
+								const nlohmann::json controlled_device_names = clockValue["controlled_devices"];
+
+								if (total_clock_pulses > 0 && pulse_duration_min_numerator > 0 && pulse_duration_min_denominator > 0) {
+
+									std::unordered_set<MidiDevice*> clocked_devices;
+
+									// First time any Device is tried to be connected, so, none is connected at this moment
+									// It's a list of Devices that is given as Device
+									for (std::string device_name : clocked_device_names) {
+
+										for (auto &available_device : available_midi_devices) {
+											if (available_device.getName().find(device_name) != std::string::npos) {
+												//
+												// Where the Device Port is connected/opened (Main reason for errors)
+												//
+												if (available_device.openPort()) {	// Where the connection happens
+
+													if (clocked_devices.find(&available_device) != clocked_devices.end())
+														continue;   // Already clocked!
+
+													connected_devices_by_name[device_name] = &available_device;
+													clocked_devices.insert(&available_device);
+														
+													midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x30) );
+													play_reporting.total_generated++;
+
+													for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
+
+														midiToProcess.push_back(MidiPin(
+															get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
+															&available_device,
+															{ system_timing_clock },
+															0x30
+														));
+														play_reporting.total_generated++;
+													}
+
+													midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_clock_stop }, 0xB0));
+													play_reporting.total_generated++;
+
+													midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB0));
+													play_reporting.total_generated++;
+
+												} else {
+													connected_devices_by_name[device_name] = nullptr;
+												}
+											} else {
+												// Just adds it as a processed device
+												unavailable_devices.insert(device_name);
+											}
+										}
+									}
+
+									std::unordered_set<MidiDevice*> controlled_devices;
+
+									// First time any Device is tried to be connected, so, none is connected at this moment
+									// It's a list of Devices that is given as Device
+									for (std::string device_name : controlled_device_names) {
+
+										for (auto &available_device : available_midi_devices) {
+											if (available_device.getName().find(device_name) != std::string::npos) {
+												//
+												// Where the Device Port is connected/opened (Main reason for errors)
+												//
+												if (available_device.openPort()) {	// Where the connection happens
+
+													if (controlled_devices.find(&available_device) != controlled_devices.end())
+														continue;   // Already controlled!
+
+													connected_devices_by_name[device_name] = &available_device;
+													controlled_devices.insert(&available_device);
+													
+													// Action			MMC	SysEx
+													// Stop				F0 7F 7F 06 01 F7
+													// Play				F0 7F 7F 06 02 F7
+													// Deferred Play	F0 7F 7F 06 03 F7
+													// Fast Forward		F0 7F 7F 06 04 F7
+													// Rewind			F0 7F 7F 06 05 F7
+													// Record Strobe	F0 7F 7F 06 06 F7
+													// Record Exit		F0 7F 7F 06 07 F7
+													// Pause			F0 7F 7F 06 09 F7
+													// Locate			F0 7F 7F 06 44 … F7
+
+													// MMC - Play
+													midiToProcess.push_back(MidiPin(
+														0.0,
+														&available_device,
+														{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x02, system_sysex_end },
+														0x00    // Highest priority 0
+													));
+													play_reporting.total_generated++;
+
+													// MMC - Stop
+													midiToProcess.push_back(MidiPin(
+														last_position_ms,
+														&available_device,
+														{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end },
+														0xF0    // Lowest priority 16
+													));
+													play_reporting.total_generated++;
+													
+													// MMC - Rewind
+													midiToProcess.push_back(MidiPin(
+														last_position_ms,
+														&available_device,
+														{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x05, system_sysex_end },
+														0xF0    // Lowest priority 16
+													));
+													play_reporting.total_generated++;
+
+												} else {
+													connected_devices_by_name[device_name] = nullptr;
+												}
+											} else {
+												// Just adds it as a processed device
+												unavailable_devices.insert(device_name);
+											}
+										}
+									}
+								}
+							} catch (const std::exception& e) {
+								if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+							}
+
+						}
+					skip_to_next_content: ;	// Does nothing, just jumps to next content
+					}
+
                 } else {
-                    if (verbose) std::cerr << "JSON file is empty." << std::endl;
+                    if (verbose) std::cout << "JSON file is empty." << std::endl;
                 }
 
-                // Keeps the last called device in the JsonMidiPlayer file
-                MidiDevice *last_called_midi_device = nullptr;
-
-                for (auto jsonElement : jsonFileContent)
-                {
-                    // Most of the time it's a midi_message being processed, so it makes sense to be the first to check
-                    if (jsonElement.contains("midi_message")) {
-
-                        if (last_called_midi_device != nullptr) {
-
-                            play_reporting.total_incorrect++;
-                            double time_milliseconds = jsonElement["time_ms"];
-
-                            // Create an API with the default API
-                            try
-                            {
-                                if (time_milliseconds < 0) {
-
-                                    continue;
-                                    
-                                } else {
-
-                                    unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
-                                    std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
-                                    unsigned char priority = 0xFF;  // Lowest priority 16 by default
-                                    
-                                    unsigned char message_action = status_byte & 0xF0;
-                                    switch (message_action) {
-                                        case action_system:
-                                            switch (status_byte) {
-                                                case system_timing_clock:
-                                                case system_clock_start:
-                                                case system_clock_stop:
-                                                case system_clock_continue:
-                                                    // Any clock message falls here
-                                                    priority = 0x30 | status_byte & 0x0F;       // High priority 3
-                                                    break;
-                                                case system_song_pointer:
-                                                {
-                                                    // This is already a try catch situation
-                                                    unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                                    unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                                    if (data_byte_1 & 128 | data_byte_2 & 128)  // Makes sure it's inside the processing window
-                                                        continue;
-
-                                                    json_midi_message.push_back(data_byte_1);
-                                                    json_midi_message.push_back(data_byte_2);
-                                                    priority = 0xB0 | status_byte & 0x0F;       // Low priority 12
-                                                    break;
-                                                }
-                                                case system_sysex_start:
-                                                {
-                                                    // sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
-                                                    
-                                                    nlohmann::json data_bytes = jsonElement["midi_message"]["data_bytes"];
-                                                    for (unsigned char sysex_data_byte : data_bytes) {
-                                                        // Makes sure it's SysEx valid data
-                                                        if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
-                                                            json_midi_message.push_back(sysex_data_byte);
-                                                        } else {
-                                                            continue;
-                                                        }
-                                                    }
-                                                    if (json_midi_message.size() < 2)
-                                                        continue;
-                                                    
-                                                    json_midi_message.push_back(0xF7);  // End SysEx Data Byte
-                                                    priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 16
-                                                    break;
-                                                }
-                                                default:
-                                                    // All other messages get a low priority
-                                                    priority = 0xD0 | status_byte & 0x0F;       // Low priority 14
-                                                    break;
-                                            }
-                                            break;
-                                        case action_note_off:
-                                        case action_note_on:
-                                        case action_control_change:
-                                        case action_pitch_bend:
-                                        case action_key_pressure:
-                                        {
-                                            // This is already a try catch situation
-                                            unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-                                            unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
-                                            if (data_byte_1 & 128 | data_byte_2 & 128)
-                                                continue;
-
-                                            json_midi_message.push_back(data_byte_1);
-                                            json_midi_message.push_back(data_byte_2);
-
-                                            // Set the respective priorities
-                                            switch (message_action) {
-
-                                                case action_note_off:
-                                                case action_note_on:
-                                                    priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On and Off
-                                                    break;
-                                                case action_control_change:
-                                                    if (data_byte_1 == 1) {             // Modulation
-                                                        priority = 0x60 | status_byte & 0x0F;       // Low priority 6
-                                                    } else if (data_byte_1 == 0 || data_byte_1 == 32) {
-                                                        // 0 -  Bank Select (MSB)
-                                                        // 32 - Bank Select (LSB)
-                                                        priority = 0x00 | status_byte & 0x0F;       // Top priority 0
-                                                    } else if (data_byte_1 == 123) {
-                                                        // 123 - All notes off (0x7B)
-                                                        // shall come after Notes On and Off
-                                                        priority = 0x90 | status_byte & 0x0F;       // Low priority 9
-                                                    } else {
-                                                        priority = 0x20 | status_byte & 0x0F;       // High priority 2
-                                                    }
-                                                    break;
-                                                case action_pitch_bend:
-                                                    priority = 0x70 | status_byte & 0x0F;       // Low priority 7
-                                                    break;
-                                                case action_key_pressure:
-                                                    priority = 0x80 | status_byte & 0x0F;       // Low priority 8
-                                                    break;
-                                            }
-                                            break;
-                                        }
-                                        case action_program_change:
-                                        case action_channel_pressure:
-                                        {
-                                            unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
-                                            if (data_byte & 128)
-                                                continue;
-                                            
-                                            json_midi_message.push_back(data_byte);
-                                            // Set the respective priorities
-                                            switch (message_action) {
-
-                                                case action_program_change:
-                                                    priority = 0x10 | status_byte & 0x0F;       // High priority 1
-                                                    break;
-                                                case action_channel_pressure:
-                                                    priority = 0x80 | status_byte & 0x0F;       // Low priority 8
-                                                    break;
-                                            }
-                                            break;
-                                        }
-
-                                        default:
-                                            continue;
-                                    }
-
-                                    midiToProcess.push_back( MidiPin(time_milliseconds, last_called_midi_device, json_midi_message, priority) );
-                                    play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
-                                    play_reporting.total_validated++;
-                                }
-                            }
-                            catch (const nlohmann::json::exception& e) {
-                                if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
-                                continue;
-                            } catch (const std::exception& e) {
-                                if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-                                continue;
-                            } catch (...) {
-                                if (verbose) std::cerr << "Unknown error occurred." << std::endl;
-                                continue;
-                            }
-                        }
-
-                    // Where the last device is set based on the json "device" input
-                    } else if (jsonElement.contains("devices")) {
-
-                        // The devices JSON list key
-                        nlohmann::json json_device_names = jsonElement["devices"];
-
-                        last_called_midi_device = nullptr; // No available device found at start
-                        // It's a list of Devices that is given as Device
-                        for (std::string device_name : json_device_names) {
-                            
-                            if (connected_devices_by_name.find(device_name) != connected_devices_by_name.end()) {
-                                last_called_midi_device = connected_devices_by_name[device_name];
-                                goto skip_to_1;
-                            }
-                    
-                            if (unavailable_devices.find(device_name) != unavailable_devices.end()) {
-                                continue;
-                            }
-                    
-                            for (auto &available_device : available_midi_devices) {
-                                if (available_device.getName().find(device_name) != std::string::npos) {
-                                    //
-                                    // Where the Device Port is connected/opened (Main reason for errors)
-                                    //
-                                    if (available_device.openPort()) {
-                                        connected_devices_by_name[device_name] = &available_device; 
-                                        last_called_midi_device = &available_device;
-                                    } else {
-                                        connected_devices_by_name[device_name] = nullptr; 
-                                    }
-                                } else {
-                                    unavailable_devices.insert(device_name);
-                                }
-                            }
-                        }
-                    }
-                skip_to_1: continue;
-                }
             }
         } catch (const nlohmann::json::parse_error& e) {
             if (verbose) std::cerr << "JSON parse error: " << e.what() << std::endl;
@@ -630,7 +644,7 @@ int PlayList(const char* json_str, bool verbose) {
                                         }
                                         ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_2;
+                                        goto skip_to_next_pin;
                                     } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
                                         pluck_pin.setStatusByte(system_clock_continue);
                                     }
@@ -648,7 +662,7 @@ int PlayList(const char* json_str, bool verbose) {
                                         }
                                         ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_2;
+                                        goto skip_to_next_pin;
                                     } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
                                         pluck_pin.setStatusByte(system_clock_continue);
                                     } else {
@@ -664,11 +678,11 @@ int PlayList(const char* json_str, bool verbose) {
                                         pluck_device.last_pin_clock->setStatusByte(system_clock_stop);
                                         ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_2;
+                                        goto skip_to_next_pin;
                                     } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
                                         ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_2;
+                                        goto skip_to_next_pin;
                                     }
                                 }
                                 pluck_device.last_pin_clock = &pluck_pin;
@@ -680,7 +694,7 @@ int PlayList(const char* json_str, bool verbose) {
                                         pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_2;
+                                        goto skip_to_next_pin;
                                     } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_start) {   // Clock Start
                                         pluck_pin.setStatusByte(system_timing_clock);
                                     } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_continue) {   // Clock Continue
@@ -702,7 +716,7 @@ int PlayList(const char* json_str, bool verbose) {
                                             && pluck_device.last_pin_song_pointer->getDataByte(2) == pluck_pin.getDataByte(2)) {
                                         ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_2;
+                                        goto skip_to_next_pin;
                                     }
                                 }
                                 pluck_device.last_pin_song_pointer = &pluck_pin;
@@ -727,7 +741,7 @@ int PlayList(const char* json_str, bool verbose) {
 								pin_it = midiToProcess.erase(pin_it);
                         		++(play_reporting.total_redundant);  // Note Off as no Note On pair (STATS)
 								// By erasing a pin above, there is no need to increase the pin iterator
-								goto skip_to_2;
+								goto skip_to_next_pin;
 							}
                         }
                         ++pin_it; // Only increments if no removal
@@ -760,7 +774,7 @@ int PlayList(const char* json_str, bool verbose) {
 									std::vector<unsigned char> midi_pin_message = {
 										static_cast<unsigned char>(pluck_pin.getChannel() | action_note_off),
 										pluck_pin.getDataByte(1),
-										0	// Note off has value 0
+										0	// Note off has velocity 0 (Data Byte 2)
 									};
 									pin_it = midiToProcess.insert(pin_it,   // Makes a copy to the place given by pin_it
 										MidiPin(
@@ -776,7 +790,7 @@ int PlayList(const char* json_str, bool verbose) {
 									// The usual increment given that it jumps the steps bellow
                         			++pin_it; // Only increments if no removal
 								}
-								goto skip_to_2;
+								goto skip_to_next_pin;
 							}
                         }
                         // First timer Note On
@@ -859,7 +873,7 @@ int PlayList(const char* json_str, bool verbose) {
                     break;
                 }
 
-            skip_to_2: continue;
+            skip_to_next_pin: ;	// Does nothing, just processes next pin
             }
 
             // Get time_ms of last message
@@ -882,7 +896,7 @@ int PlayList(const char* json_str, bool verbose) {
                             std::vector<unsigned char> midi_pin_message = {
                                 static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte
                                 last_pin_note_on->getDataByte(1),
-                                0	// Note off has value 0
+                                0	// Note off has velocity 0 (Data Byte 2)
                             };
                             // Adds a new MidiPin as a copy to the list of pins to be processed
                             midiToProcess.push_back( MidiPin(last_message_time_ms, &device, midi_pin_message) );

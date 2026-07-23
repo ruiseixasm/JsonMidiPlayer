@@ -200,21 +200,6 @@ int PlayList(const char* json_str, bool verbose) {
                 // Check if jsonFileContent is a non-empty array
                 if (jsonFileContent.is_array() && !jsonFileContent.empty()) {
 
-                    // Access the first element
-                    const auto& firstElement = jsonFileContent.front();
-
-                    // Check if the first element is an object and contains the key "clock"
-                    if (firstElement.is_object() && firstElement.contains("clock")) {
-
-
-
-
-
-
-                    } else {
-                        if (verbose) std::cout << "No Clock given!" << std::endl;
-                    }
-
 					// Keeps the last called device in the JsonMidiPlayer file
 					MidiDevice *last_called_midi_device = nullptr;
 

@@ -232,10 +232,13 @@ int PlayList(const char* json_str, bool verbose) {
 												switch (status_byte) {
 													case system_timing_clock:
 													case system_clock_start:
-													case system_clock_stop:
 													case system_clock_continue:
 														// Any clock message falls here
-														priority = 0x30 | status_byte & 0x0F;       // High priority 3
+														priority = 0x31;       // High priority 3.1
+														break;
+													case system_clock_stop:
+														// Any clock message falls here
+														priority = 0xF0;       // Lowest priority 16
 														break;
 													case system_song_pointer:
 													{
@@ -304,7 +307,7 @@ int PlayList(const char* json_str, bool verbose) {
 														} else if (data_byte_1 == 0 || data_byte_1 == 32) {
 															// 0 -  Bank Select (MSB)
 															// 32 - Bank Select (LSB)
-															priority = 0x00 | status_byte & 0x0F;       // Top priority 0
+															priority = 0x00 | status_byte & 0x0F;       // Top priority 0	(Equivalent to Program Change)
 														} else if (data_byte_1 == 123) {
 															// 123 - All notes off (0x7B)
 															// shall come after Notes On and Off
@@ -448,7 +451,7 @@ int PlayList(const char* json_str, bool verbose) {
 															get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
 															&available_device,
 															{ system_timing_clock },
-															0x30
+															0x31	// Priority 3.1
 														));
 														play_reporting.total_generated++;
 													}
@@ -504,7 +507,7 @@ int PlayList(const char* json_str, bool verbose) {
 														0.0,
 														&available_device,
 														{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x02, system_sysex_end },
-														0x00    // Highest priority 0
+														0x30    // High priority 3.0
 													));
 													play_reporting.total_generated++;
 
@@ -513,7 +516,7 @@ int PlayList(const char* json_str, bool verbose) {
 														last_position_ms,
 														&available_device,
 														{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end },
-														0xF0    // Lowest priority 16
+														0xF1    // Lowest priority 16.1
 													));
 													play_reporting.total_generated++;
 													
@@ -522,7 +525,7 @@ int PlayList(const char* json_str, bool verbose) {
 														last_position_ms,
 														&available_device,
 														{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x05, system_sysex_end },
-														0xF0    // Lowest priority 16
+														0xF2    // Lowest priority 16.2
 													));
 													play_reporting.total_generated++;
 

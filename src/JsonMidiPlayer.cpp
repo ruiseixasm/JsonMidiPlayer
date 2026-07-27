@@ -273,12 +273,12 @@ int PlayList(const char* json_str, bool verbose) {
 															continue;
 														
 														json_midi_message.push_back(0xF7);  // End SysEx Data Byte
-														priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 16
+														priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 15
 														break;
 													}
 													default:
 														// All other messages get a low priority
-														priority = 0xD0 | status_byte & 0x0F;       // Low priority 14
+														priority = 0xD0 | status_byte & 0x0F;       // Low priority 13
 														break;
 												}
 												break;

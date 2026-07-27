@@ -231,6 +231,9 @@ int PlayList(const char* json_str, bool verbose) {
 											case action_system:
 												switch (status_byte) {
 													case system_timing_clock:
+														// Any clock message falls here
+														priority = 0x01;       // Top priority 0.1
+														break;
 													case system_clock_start:
 													case system_clock_continue:
 														// Any clock message falls here
@@ -442,7 +445,8 @@ int PlayList(const char* json_str, bool verbose) {
 													connected_devices_by_name[device_name] = &available_device;
 													clocked_devices.insert(&available_device);
 														
-													midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x30) );
+													// High Priority 3.1
+													midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x31) );
 													play_reporting.total_generated++;
 
 													for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
@@ -451,7 +455,7 @@ int PlayList(const char* json_str, bool verbose) {
 															get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
 															&available_device,
 															{ system_timing_clock },
-															0x31	// Priority 3.1
+															0x01	// Top Priority 0.1
 														));
 														play_reporting.total_generated++;
 													}

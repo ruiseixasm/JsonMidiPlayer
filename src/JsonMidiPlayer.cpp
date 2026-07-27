@@ -238,7 +238,7 @@ int PlayList(const char* json_str, bool verbose) {
 														break;
 													case system_clock_stop:
 														// Any clock message falls here
-														priority = 0xF0;       // Lowest priority 16
+														priority = 0xB0;       // Low priority 11
 														break;
 													case system_song_pointer:
 													{
@@ -250,7 +250,7 @@ int PlayList(const char* json_str, bool verbose) {
 
 														json_midi_message.push_back(data_byte_1);
 														json_midi_message.push_back(data_byte_2);
-														priority = 0xB0 | status_byte & 0x0F;       // Low priority 12
+														priority = 0xB1;       // Low priority 11.1
 														break;
 													}
 													case system_sysex_start:

@@ -456,10 +456,12 @@ int PlayList(const char* json_str, bool verbose) {
 														play_reporting.total_generated++;
 													}
 
+													// Lowest priority 11.0
 													midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_clock_stop }, 0xB0));
 													play_reporting.total_generated++;
 
-													midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB0));
+													// Lowest priority 11.1
+													midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB1));
 													play_reporting.total_generated++;
 
 												} else {

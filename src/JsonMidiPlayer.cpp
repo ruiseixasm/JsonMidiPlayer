@@ -224,36 +224,23 @@ int PlayList(const char* json_str, bool verbose) {
 
 										unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
 										std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
-										unsigned char priority = 0xFF;  // Lowest priority 16 by default
 										
 										unsigned char message_action = status_byte & 0xF0;
+                                        unsigned char data_byte_1;  // Just the declarations, no need to set them
+                                        unsigned char data_byte_2;
+
 										switch (message_action) {
 											case action_system:
 												switch (status_byte) {
-													case system_timing_clock:
-														// Any clock message falls here
-														priority = 0x01;       // Top priority 0.1
-														break;
-													case system_clock_start:
-													case system_clock_continue:
-														// Any clock message falls here
-														priority = 0x31;       // High priority 3.1
-														break;
-													case system_clock_stop:
-														// Any clock message falls here
-														priority = 0xB0;       // Low priority 11.0
-														break;
 													case system_song_pointer:
 													{
 														// This is already a try catch situation
-														unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-														unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+														data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+														data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
 														if (data_byte_1 & 128 | data_byte_2 & 128)  // Makes sure it's inside the processing window
 															continue;
-
 														json_midi_message.push_back(data_byte_1);
 														json_midi_message.push_back(data_byte_2);
-														priority = 0xB1;       // Low priority 11.1
 														break;
 													}
 													case system_sysex_start:
@@ -271,14 +258,10 @@ int PlayList(const char* json_str, bool verbose) {
 														}
 														if (json_midi_message.size() < 2)
 															continue;
-														
 														json_midi_message.push_back(0xF7);  // End SysEx Data Byte
-														priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 15
 														break;
 													}
 													default:
-														// All other messages get a low priority
-														priority = 0xD0 | status_byte & 0x0F;       // Low priority 13
 														break;
 												}
 												break;
@@ -289,70 +272,92 @@ int PlayList(const char* json_str, bool verbose) {
 											case action_key_pressure:
 											{
 												// This is already a try catch situation
-												unsigned char data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-												unsigned char data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+												data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
+												data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
 												if (data_byte_1 & 128 | data_byte_2 & 128)
 													continue;
-
 												json_midi_message.push_back(data_byte_1);
 												json_midi_message.push_back(data_byte_2);
-
-												// Set the respective priorities
-												switch (message_action) {
-
-													case action_note_off:
-														priority = 0x40 | status_byte & 0x0F;       // Normal priority 4 for Off
-														break;
-													case action_note_on:
-														priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On
-														break;
-													case action_control_change:
-														if (data_byte_1 == 1) {             // Modulation
-															priority = 0x60 | status_byte & 0x0F;       // Low priority 6
-														} else if (data_byte_1 == 0 || data_byte_1 == 32) {
-															// 0 -  Bank Select (MSB)
-															// 32 - Bank Select (LSB)
-															priority = 0x10;                            // High priority 1.0	(Equivalent to Program Change)
-														} else if (data_byte_1 == 123) {
-															// 123 - All notes off (0x7B)
-															// shall come after Notes On and Off
-															priority = 0x90 | status_byte & 0x0F;       // Low priority 9
-														} else {
-															priority = 0x20 | status_byte & 0x0F;       // High priority 2
-														}
-														break;
-													case action_pitch_bend:
-														priority = 0x70 | status_byte & 0x0F;           // Low priority 7
-														break;
-													case action_key_pressure:
-														priority = 0x80 | status_byte & 0x0F;           // Low priority 8
-														break;
-												}
 												break;
 											}
 											case action_program_change:
 											case action_channel_pressure:
 											{
-												unsigned char data_byte = jsonElement["midi_message"]["data_byte"];
-												if (data_byte & 128)
+												data_byte_1 = jsonElement["midi_message"]["data_byte"];
+												if (data_byte_1 & 128)
 													continue;
-												
-												json_midi_message.push_back(data_byte);
-												// Set the respective priorities
-												switch (message_action) {
+												json_midi_message.push_back(data_byte_1);
+												break;
+											}
+											default:
+												continue;   // Not a valid message type
+										}
 
-													case action_program_change:
-														priority = 0x11;                            // High priority 1.1
+										unsigned char priority; // Just the declaration, priority set bellow
+                                        // Where the Priority is set
+										switch (message_action) {
+											case action_system:
+												switch (status_byte) {
+													case system_timing_clock:
+														// Any clock message falls here
+														priority = 0x01;       // Top priority 0.1
 														break;
-													case action_channel_pressure:
-														priority = 0x80 | status_byte & 0x0F;       // Low priority 8
+													case system_clock_start:
+													case system_clock_continue:
+														// Any clock message falls here
+														priority = 0x31;       // High priority 3.1
+														break;
+													case system_clock_stop:
+														// Any clock message falls here
+														priority = 0xB0;       // Low priority 11.0
+														break;
+													case system_song_pointer:
+														priority = 0xB1;       // Low priority 11.1
+														break;
+													case system_sysex_start:
+														priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 15
+														break;
+													default:
+														// All other messages get a low priority
+														priority = 0xD0 | status_byte & 0x0F;       // Low priority 13
 														break;
 												}
 												break;
-											}
-
+											case action_note_off:
+                                                priority = 0x40 | status_byte & 0x0F;       // Normal priority 4 for Off
+                                                break;
+											case action_note_on:
+                                                priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On
+                                                break;
+											case action_control_change:
+                                                if (data_byte_1 == 1) {             // Modulation
+                                                    priority = 0x60 | status_byte & 0x0F;       // Low priority 6
+                                                } else if (data_byte_1 == 0 || data_byte_1 == 32) {
+                                                    // 0 -  Bank Select (MSB)
+                                                    // 32 - Bank Select (LSB)
+                                                    priority = 0x10;                            // High priority 1.0	(Equivalent to Program Change)
+                                                } else if (data_byte_1 == 123) {
+                                                    // 123 - All notes off (0x7B)
+                                                    // shall come after Notes On and Off
+                                                    priority = 0x90 | status_byte & 0x0F;       // Low priority 9
+                                                } else {
+                                                    priority = 0x20 | status_byte & 0x0F;       // High priority 2
+                                                }
+                                                break;
+											case action_pitch_bend:
+                                                priority = 0x70 | status_byte & 0x0F;           // Low priority 7
+                                                break;
+											case action_key_pressure:
+                                                priority = 0x80 | status_byte & 0x0F;           // Low priority 8
+                                                break;
+											case action_program_change:
+                                                priority = 0x11;                            // High priority 1.1
+                                                break;
+											case action_channel_pressure:
+                                                priority = 0x80 | status_byte & 0x0F;       // Low priority 8
+                                                break;
 											default:
-												continue;
+												continue;   // No valid message, jumps to the next one
 										}
 
 										midiToProcess.push_back( MidiPin(time_milliseconds, last_called_midi_device, json_midi_message, priority) );

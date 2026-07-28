@@ -174,13 +174,13 @@ int PlayList(const char* json_str, bool verbose) {
 
                 nlohmann::json jsonFileType;
                 nlohmann::json jsonFileUrl;
-                nlohmann::json jsonFileContent;
+                nlohmann::json jsonFilePlaylist;
 
                 try
                 {
                     jsonFileType = jsonData["filetype"];
                     jsonFileUrl = jsonData["url"];
-                    jsonFileContent = jsonData["content"];
+                    jsonFilePlaylist = jsonData["content"];
                 }
                 catch (nlohmann::json::parse_error& ex)
                 {
@@ -198,20 +198,24 @@ int PlayList(const char* json_str, bool verbose) {
                 std::unordered_set<std::string> unavailable_devices;
                 
                 // Check if jsonFileContent is a non-empty array
-                if (jsonFileContent.is_array() && !jsonFileContent.empty()) {
+                if (jsonFilePlaylist.is_array() && !jsonFilePlaylist.empty()) {
 
 					// Keeps the last called device in the JsonMidiPlayer file
 					MidiDevice *last_called_midi_device = nullptr;
+                    // Just the declarations, no need to set them
+                    unsigned char data_byte_1;
+                    unsigned char data_byte_2;
+					unsigned char priority;
 
-					for (auto jsonElement : jsonFileContent)
+					for (auto jsonPlaylistItem : jsonFilePlaylist)
 					{
 						// Most of the time it's a midi_message being processed, so it makes sense to be the first to check
-						if (jsonElement.contains("midi_message")) {
+						if (jsonPlaylistItem.contains("midi_message")) {
 
 							if (last_called_midi_device != nullptr) {
 
 								play_reporting.total_incorrect++;
-								double time_milliseconds = jsonElement["time_ms"];
+								double time_milliseconds = jsonPlaylistItem["time_ms"];
 
 								// Create an API with the default API
 								try
@@ -222,12 +226,10 @@ int PlayList(const char* json_str, bool verbose) {
 										
 									} else {
 
-										unsigned char status_byte = jsonElement["midi_message"]["status_byte"];
+										unsigned char status_byte = jsonPlaylistItem["midi_message"]["status_byte"];
 										std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
 										
 										unsigned char message_action = status_byte & 0xF0;
-                                        unsigned char data_byte_1;  // Just the declarations, no need to set them
-                                        unsigned char data_byte_2;
 
 										switch (message_action) {
 											case action_system:
@@ -235,8 +237,8 @@ int PlayList(const char* json_str, bool verbose) {
 													case system_song_pointer:
 													{
 														// This is already a try catch situation
-														data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-														data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+														data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte_1"];
+														data_byte_2 = jsonPlaylistItem["midi_message"]["data_byte_2"];
 														if (data_byte_1 & 128 | data_byte_2 & 128)  // Makes sure it's inside the processing window
 															continue;
 														json_midi_message.push_back(data_byte_1);
@@ -247,7 +249,7 @@ int PlayList(const char* json_str, bool verbose) {
 													{
 														// sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
 														
-														nlohmann::json data_bytes = jsonElement["midi_message"]["data_bytes"];
+														nlohmann::json data_bytes = jsonPlaylistItem["midi_message"]["data_bytes"];
 														for (unsigned char sysex_data_byte : data_bytes) {
 															// Makes sure it's SysEx valid data
 															if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
@@ -272,8 +274,8 @@ int PlayList(const char* json_str, bool verbose) {
 											case action_key_pressure:
 											{
 												// This is already a try catch situation
-												data_byte_1 = jsonElement["midi_message"]["data_byte_1"];
-												data_byte_2 = jsonElement["midi_message"]["data_byte_2"];
+												data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte_1"];
+												data_byte_2 = jsonPlaylistItem["midi_message"]["data_byte_2"];
 												if (data_byte_1 & 128 | data_byte_2 & 128)
 													continue;
 												json_midi_message.push_back(data_byte_1);
@@ -283,7 +285,7 @@ int PlayList(const char* json_str, bool verbose) {
 											case action_program_change:
 											case action_channel_pressure:
 											{
-												data_byte_1 = jsonElement["midi_message"]["data_byte"];
+												data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte"];
 												if (data_byte_1 & 128)
 													continue;
 												json_midi_message.push_back(data_byte_1);
@@ -293,7 +295,6 @@ int PlayList(const char* json_str, bool verbose) {
 												break;
 										}
 
-										unsigned char priority; // Just the declaration, priority set bellow
                                         // Where the Priority is set
 										switch (message_action) {
 											case action_system:
@@ -378,10 +379,10 @@ int PlayList(const char* json_str, bool verbose) {
 							}
 
 						// Where the last device is set based on the json "device" input
-						} else if (jsonElement.contains("devices")) {
+						} else if (jsonPlaylistItem.contains("devices")) {
 
 							// The devices JSON list key
-							nlohmann::json json_device_names = jsonElement["devices"];
+							nlohmann::json json_device_names = jsonPlaylistItem["devices"];
 
 							last_called_midi_device = nullptr; // No available device found at start
 							// It's a list of Devices that is given as Device
@@ -389,7 +390,7 @@ int PlayList(const char* json_str, bool verbose) {
 								
 								if (connected_devices_by_name.find(device_name) != connected_devices_by_name.end()) {
 									last_called_midi_device = connected_devices_by_name[device_name];
-									goto skip_to_next_content;
+									goto skip_to_next_item;
 								}
 						
 								if (unavailable_devices.find(device_name) != unavailable_devices.end()) {
@@ -405,7 +406,7 @@ int PlayList(const char* json_str, bool verbose) {
 											connected_devices_by_name[device_name] = &available_device; 
 											last_called_midi_device = &available_device;
 
-											goto skip_to_next_content; // For Message devices only the first one found is connected and NOT all of them
+											goto skip_to_next_item; // For Message devices only the first one found is connected and NOT all of them
 
 										} else {
 											connected_devices_by_name[device_name] = nullptr; 
@@ -417,12 +418,12 @@ int PlayList(const char* json_str, bool verbose) {
 							}
 
 						// Where the clock is processed
-						} else if (jsonElement.contains("clock")) {
+						} else if (jsonPlaylistItem.contains("clock")) {
 
 							try
 							{
 								// Access the value associated with the key "clock"
-								auto clockValue = jsonElement.at("clock");	// Same as jsonElement["clock"]
+								auto clockValue = jsonPlaylistItem.at("clock");	// Same as jsonElement["clock"]
 								// The devices JSON list key
 								const unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
 								const unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
@@ -557,7 +558,7 @@ int PlayList(const char* json_str, bool verbose) {
 							}
 
 						}
-					skip_to_next_content: ;	// Does nothing, just jumps to next content
+					skip_to_next_item: ;    // Does nothing, just jumps to next item
 					}
 
                 } else {

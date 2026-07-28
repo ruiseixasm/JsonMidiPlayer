@@ -290,7 +290,7 @@ int PlayList(const char* json_str, bool verbose) {
 												break;
 											}
 											default:
-												continue;   // Not a valid message type
+												break;
 										}
 
 										unsigned char priority; // Just the declaration, priority set bellow
@@ -357,7 +357,7 @@ int PlayList(const char* json_str, bool verbose) {
                                                 priority = 0x80 | status_byte & 0x0F;       // Low priority 8
                                                 break;
 											default:
-												continue;   // No valid message, jumps to the next one
+												continue;   // Not a valid message, no priority given, jumps to the next one
 										}
 
 										midiToProcess.push_back( MidiPin(time_milliseconds, last_called_midi_device, json_midi_message, priority) );

@@ -231,6 +231,7 @@ int PlayList(const char* json_str, bool verbose) {
 										
 										unsigned char message_action = status_byte & 0xF0;
 
+                                        // Where the Midi message is set
 										switch (message_action) {
 											case action_system:
 												switch (status_byte) {

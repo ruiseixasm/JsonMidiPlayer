@@ -301,8 +301,10 @@ int PlayList(const char* json_str, bool verbose) {
 												switch (message_action) {
 
 													case action_note_off:
+														priority = 0x40 | status_byte & 0x0F;       // Normal priority 4 for Off
+														break;
 													case action_note_on:
-														priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On and Off
+														priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On
 														break;
 													case action_control_change:
 														if (data_byte_1 == 1) {             // Modulation
@@ -310,7 +312,7 @@ int PlayList(const char* json_str, bool verbose) {
 														} else if (data_byte_1 == 0 || data_byte_1 == 32) {
 															// 0 -  Bank Select (MSB)
 															// 32 - Bank Select (LSB)
-															priority = 0x00 | status_byte & 0x0F;       // Top priority 0	(Equivalent to Program Change)
+															priority = 0x10 | status_byte & 0x0F;       // High priority 1	(Equivalent to Program Change)
 														} else if (data_byte_1 == 123) {
 															// 123 - All notes off (0x7B)
 															// shall come after Notes On and Off

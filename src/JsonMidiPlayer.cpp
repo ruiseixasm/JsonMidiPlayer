@@ -241,7 +241,7 @@ int PlayList(const char* json_str, bool verbose) {
 														break;
 													case system_clock_stop:
 														// Any clock message falls here
-														priority = 0xB0;       // Low priority 11
+														priority = 0xB0;       // Low priority 11.0
 														break;
 													case system_song_pointer:
 													{
@@ -312,7 +312,7 @@ int PlayList(const char* json_str, bool verbose) {
 														} else if (data_byte_1 == 0 || data_byte_1 == 32) {
 															// 0 -  Bank Select (MSB)
 															// 32 - Bank Select (LSB)
-															priority = 0x10 | status_byte & 0x0F;       // High priority 1	(Equivalent to Program Change)
+															priority = 0x10;                            // High priority 1.0	(Equivalent to Program Change)
 														} else if (data_byte_1 == 123) {
 															// 123 - All notes off (0x7B)
 															// shall come after Notes On and Off
@@ -322,10 +322,10 @@ int PlayList(const char* json_str, bool verbose) {
 														}
 														break;
 													case action_pitch_bend:
-														priority = 0x70 | status_byte & 0x0F;       // Low priority 7
+														priority = 0x70 | status_byte & 0x0F;           // Low priority 7
 														break;
 													case action_key_pressure:
-														priority = 0x80 | status_byte & 0x0F;       // Low priority 8
+														priority = 0x80 | status_byte & 0x0F;           // Low priority 8
 														break;
 												}
 												break;
@@ -342,7 +342,7 @@ int PlayList(const char* json_str, bool verbose) {
 												switch (message_action) {
 
 													case action_program_change:
-														priority = 0x10 | status_byte & 0x0F;       // High priority 1
+														priority = 0x11;                            // High priority 1.1
 														break;
 													case action_channel_pressure:
 														priority = 0x80 | status_byte & 0x0F;       // Low priority 8

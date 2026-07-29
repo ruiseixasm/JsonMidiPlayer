@@ -215,11 +215,11 @@ int PlayList(const char* json_str, bool verbose) {
 							if (last_called_midi_device != nullptr) {
 
 								play_reporting.total_incorrect++;
-								double time_milliseconds = jsonPlaylistItem["time_ms"];
 
 								// Create an API with the default API
 								try
 								{
+								    double time_milliseconds = jsonPlaylistItem["time_ms"];
 									if (time_milliseconds < 0) {
 
 										continue;

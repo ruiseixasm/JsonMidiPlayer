@@ -401,9 +401,14 @@ public:
 
 
 class Clocking {
+    std::vector<MidiDevice*> _clocked_devices;
 	std::list<Tempo> _tempos;
 
 public:
+
+	void addDevice(MidiDevice* midi_device) {
+		_clocked_devices.push_back(midi_device);
+	}
 
 	void addTempo(uint16_t bpm_10, uint32_t position_ticks) {
 		_tempos.emplace_back(bpm_10, position_ticks);

@@ -319,41 +319,6 @@ int PlayList(const char* json_str, bool verbose) {
 
                                         // Where the Midi message is set
 										switch (message_action) {
-											case action_system:
-												switch (status_byte) {
-													case system_song_pointer:
-													{
-														// This is already a try catch situation
-														data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte_1"];
-														data_byte_2 = jsonPlaylistItem["midi_message"]["data_byte_2"];
-														if (data_byte_1 & 128 | data_byte_2 & 128)  // Makes sure it's inside the processing window
-															continue;
-														json_midi_message.push_back(data_byte_1);
-														json_midi_message.push_back(data_byte_2);
-														break;
-													}
-													case system_sysex_start:
-													{
-														// sysex_data_bytes = jsonElement["midi_message"]["data_bytes"].get<std::vector<unsigned char>>();
-														
-														nlohmann::json data_bytes = jsonPlaylistItem["midi_message"]["data_bytes"];
-														for (unsigned char sysex_data_byte : data_bytes) {
-															// Makes sure it's SysEx valid data
-															if (sysex_data_byte != 0xF0 && sysex_data_byte != 0xF7) {
-																json_midi_message.push_back(sysex_data_byte);
-															} else {
-																continue;
-															}
-														}
-														if (json_midi_message.size() < 2)
-															continue;
-														json_midi_message.push_back(0xF7);  // End SysEx Data Byte
-														break;
-													}
-													default:
-														break;
-												}
-												break;
 											case action_note_off:
 											case action_note_on:
 											case action_control_change:
@@ -384,33 +349,6 @@ int PlayList(const char* json_str, bool verbose) {
 
                                         // Where the Priority is set
 										switch (message_action) {
-											case action_system:
-												switch (status_byte) {
-													case system_timing_clock:
-														// Any clock message falls here
-														priority = 0x01;       // Top priority 0.1
-														break;
-													case system_clock_start:
-													case system_clock_continue:
-														// Any clock message falls here
-														priority = 0x31;       // High priority 3.1
-														break;
-													case system_clock_stop:
-														// Any clock message falls here
-														priority = 0xB0;       // Low priority 11.0
-														break;
-													case system_song_pointer:
-														priority = 0xB1;       // Low priority 11.1
-														break;
-													case system_sysex_start:
-														priority = 0xF0 | status_byte & 0x0F;       // Lowest priority 15
-														break;
-													default:
-														// All other messages get a low priority
-														priority = 0xD0 | status_byte & 0x0F;       // Low priority 13
-														break;
-												}
-												break;
 											case action_note_off:
                                                 priority = 0x40 | status_byte & 0x0F;       // Normal priority 4 for Off
                                                 break;
@@ -505,79 +443,6 @@ int PlayList(const char* json_str, bool verbose) {
 									}
 								}
 							}
-
-						// Where the clock is processed
-						} else if (jsonPlaylistItem.contains("clock")) {
-
-							try
-							{
-								// Access the value associated with the key "clock"
-								auto clockValue = jsonPlaylistItem.at("clock");	// Same as jsonElement["clock"]
-								// The devices JSON list key
-								const unsigned int total_clock_pulses = clockValue["total_clock_pulses"];
-								const unsigned int pulse_duration_min_numerator = clockValue["pulse_duration_min_numerator"];
-								const unsigned int pulse_duration_min_denominator = clockValue["pulse_duration_min_denominator"];
-								auto last_position_ms = get_time_ms(total_clock_pulses * pulse_duration_min_numerator, pulse_duration_min_denominator);
-								const nlohmann::json clocked_device_names = clockValue["clocked_devices"];
-
-								if (total_clock_pulses > 0 && pulse_duration_min_numerator > 0 && pulse_duration_min_denominator > 0) {
-
-									std::unordered_set<MidiDevice*> clocked_devices;
-
-									// First time any Device is tried to be connected, so, none is connected at this moment
-									// It's a list of Devices that is given as Device
-									for (std::string device_name : clocked_device_names) {
-
-										for (auto &available_device : available_midi_devices) {
-											if (available_device.getName().find(device_name) != std::string::npos) {
-												//
-												// Where the Device Port is connected/opened (Main reason for errors)
-												//
-												if (available_device.openPort()) {	// Where the connection happens
-
-													if (clocked_devices.find(&available_device) != clocked_devices.end())
-														continue;   // Already clocked!
-
-													connected_devices_by_name[device_name] = &available_device;
-													clocked_devices.insert(&available_device);
-														
-													// High Priority 3.1
-													midiToProcess.push_back( MidiPin(0.0, &available_device, { system_clock_start }, 0x31) );
-													play_reporting.total_generated++;
-
-													for (unsigned int pulse_i = 1; pulse_i < total_clock_pulses; ++pulse_i) {
-
-														midiToProcess.push_back(MidiPin(
-															get_time_ms(pulse_i * pulse_duration_min_numerator, pulse_duration_min_denominator),
-															&available_device,
-															{ system_timing_clock },
-															0x01	// Top Priority 0.1
-														));
-														play_reporting.total_generated++;
-													}
-
-													// Lowest priority 11.0
-													midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_clock_stop }, 0xB0));
-													play_reporting.total_generated++;
-
-													// Lowest priority 11.1
-													midiToProcess.push_back(MidiPin(last_position_ms, &available_device, { system_song_pointer, 0, 0 }, 0xB1));
-													play_reporting.total_generated++;
-
-												} else {
-													connected_devices_by_name[device_name] = nullptr;
-												}
-											} else {
-												// Just adds it as a processed device
-												unavailable_devices.insert(device_name);
-											}
-										}
-									}
-								}
-							} catch (const std::exception& e) {
-								if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-							}
-
 						}
 					skip_to_next_item: ;    // Does nothing, just jumps to next item
 					}
@@ -659,109 +524,6 @@ int PlayList(const char* json_str, bool verbose) {
 				const uint32_t pin_actual_position_ticks = pluck_pin.getPositionTicks();
 
                 switch (pluck_pin.getAction()) {
-                    case action_system:
-                        switch (pluck_pin.getStatusByte()) {
-                            case system_timing_clock:
-                                if (pluck_device.last_pin_clock != nullptr) {
-									// Position beats and ticks
-									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
-                                    if (pin_actual_position_ticks == clock_last_position_ticks) {
-                                        if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
-                                            pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
-                                        }
-                                        ++(play_reporting.total_redundant);
-                                        pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_next_pin;
-                                    } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
-                                        pluck_pin.setStatusByte(system_clock_continue);
-                                    }
-                                } else {
-                                    pluck_pin.setStatusByte(system_clock_start);
-                                }
-                                pluck_device.last_pin_clock = &pluck_pin;
-                                ++pin_it; // Only increment if no removal
-                            break;
-                            case system_clock_start:
-                                if (pluck_device.last_pin_clock != nullptr) {
-									// Position beats and ticks
-									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
-                                    if (pin_actual_position_ticks == clock_last_position_ticks) {
-                                        if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
-                                            pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
-                                        }
-                                        ++(play_reporting.total_redundant);
-                                        pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_next_pin;
-                                    } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
-                                        pluck_pin.setStatusByte(system_clock_continue);
-                                    } else {
-                                        pluck_pin.setStatusByte(system_timing_clock);
-                                    }
-                                }
-                                pluck_device.last_pin_clock = &pluck_pin;
-                                ++pin_it; // Only increment if no removal
-                            break;
-                            case system_clock_stop:
-                                if (pluck_device.last_pin_clock != nullptr) {
-									// Position beats and ticks
-									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
-                                    if (pin_actual_position_ticks == clock_last_position_ticks) {
-                                        pluck_device.last_pin_clock->setStatusByte(system_clock_stop);
-                                        ++(play_reporting.total_redundant);
-                                        pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_next_pin;
-                                    } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {   // Clock Stop
-                                        ++(play_reporting.total_redundant);
-                                        pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_next_pin;
-                                    }
-                                }
-                                pluck_device.last_pin_clock = &pluck_pin;
-                                ++pin_it; // Only increment if no removal
-                            break;
-                            case system_clock_continue:
-                                if (pluck_device.last_pin_clock != nullptr) {
-									// Position beats and ticks
-									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
-                                    if (pin_actual_position_ticks == clock_last_position_ticks) {
-                                        pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
-                                        ++(play_reporting.total_redundant);
-                                        pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_next_pin;
-                                    } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_start) {   // Clock Start
-                                        pluck_pin.setStatusByte(system_timing_clock);
-                                    } else if (pluck_device.last_pin_clock->getStatusByte() == system_clock_continue) {   // Clock Continue
-                                        pluck_pin.setStatusByte(system_timing_clock);
-                                    } else {                                                    // NOT Clock Start or Continue
-                                        pluck_device.last_pin_clock->setStatusByte(system_clock_stop);
-                                    }
-                                } else {
-                                    pluck_pin.setStatusByte(system_clock_start);
-                                }
-                                pluck_device.last_pin_clock = &pluck_pin;
-                                ++pin_it; // Only increment if no removal
-                            break;
-                            case system_song_pointer:
-                                if (pluck_device.last_pin_song_pointer != nullptr) {
-									// Position beats and ticks
-									const uint32_t song_pointer_last_position_ticks = pluck_device.last_pin_song_pointer->getPositionTicks();
-                                    if (pin_actual_position_ticks == song_pointer_last_position_ticks
-                                            && pluck_device.last_pin_song_pointer->getStatusByte() == system_song_pointer
-                                            && pluck_device.last_pin_song_pointer->getDataByte(1) == pluck_pin.getDataByte(1)
-                                            && pluck_device.last_pin_song_pointer->getDataByte(2) == pluck_pin.getDataByte(2)) {
-                                        ++(play_reporting.total_redundant);
-                                        pin_it = midiToProcess.erase(pin_it);
-                                        goto skip_to_next_pin;
-                                    }
-                                }
-                                pluck_device.last_pin_song_pointer = &pluck_pin;
-                                ++pin_it; // Only increment if no removal
-                            break;
-                            default:
-                                ++pin_it; // Only increment if no removal
-                            break;
-                        }
-                    break;
                     case action_note_off:
                     {
                         auto& dict_last_on = pluck_device.channelpitch_last_pins_note_on;

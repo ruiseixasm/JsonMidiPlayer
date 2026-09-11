@@ -424,8 +424,8 @@ public:
 		_tempos.sort();
 	}
 
-	void addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {
-		if (midiToProcess->size() > 0) {
+	bool addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {
+		if (_clocked_devices.size() > 0 && midiToProcess->size() > 0) {
 			const MidiPin& last_message = midiToProcess->back();
 			uint32_t last_tick = last_message.getPositionTicks();
 			size_t total_clock_ticks = (last_tick + TICKS_PER_CLOCK - 1) / TICKS_PER_CLOCK;	// Wraps outside messages
@@ -442,7 +442,9 @@ public:
 				// New Stop clock message with Lowest priority 11.1
 				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_ticks), device, { system_song_pointer, 0, 0 }, 0xB1) );
 			}
+			return true;
 		}
+		return false;
 	}
 
 	// beats_per_second	= (1 / 60) * BPM

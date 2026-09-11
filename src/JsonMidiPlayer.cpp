@@ -945,6 +945,32 @@ int PlayList(const char* json_str, bool verbose) {
                 }
             }
 			
+
+            //
+            // Where the Clock pins are added if existing
+            //
+			if (clocking.addClockMessagesToPlay(&midiToProcess)) {
+
+				//
+				// Where the added Clock messages are sorted by time and other parameters
+				//
+
+				// Two levels sorting criteria
+				midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
+					
+					// Time is the primary sorting criteria
+					if (a.getPositionTicks() != b.getPositionTicks())  
+						return a.getPositionTicks() < b.getPositionTicks();	// Primary: Sort by position (ascending)
+				
+					// Then sort by Priority (Ascendent)
+					// Must be "<" instead of "<=" due to the mysterious "strict weak ordering"
+					// Explanation here: https://youtu.be/fi0CQ7laiXE?si=fysJC-UdG2lJytjU&t=1542
+					return a.getPriority() < b.getPriority();      // Secondary: Sort by priority (ascending)
+					
+				});
+			}
+
+
             //
             // Where the time_ms is set on each pin
             //

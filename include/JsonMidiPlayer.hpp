@@ -101,8 +101,8 @@ public:
         return Beat((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
     }
 
-    uint32_t ticks() const { return _ticks; }
-    double  beats() const { return (double)_ticks / TICKS_PER_BEAT; }
+    uint32_t getTicks() const { return _ticks; }
+    double getBeats() const { return (double)_ticks / TICKS_PER_BEAT; }
 
     // ── tempo-aware conversion ──
     uint64_t toMicroseconds(uint16_t bpm_10) const {
@@ -251,6 +251,10 @@ public:
 
     const Beat& getPositionBeat() const {
         return _position_beat;   // Just return the object, bound to a const ref
+    }
+
+    uint32_t getPositionTicks() const {
+        return _position_beat.getTicks();
     }
 
     MidiDevice *getMidiDevice() const {

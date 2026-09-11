@@ -619,8 +619,8 @@ int PlayList(const char* json_str, bool verbose) {
             midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
                 
                 // Time is the primary sorting criteria
-                if (a.getPositionBeat() != b.getPositionBeat())  
-                    return a.getPositionBeat() < b.getPositionBeat();	// Primary: Sort by position (ascending)
+                if (a.getPositionTicks() != b.getPositionTicks())  
+                    return a.getPositionTicks() < b.getPositionTicks();	// Primary: Sort by position (ascending)
             
                 // Then sort by Priority (Ascendent)
                 // Must be "<" instead of "<=" due to the mysterious "strict weak ordering"

@@ -227,8 +227,9 @@ int PlayList(const char* json_str, bool verbose) {
 								try
 								{
 								    double time_milliseconds = jsonPlaylistItem["time_ms"];
-									uint32_t position_beats_num = jsonPlaylistItem["position_beats"][0].get<uint32_t>();
-									uint32_t position_beats_den = jsonPlaylistItem["position_beats"][1].get<uint32_t>();
+									const auto& pb = jsonPlaylistItem.at("position_beats");
+									uint32_t position_beats_num = pb.at(0).get<uint32_t>();
+									uint32_t position_beats_den = pb.at(1).get<uint32_t>();
 									if (time_milliseconds < 0 || position_beats_num < 0 || position_beats_den <= 0) {
 
 										continue;

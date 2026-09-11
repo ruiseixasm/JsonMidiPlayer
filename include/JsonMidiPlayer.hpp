@@ -93,6 +93,7 @@ public:
     }
 
     static Beat fromFraction(uint32_t num, uint32_t den) {
+		// Equivalent to Beat((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
         return Beat((num * TICKS_PER_BEAT + den / 2) / den);
     }
 

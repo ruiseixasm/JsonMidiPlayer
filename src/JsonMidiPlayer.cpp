@@ -269,6 +269,8 @@ int PlayList(const char* json_str, bool verbose) {
 								bpm_10, position_beats_num, position_beats_den
 							);
 						}
+						// Sorts all the added tempos
+						clocking.sortTempos();
 					} catch (const nlohmann::json::exception& e) {
 						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
 						continue;

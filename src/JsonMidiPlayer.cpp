@@ -656,8 +656,8 @@ int PlayList(const char* json_str, bool verbose) {
                             case system_timing_clock:
                                 if (pluck_device.last_pin_clock != nullptr) {
 									// Position check
-									const double device_last_time_ms = pluck_device.last_pin_clock->getTime();
-                                    if (pin_actual_time_ms == device_last_time_ms) {
+									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
+                                    if (pin_actual_time_ms == clock_last_time_ms) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
                                             pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         }
@@ -676,8 +676,8 @@ int PlayList(const char* json_str, bool verbose) {
                             case system_clock_start:
                                 if (pluck_device.last_pin_clock != nullptr) {
 									// Position check
-									const double device_last_time_ms = pluck_device.last_pin_clock->getTime();
-                                    if (pin_actual_time_ms == device_last_time_ms) {
+									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
+                                    if (pin_actual_time_ms == clock_last_time_ms) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
                                             pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         }
@@ -695,7 +695,9 @@ int PlayList(const char* json_str, bool verbose) {
                             break;
                             case system_clock_stop:
                                 if (pluck_device.last_pin_clock != nullptr) {
-                                    if (pluck_device.last_pin_clock->getTime() == pin_actual_time_ms) {
+									// Position check
+									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
+                                    if (pin_actual_time_ms == clock_last_time_ms) {
                                         pluck_device.last_pin_clock->setStatusByte(system_clock_stop);
                                         ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
@@ -711,7 +713,9 @@ int PlayList(const char* json_str, bool verbose) {
                             break;
                             case system_clock_continue:
                                 if (pluck_device.last_pin_clock != nullptr) {
-                                    if (pluck_device.last_pin_clock->getTime() == pin_actual_time_ms) {
+									// Position check
+									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
+                                    if (pin_actual_time_ms == clock_last_time_ms) {
                                         pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
@@ -731,7 +735,9 @@ int PlayList(const char* json_str, bool verbose) {
                             break;
                             case system_song_pointer:
                                 if (pluck_device.last_pin_song_pointer != nullptr) {
-                                    if (pluck_device.last_pin_song_pointer->getTime() == pin_actual_time_ms
+									// Position check
+									const double song_pointer_last_time_ms = pluck_device.last_pin_song_pointer->getTime();
+                                    if (pin_actual_time_ms == song_pointer_last_time_ms
                                             && pluck_device.last_pin_song_pointer->getStatusByte() == system_song_pointer
                                             && pluck_device.last_pin_song_pointer->getDataByte(1) == pluck_pin.getDataByte(1)
                                             && pluck_device.last_pin_song_pointer->getDataByte(2) == pluck_pin.getDataByte(2)) {

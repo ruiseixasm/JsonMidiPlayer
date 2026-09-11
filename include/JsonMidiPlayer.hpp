@@ -367,21 +367,6 @@ public:
     Tempo(uint16_t bpm_10, uint32_t position_ticks)
         : _bpm_10(bpm_10), _ticks(position_ticks) {}
 
-	// beats_per_second	= (1 / 60) * BPM
-	// seconds_per_ms   = 1,000
-	// ticks_per_beat   = 960
-	//
-	// beats_per_ms = beats_per_second / seconds_per_ms = (1 / 60) * BPM / 1,000
-	// ticks_per_ms = ticks_per_beat * beats_per_ms
-	//		= 960 * (1 / 60) * BPM / 1,000
-	//		= 960 / (1,000 * 60) * BPM
-	//		= 0.016 * BPM
-	//
-	// ms_per_tick = 1 / ticks_per_ms
-	//		= 1 / (960 * (1 / 60) * BPM / 1,000)
-	//		= 60 * 1,000 / (960 * BPM)
-	//		= 62.5 / BPM
-
 	double beatsToMs() const {
 		return (double)_ticks * 625 / _bpm_10;
 	}
@@ -420,7 +405,31 @@ public:
 		_tempos.sort();
 	}
 
-	void setPinTime();
+	// beats_per_second	= (1 / 60) * BPM
+	// seconds_per_ms   = 1,000
+	// ticks_per_beat   = 960
+	//
+	// beats_per_ms = beats_per_second / seconds_per_ms = (1 / 60) * BPM / 1,000
+	// ticks_per_ms = ticks_per_beat * beats_per_ms
+	//		= 960 * (1 / 60) * BPM / 1,000
+	//		= 960 / (1,000 * 60) * BPM
+	//		= 0.016 * BPM
+	//
+	// ms_per_tick = 1 / ticks_per_ms
+	//		= 1 / (960 * (1 / 60) * BPM / 1,000)
+	//		= 60 * 1,000 / (960 * BPM)
+	//		= 62.5 / BPM
+
+	double getClockTime_ms() const {
+		uint16_t bpm_10 = 1200;
+    	uint32_t ticks = 0;
+		if (_tempos.size() > 0) {
+			const Tempo first_tempo = *_tempos.begin();
+			uint16_t bpm_10 = first_tempo.getBPM_10();
+			uint32_t tick = first_tempo.getPositionTicks();
+		}
+		return (double)ticks * 625 / bpm_10;
+	}
 };
 
     

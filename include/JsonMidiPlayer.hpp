@@ -121,7 +121,7 @@ class MidiPin {
 
 private:
     double time_ms = 0.0;   // Set afterwards based on the _position_beat
-    const Beat _position_beat;
+    const uint32_t _ticks;
     const unsigned char priority;
     MidiDevice * const midi_device = nullptr;
     std::vector<unsigned char> midi_message;  // Replaces midi_message[3]
@@ -136,6 +136,7 @@ public:
     // needed for emplace and insert of the std::unordered_map inside MidiDevice class !!
     MidiPin()
         : time_ms(0.0),                 // Default to 0.0
+        _ticks(0),                    	// Default to 0
         priority(0),                    // Default to 0
         midi_device(nullptr),           // Default to nullptr
         midi_message(),                 // Default to an empty vector
@@ -147,6 +148,7 @@ public:
     MidiPin(double time_milliseconds, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
             : time_ms(time_milliseconds),
+        	_ticks(0),                    	// Default to 0
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
@@ -155,7 +157,7 @@ public:
     // Pin constructor from position_beats (num, den)
     MidiPin(uint32_t num, uint32_t den, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
-            : _position_beat(Beat::fromFraction(num, den)),
+            : _ticks(Beat::getTicksFromBeats(num, den)),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
@@ -164,7 +166,7 @@ public:
     // Pin constructor from position_beats (num, den)
     MidiPin(uint32_t ticks, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
-            : _position_beat(Beat::fromTicks(ticks)),
+            : _ticks(ticks),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
@@ -174,7 +176,7 @@ public:
     MidiPin(double time_milliseconds, uint32_t num, uint32_t den, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
             : time_ms(time_milliseconds),
-            _position_beat(Beat::fromFraction(num, den)),
+            _ticks(Beat::getTicksFromBeats(num, den)),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
@@ -184,7 +186,7 @@ public:
     MidiPin(double time_milliseconds, uint32_t ticks, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
             : time_ms(time_milliseconds),
-            _position_beat(Beat::fromTicks(ticks)),
+            _ticks(ticks),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
@@ -193,7 +195,7 @@ public:
     // Pin copy constructor
     MidiPin(const MidiPin& other)
         : time_ms(other.time_ms),                     // Copy the time_ms
-          _position_beat(other._position_beat),       // Copy the position_beat (Beat class implicit copy constructor)
+          _ticks(other._ticks),       				  // Copy the position ticks
           midi_device(other.midi_device),             // Copy the pointer to the MidiDevice
           midi_message(other.midi_message),           // Copy the midi_message vector
           priority(other.priority),                   // Copy the priority
@@ -209,12 +211,8 @@ public:
         return time_ms;
     }
 
-    const Beat& getPositionBeat() const {
-        return _position_beat;   // Just return the object, bound to a const ref
-    }
-
     uint32_t getPositionTicks() const {
-        return _position_beat.getTicks();
+        return _ticks;
     }
 
     MidiDevice *getMidiDevice() const {

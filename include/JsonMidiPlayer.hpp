@@ -86,6 +86,9 @@ public:
 
 	static uint32_t getTicksFromBeats(uint32_t num, uint32_t den) {
 		// Equivalent to Beat((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
+		if (num < 0 || den <= 0) {
+			return 0;
+		}
 		return (num * TICKS_PER_BEAT + den / 2) / den;
 	}
 
@@ -399,6 +402,10 @@ public:
 
 	void addTempo(uint16_t bpm_10, uint32_t position_ticks) {
 		_tempos.emplace_back(bpm_10, position_ticks);
+	}
+
+	void addTempo(uint16_t bpm_10, uint32_t num, uint32_t den) {
+		_tempos.emplace_back(bpm_10, Beat::getTicksFromBeats(num, den));
 	}
 
 	void sortTempos() {

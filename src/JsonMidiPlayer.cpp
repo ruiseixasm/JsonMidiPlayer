@@ -197,7 +197,33 @@ int PlayList(const char* json_str, bool verbose) {
                     continue;
                 }
 
-				
+                // Check if jsonFileClocking is a non-empty array
+                if (jsonFileClocking.is_array() && !jsonFileClocking.empty()) {
+					try {
+
+						for (auto jsonClockingItem : jsonFileClocking) {
+
+							uint16_t bpm_10 = jsonClockingItem["bpm_10"];
+							const auto& pb = jsonClockingItem.at("position_beats");
+							uint32_t position_beats_num = pb.at(0).get<uint32_t>();
+							uint32_t position_beats_den = pb.at(1).get<uint32_t>();
+							clocking.addTempo(
+								bpm_10, position_beats_num, position_beats_den
+							);
+						}
+
+					} catch (const nlohmann::json::exception& e) {
+						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+						continue;
+					} catch (const std::exception& e) {
+						if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+						continue;
+					} catch (...) {
+						if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+						continue;
+					}
+
+				}
 
                 // Dictionary where the key is a JSON list
                 std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;

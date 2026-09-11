@@ -120,6 +120,7 @@ int PlayList(const char* json_str, bool verbose) {
 
     // Where the playing happens
     {
+		Clocking clocking;
         // Under its own scope in order to disconnect all devices before the stats reporting !
         std::vector<MidiDevice> available_midi_devices;
         std::list<MidiPin> midiToProcess;
@@ -175,13 +176,15 @@ int PlayList(const char* json_str, bool verbose) {
 
                 nlohmann::json jsonFileType;
                 nlohmann::json jsonFileUrl;
-                nlohmann::json jsonFilePlaylist;
+                nlohmann::json jsonFileClocking;
+                nlohmann::json jsonFileContent;
 
                 try
                 {
                     jsonFileType = jsonData["filetype"];
                     jsonFileUrl = jsonData["url"];
-                    jsonFilePlaylist = jsonData["content"];
+                    jsonFileClocking = jsonData["clocking"];
+                    jsonFileContent = jsonData["content"];
                 }
                 catch (nlohmann::json::parse_error& ex)
                 {
@@ -194,12 +197,14 @@ int PlayList(const char* json_str, bool verbose) {
                     continue;
                 }
 
+				
+
                 // Dictionary where the key is a JSON list
                 std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
                 std::unordered_set<std::string> unavailable_devices;
                 
                 // Check if jsonFileContent is a non-empty array
-                if (jsonFilePlaylist.is_array() && !jsonFilePlaylist.empty()) {
+                if (jsonFileContent.is_array() && !jsonFileContent.empty()) {
 
 					// Keeps the last called device in the JsonMidiPlayer file
 					MidiDevice *last_called_midi_device = nullptr;
@@ -208,7 +213,7 @@ int PlayList(const char* json_str, bool verbose) {
                     unsigned char data_byte_2;
 					unsigned char priority;
 
-					for (auto jsonPlaylistItem : jsonFilePlaylist)
+					for (auto jsonPlaylistItem : jsonFileContent)
 					{
 						// Most of the time it's a midi_message being processed, so it makes sense to be the first to check
 						if (jsonPlaylistItem.contains("midi_message")) {

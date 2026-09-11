@@ -250,11 +250,10 @@ int PlayList(const char* json_str, bool verbose) {
 								// Create an API with the default API
 								try
 								{
-								    double time_milliseconds = jsonPlaylistItem["time_ms"];
 									const auto& pb = jsonPlaylistItem.at("position_beats");
 									uint32_t position_beats_num = pb.at(0).get<uint32_t>();
 									uint32_t position_beats_den = pb.at(1).get<uint32_t>();
-									if (time_milliseconds < 0 || position_beats_num < 0 || position_beats_den <= 0) {
+									if (position_beats_num < 0 || position_beats_den <= 0) {
 
 										continue;
 										
@@ -397,7 +396,7 @@ int PlayList(const char* json_str, bool verbose) {
 										}
 
 										midiToProcess.push_back(
-											MidiPin(time_milliseconds, position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority)
+											MidiPin(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority)
 										);
 										play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
 										play_reporting.total_validated++;
@@ -1172,7 +1171,7 @@ void highResolutionSleep(long long microseconds) {
 
     self_playlist.append(
         {
-            "time_ms": self.get_time_ms(single_pulse_duration_ms * total_clock_pulses),
+            ...,
             "midi_message": {
                 "status_byte": 0xF0,    # Start of SysEx
                 "data_bytes": [0x7F, 0x7F, 0x06, 0x01],  # Universal Stop command

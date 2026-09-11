@@ -104,9 +104,9 @@ public:
     double  beats() const { return (double)_ticks / TICKS_PER_BEAT; }
 
     // ── tempo-aware conversion ──
-    uint64_t toMicroseconds(double bpm) const {
+    uint64_t toMicroseconds(uint16_t bpm_10) const {
         // µs = ticks × 62,500 / bpm
-        return (uint64_t)_ticks * 62500 / (uint64_t)bpm;
+        return (uint64_t)_ticks * 625000 / bpm_10;
     }
 
     double beatsToMs(Tempo& tempo) const;

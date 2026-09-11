@@ -659,7 +659,7 @@ int PlayList(const char* json_str, bool verbose) {
 									// Position beats and ticks
 									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
 									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
-                                    if (pin_actual_time_ms == clock_last_time_ms) {
+                                    if (pin_actual_position_ticks == clock_last_position_ticks) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
                                             pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         }
@@ -680,7 +680,7 @@ int PlayList(const char* json_str, bool verbose) {
 									// Position beats and ticks
 									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
 									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
-                                    if (pin_actual_time_ms == clock_last_time_ms) {
+                                    if (pin_actual_position_ticks == clock_last_position_ticks) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
                                             pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         }
@@ -701,7 +701,7 @@ int PlayList(const char* json_str, bool verbose) {
 									// Position beats and ticks
 									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
 									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
-                                    if (pin_actual_time_ms == clock_last_time_ms) {
+                                    if (pin_actual_position_ticks == clock_last_position_ticks) {
                                         pluck_device.last_pin_clock->setStatusByte(system_clock_stop);
                                         ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
@@ -720,7 +720,7 @@ int PlayList(const char* json_str, bool verbose) {
 									// Position beats and ticks
 									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
 									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
-                                    if (pin_actual_time_ms == clock_last_time_ms) {
+                                    if (pin_actual_position_ticks == clock_last_position_ticks) {
                                         pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         ++(play_reporting.total_redundant);
                                         pin_it = midiToProcess.erase(pin_it);
@@ -743,7 +743,7 @@ int PlayList(const char* json_str, bool verbose) {
 									// Position beats and ticks
 									const double song_pointer_last_time_ms = pluck_device.last_pin_song_pointer->getTime();
 									const uint32_t song_pointer_last_position_ticks = pluck_device.last_pin_song_pointer->getPositionTicks();
-                                    if (pin_actual_time_ms == song_pointer_last_time_ms
+                                    if (pin_actual_position_ticks == song_pointer_last_position_ticks
                                             && pluck_device.last_pin_song_pointer->getStatusByte() == system_song_pointer
                                             && pluck_device.last_pin_song_pointer->getDataByte(1) == pluck_pin.getDataByte(1)
                                             && pluck_device.last_pin_song_pointer->getDataByte(2) == pluck_pin.getDataByte(2)) {
@@ -796,7 +796,7 @@ int PlayList(const char* json_str, bool verbose) {
 								const uint32_t last_note_position_ticks = last_note_on_pin->getPositionTicks();
 
 								last_note_on_pin->increaseNotePressedTimes();	// Because the remaining EXTRA note off
-								if (pin_actual_time_ms == last_note_time_ms) {
+								if (pin_actual_position_ticks == last_note_position_ticks) {
 									
 									pin_it = midiToProcess.erase(pin_it);	// Can't trigger the same note twice at the same time
 									++(play_reporting.total_redundant);	// STATS
@@ -813,6 +813,7 @@ int PlayList(const char* json_str, bool verbose) {
 									pin_it = midiToProcess.insert(pin_it,   // Makes a copy to the place given by pin_it
 										MidiPin(
 												pin_actual_time_ms,
+												pin_actual_position_ticks,
 												pluck_pin.getMidiDevice(),
 												midi_pin_message
 											)

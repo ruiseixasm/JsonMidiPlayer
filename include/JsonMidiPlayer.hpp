@@ -235,6 +235,16 @@ public:
             priority(priority)
         { }
 
+    // Pin constructor from time_ms and position_beats (num, den)
+    MidiPin(double time_milliseconds, uint32_t ticks, MidiDevice* midi_device,
+        const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
+            : time_ms(time_milliseconds),
+            _position_beat(Beat::fromTicks(ticks)),
+            midi_device(midi_device),
+            midi_message(json_midi_message),    // Directly initialize midi_message
+            priority(priority)
+        { }
+
     // Pin copy constructor
     MidiPin(const MidiPin& other)
         : time_ms(other.time_ms),                     // Copy the time_ms

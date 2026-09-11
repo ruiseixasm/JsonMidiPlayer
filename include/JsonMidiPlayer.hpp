@@ -432,8 +432,8 @@ public:
 			size_t total_clock_ticks = (last_tick + TICKS_PER_CLOCK - 1) / TICKS_PER_CLOCK;	// Wraps outside messages
 			
 			for (const auto& device : _clocked_devices) {
-				// New Start clock message with Top Priority 0.1
-				midiToProcess->push_back( MidiPin(TICKS_PER_CLOCK * 0, device, { system_clock_start }, 0x01) );
+				// New Start clock message with High Priority 3.1 (Let's messages like Program Change go first)
+				midiToProcess->push_back( MidiPin(TICKS_PER_CLOCK * 0, device, { system_clock_start }, 0x31) );
 				added_mesages++;
 				for (size_t tick_i = 1; tick_i < total_clock_ticks; tick_i++) {
 					// New clock message with Top Priority 0.1

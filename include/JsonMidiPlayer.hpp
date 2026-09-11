@@ -415,13 +415,10 @@ public:
 		_tempos.emplace_back(bpm_10, Beat::getTicksFromBeats(num, den));
 	}
 
-	void sortTempos() {
-		_tempos.sort();
-	}
-
-	size_t addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {
+	size_t addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) {
 		size_t added_mesages = 0;
 		if (_clocked_devices.size() > 0 && midiToProcess->size() > 0) {
+			_tempos.sort();	// Starts by sorting the tempos list right away
 			const MidiPin& last_message = midiToProcess->back();
 			uint32_t last_tick = last_message.getPositionTicks();
 			size_t total_clock_ticks = (last_tick + TICKS_PER_CLOCK - 1) / TICKS_PER_CLOCK;	// Wraps outside messages

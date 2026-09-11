@@ -428,7 +428,7 @@ public:
 		if (midiToProcess->size() > 0) {
 			const MidiPin& last_message = midiToProcess->back();
 			uint32_t last_tick = last_message.getPositionTicks();
-			size_t total_clock_ticks = last_tick / TICKS_PER_CLOCK;
+			size_t total_clock_ticks = (last_tick + TICKS_PER_CLOCK - 1) / TICKS_PER_CLOCK;	// Wraps outside messages
 			
 			for (const auto& device : _clocked_devices) {
 				// New Start clock message with Top Priority 0.1

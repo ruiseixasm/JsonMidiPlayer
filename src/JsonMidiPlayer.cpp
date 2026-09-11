@@ -15,6 +15,13 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 */
 #include "JsonMidiPlayer.hpp"
 
+
+double Beat::beatsToMs(Tempo& tempo) const {
+    uint16_t bpm_10 = tempo.getBPM_10();
+    return (double)_ticks * 625 / bpm_10;
+}
+
+
 // MidiPin methods definition
 void MidiPin::pluckTooth() {
     if (midi_device != nullptr)

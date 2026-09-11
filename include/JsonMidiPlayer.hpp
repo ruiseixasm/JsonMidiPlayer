@@ -74,35 +74,77 @@ const unsigned char system_active_sensing   = 0xFE; // Active Sensing
 const unsigned char system_system_reset     = 0xFF; // System Reset
 
 
+class Tempo;
+
+
 class Beat {
-    uint32_t _ticks;
+    const uint32_t _ticks;
+
+    // private constructor — factories call this
+    explicit Beat(uint32_t ticks) : _ticks(ticks) {}
 
 public:
     static constexpr uint32_t TICKS_PER_BEAT = 960;
 
     Beat() : _ticks(0) {}
-    static Beat fromTicks(uint32_t ticks) { Beat b; b._ticks = ticks; return b; }
+    
+    static Beat fromTicks(uint32_t ticks) {
+        return Beat(ticks);          // ✅ constructs directly
+    }
 
     static Beat fromFraction(uint32_t num, uint32_t den) {
-        return fromTicks((uint32_t)(((int64_t)num * TICKS_PER_BEAT
-                                    + den / 2) / den));
+        return Beat((num * TICKS_PER_BEAT + den / 2) / den);
     }
+
     static Beat fromDouble(double beats) {
-        return fromTicks((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
+        return Beat((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
     }
 
     uint32_t ticks() const { return _ticks; }
     double  beats() const { return (double)_ticks / TICKS_PER_BEAT; }
 
     // ── tempo-aware conversion ──
-    int64_t toMicroseconds(double bpm) const {
+    uint64_t toMicroseconds(double bpm) const {
         // µs = ticks × 62,500 / bpm
-        return (int64_t)_ticks * 62500 / (int64_t)bpm;
+        return (uint64_t)_ticks * 62500 / (uint64_t)bpm;
     }
+
+    double beatsToMs(Tempo& tempo) const;
 
     bool operator< (const Beat& o) const { return _ticks <  o._ticks; }
     bool operator==(const Beat& o) const { return _ticks == o._ticks; }
     Beat operator+(const Beat& o) const { return fromTicks(_ticks + o._ticks); }
+};
+
+
+class Tempo {
+    const Beat _beat;
+    const uint16_t _bpm_10;
+
+public:
+
+    // ── canonical constructor ──
+    Tempo(const Beat& beat, uint16_t bpm_10)
+        : _beat(beat), _bpm_10(bpm_10) {}
+
+    // ── convenience: build the Beat for you ──
+    Tempo(uint32_t ticks, uint16_t bpm_10)
+        : _beat(Beat::fromTicks(ticks)), _bpm_10(bpm_10) {}
+
+    Tempo(uint32_t num, uint32_t den, uint16_t bpm_10)
+        : _beat(Beat::fromFraction(num, den)), _bpm_10(bpm_10) {}
+
+    Tempo(double beats, uint16_t bpm_10)
+        : _beat(Beat::fromDouble(beats)), _bpm_10(bpm_10) {}
+
+    const Beat& getBeat() const {
+        return _beat;   // Just return the object, bound to a const ref
+    }
+
+    uint16_t getBPM_10() const {
+        return _bpm_10;
+    }
+
 };
 
 

@@ -406,6 +406,8 @@ class Clocking {
 
 public:
 
+    static constexpr uint32_t TICKS_PER_CLOCK = 24;
+
 	void addDevice(MidiDevice* midi_device) {
 		_clocked_devices.push_back(midi_device);
 	}
@@ -420,6 +422,27 @@ public:
 
 	void sortTempos() {
 		_tempos.sort();
+	}
+
+	void addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {
+		if (midiToProcess->size() > 0) {
+			const MidiPin& last_message = midiToProcess->back();
+			uint32_t last_tick = last_message.getPositionTicks();
+			size_t total_clock_ticks = last_tick / TICKS_PER_CLOCK;
+			
+			for (const auto& device : _clocked_devices) {
+				// New Start clock message with Top Priority 0.1
+				midiToProcess->push_back( MidiPin(TICKS_PER_CLOCK * 0, device, { system_clock_start }, 0x01) );
+				for (size_t tick_i = 1; tick_i < total_clock_ticks; tick_i++) {
+					// New clock message with Top Priority 0.1
+					midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * tick_i), device, { system_timing_clock }, 0x01) );
+				}
+				// New Stop clock message with Lowest priority 11.0
+				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_ticks), device, { system_clock_stop }, 0xB0) );
+				// New Stop clock message with Lowest priority 11.1
+				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_ticks), device, { system_song_pointer, 0, 0 }, 0xB1) );
+			}
+		}
 	}
 
 	// beats_per_second	= (1 / 60) * BPM
@@ -439,7 +462,7 @@ public:
 
 	double getClockTime_ms(uint32_t position_ticks) const {
 		if (_tempos.size() > 0) {
-			const Tempo first_tempo = *_tempos.begin();
+			const Tempo& first_tempo = *_tempos.begin();
 			return first_tempo.getTimeFromTicks(position_ticks);
 		}
 		return 0.0;

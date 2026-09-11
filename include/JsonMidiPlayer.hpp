@@ -74,6 +74,9 @@ const unsigned char system_active_sensing   = 0xFE; // Active Sensing
 const unsigned char system_system_reset     = 0xFF; // System Reset
 
 
+static constexpr uint32_t TICKS_PER_BEAT 	= 960;	// Internal PPQN
+static constexpr uint32_t CLOCKS_PER_BEAT 	= 24;   // MIDI spec
+static constexpr uint32_t TICKS_PER_CLOCK 	= TICKS_PER_BEAT / CLOCKS_PER_BEAT;	// = 40
 
 class Beat {
     const uint32_t _ticks;
@@ -82,7 +85,6 @@ class Beat {
     explicit Beat(uint32_t ticks) : _ticks(ticks) {}
 
 public:
-    static constexpr uint32_t TICKS_PER_BEAT = 960;
 
 	static uint32_t getTicksFromBeats(uint32_t num, uint32_t den) {
 		// Equivalent to Beat((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
@@ -405,8 +407,6 @@ class Clocking {
 	std::list<Tempo> _tempos;
 
 public:
-
-    static constexpr uint32_t TICKS_PER_CLOCK = 24;
 
 	void addDevice(MidiDevice* midi_device) {
 		_clocked_devices.push_back(midi_device);

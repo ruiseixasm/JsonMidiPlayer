@@ -229,7 +229,7 @@ public:
     // Pin copy constructor
     MidiPin(const MidiPin& other)
         : time_ms(other.time_ms),                     // Copy the time_ms
-          _position_beat(other._position_beat),       // Copy the position_beat
+          _position_beat(other._position_beat),       // Copy the position_beat (Beat class implicit copy constructor)
           midi_device(other.midi_device),             // Copy the pointer to the MidiDevice
           midi_message(other.midi_message),           // Copy the midi_message vector
           priority(other.priority),                   // Copy the priority

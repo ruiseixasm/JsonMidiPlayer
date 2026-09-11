@@ -958,7 +958,7 @@ int PlayList(const char* json_str, bool verbose) {
                                 0	// Note off has velocity 0 (Data Byte 2)
                             };
                             // Adds a new MidiPin as a copy to the list of pins to be processed
-                            midiToProcess.push_back( MidiPin(last_message_time_ms, &device, midi_pin_message) );
+                            midiToProcess.push_back( MidiPin(last_message_position_ticks, &device, midi_pin_message) );
                             play_reporting.total_generated++;
                         }
                     }

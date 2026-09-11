@@ -371,7 +371,9 @@ int PlayList(const char* json_str, bool verbose) {
 												continue;   // Not a valid message, no priority given, jumps to the next one
 										}
 
-										midiToProcess.push_back( MidiPin(time_milliseconds, last_called_midi_device, json_midi_message, priority) );
+										midiToProcess.push_back(
+											MidiPin(time_milliseconds, position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority)
+										);
 										play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
 										play_reporting.total_validated++;
 									}

@@ -197,24 +197,53 @@ int PlayList(const char* json_str, bool verbose) {
                     continue;
                 }
 
+                // Dictionary where the key is a JSON list
+                std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
+                std::unordered_set<std::string> unavailable_devices;
+                
 				nlohmann::json jsonFileClocking_devices = jsonFileClocking.at("devices");
 				nlohmann::json jsonFileClocking_tempos = jsonFileClocking.at("tempos");
 
-                // Check if jsonFileClocking_tempos is a non-empty array
-                if (jsonFileClocking_tempos.is_array() && !jsonFileClocking_tempos.empty()) {
+				// Load the Devices
+                if (jsonFileClocking_devices.is_array() && !jsonFileClocking_devices.empty()) {
+
 					try {
+						// Keeps the last called device in the JsonMidiPlayer file
+						MidiDevice *last_called_midi_device = nullptr;
 
-						for (auto jsonClockingTempo : jsonFileClocking_tempos) {
+						for (std::string jsonClockingDevice_name : jsonFileClocking_devices) {
 
-							uint16_t bpm_10 = jsonClockingTempo["bpm_10"];
-							const auto& pb = jsonClockingTempo.at("position_beats");
-							uint32_t position_beats_num = pb.at(0).get<uint32_t>();
-							uint32_t position_beats_den = pb.at(1).get<uint32_t>();
-							clocking.addTempo(
-								bpm_10, position_beats_num, position_beats_den
-							);
+							if (connected_devices_by_name.find(jsonClockingDevice_name) != connected_devices_by_name.end()) {
+								last_called_midi_device = connected_devices_by_name[jsonClockingDevice_name];
+								goto skip_to_next_device;
+							}
+					
+							if (unavailable_devices.find(jsonClockingDevice_name) != unavailable_devices.end()) {
+								continue;
+							}
+					
+							for (auto &available_device : available_midi_devices) {
+								if (available_device.getName().find(jsonClockingDevice_name) != std::string::npos) {
+									//
+									// Where the Device Port is connected/opened (Main reason for errors)
+									//
+									if (available_device.openPort()) {	// Where the connection happens
+										connected_devices_by_name[jsonClockingDevice_name] = &available_device; 
+										last_called_midi_device = &available_device;
+
+										clocking.addDevice(&available_device);
+
+										goto skip_to_next_device; // For Message devices only the first one found is connected and NOT all of them
+
+									} else {
+										connected_devices_by_name[jsonClockingDevice_name] = nullptr; 
+									}
+								} else {
+									unavailable_devices.insert(jsonClockingDevice_name);
+								}
+							}
+							skip_to_next_device: ;	// Does nothing, just jumps to next device
 						}
-
 					} catch (const nlohmann::json::exception& e) {
 						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
 						continue;
@@ -227,10 +256,31 @@ int PlayList(const char* json_str, bool verbose) {
 					}
 				}
 
-                // Dictionary where the key is a JSON list
-                std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
-                std::unordered_set<std::string> unavailable_devices;
-                
+				// Load the Tempos
+                if (jsonFileClocking_tempos.is_array() && !jsonFileClocking_tempos.empty()) {
+					try {
+						for (auto jsonClockingTempo : jsonFileClocking_tempos) {
+
+							uint16_t bpm_10 = jsonClockingTempo["bpm_10"];
+							const auto& pb = jsonClockingTempo.at("position_beats");
+							uint32_t position_beats_num = pb.at(0).get<uint32_t>();
+							uint32_t position_beats_den = pb.at(1).get<uint32_t>();
+							clocking.addTempo(
+								bpm_10, position_beats_num, position_beats_den
+							);
+						}
+					} catch (const nlohmann::json::exception& e) {
+						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+						continue;
+					} catch (const std::exception& e) {
+						if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+						continue;
+					} catch (...) {
+						if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+						continue;
+					}
+				}
+
                 // Check if jsonFilePlaylist is a non-empty array
                 if (jsonFilePlaylist.is_array() && !jsonFilePlaylist.empty()) {
 

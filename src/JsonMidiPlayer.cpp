@@ -177,14 +177,14 @@ int PlayList(const char* json_str, bool verbose) {
                 nlohmann::json jsonFileType;
                 nlohmann::json jsonFileUrl;
                 nlohmann::json jsonFileClocking;
-                nlohmann::json jsonFileContent;
+                nlohmann::json jsonFilePlaylist;
 
                 try
                 {
                     jsonFileType = jsonData["filetype"];
                     jsonFileUrl = jsonData["url"];
                     jsonFileClocking = jsonData["clocking"];
-                    jsonFileContent = jsonData["content"];
+                    jsonFilePlaylist = jsonData["playlist"];
                 }
                 catch (nlohmann::json::parse_error& ex)
                 {
@@ -197,14 +197,17 @@ int PlayList(const char* json_str, bool verbose) {
                     continue;
                 }
 
-                // Check if jsonFileClocking is a non-empty array
-                if (jsonFileClocking.is_array() && !jsonFileClocking.empty()) {
+				nlohmann::json jsonFileClocking_devices = jsonFileClocking.at("devices");
+				nlohmann::json jsonFileClocking_tempos = jsonFileClocking.at("tempos");
+
+                // Check if jsonFileClocking_tempos is a non-empty array
+                if (jsonFileClocking_tempos.is_array() && !jsonFileClocking_tempos.empty()) {
 					try {
 
-						for (auto jsonClockingItem : jsonFileClocking) {
+						for (auto jsonClockingTempo : jsonFileClocking_tempos) {
 
-							uint16_t bpm_10 = jsonClockingItem["bpm_10"];
-							const auto& pb = jsonClockingItem.at("position_beats");
+							uint16_t bpm_10 = jsonClockingTempo["bpm_10"];
+							const auto& pb = jsonClockingTempo.at("position_beats");
 							uint32_t position_beats_num = pb.at(0).get<uint32_t>();
 							uint32_t position_beats_den = pb.at(1).get<uint32_t>();
 							clocking.addTempo(
@@ -228,8 +231,8 @@ int PlayList(const char* json_str, bool verbose) {
                 std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
                 std::unordered_set<std::string> unavailable_devices;
                 
-                // Check if jsonFileContent is a non-empty array
-                if (jsonFileContent.is_array() && !jsonFileContent.empty()) {
+                // Check if jsonFilePlaylist is a non-empty array
+                if (jsonFilePlaylist.is_array() && !jsonFilePlaylist.empty()) {
 
 					// Keeps the last called device in the JsonMidiPlayer file
 					MidiDevice *last_called_midi_device = nullptr;
@@ -238,7 +241,7 @@ int PlayList(const char* json_str, bool verbose) {
                     unsigned char data_byte_2;
 					unsigned char priority;
 
-					for (auto jsonPlaylistItem : jsonFileContent)
+					for (auto jsonPlaylistItem : jsonFilePlaylist)
 					{
 						// Most of the time it's a midi_message being processed, so it makes sense to be the first to check
 						if (jsonPlaylistItem.contains("midi_message")) {

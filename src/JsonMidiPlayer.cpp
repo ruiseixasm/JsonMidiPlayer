@@ -700,10 +700,6 @@ int PlayList(const char* json_str, bool verbose) {
                             play_reporting.total_generated++;
                         }
                     }
-
-                    // LAST MIDI CLOCK MESSAGE SHALL BE STOP
-                    if (device.last_pin_clock != nullptr && device.last_pin_clock->getStatusByte() == system_timing_clock)
-                        device.last_pin_clock->setStatusByte(system_clock_stop);    // Clock Stop
                 }
             }
 			

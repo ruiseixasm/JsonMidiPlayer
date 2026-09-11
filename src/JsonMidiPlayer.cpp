@@ -949,7 +949,10 @@ int PlayList(const char* json_str, bool verbose) {
             //
             // Where the Clock pins are added if existing
             //
-			if (clocking.addClockMessagesToPlay(&midiToProcess)) {
+			size_t added_mesages = clocking.addClockMessagesToPlay(&midiToProcess);
+			if (added_mesages > 0) {
+
+				play_reporting.total_generated += added_mesages;
 
 				//
 				// Where the added Clock messages are sorted by time and other parameters

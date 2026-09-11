@@ -647,7 +647,7 @@ int PlayList(const char* json_str, bool verbose) {
                 // Auxiliary variables
                 MidiPin &pluck_pin = *pin_it;	// Just an handy conversion
                 MidiDevice &pluck_device = *pluck_pin.getDevice();
-				// Position check
+				// Position beats and ticks
 				const double pin_actual_time_ms = pluck_pin.getTime();
 
                 switch (pluck_pin.getAction()) {
@@ -655,7 +655,7 @@ int PlayList(const char* json_str, bool verbose) {
                         switch (pluck_pin.getStatusByte()) {
                             case system_timing_clock:
                                 if (pluck_device.last_pin_clock != nullptr) {
-									// Position check
+									// Position beats and ticks
 									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
                                     if (pin_actual_time_ms == clock_last_time_ms) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
@@ -675,7 +675,7 @@ int PlayList(const char* json_str, bool verbose) {
                             break;
                             case system_clock_start:
                                 if (pluck_device.last_pin_clock != nullptr) {
-									// Position check
+									// Position beats and ticks
 									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
                                     if (pin_actual_time_ms == clock_last_time_ms) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
@@ -695,7 +695,7 @@ int PlayList(const char* json_str, bool verbose) {
                             break;
                             case system_clock_stop:
                                 if (pluck_device.last_pin_clock != nullptr) {
-									// Position check
+									// Position beats and ticks
 									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
                                     if (pin_actual_time_ms == clock_last_time_ms) {
                                         pluck_device.last_pin_clock->setStatusByte(system_clock_stop);
@@ -713,7 +713,7 @@ int PlayList(const char* json_str, bool verbose) {
                             break;
                             case system_clock_continue:
                                 if (pluck_device.last_pin_clock != nullptr) {
-									// Position check
+									// Position beats and ticks
 									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
                                     if (pin_actual_time_ms == clock_last_time_ms) {
                                         pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
@@ -735,7 +735,7 @@ int PlayList(const char* json_str, bool verbose) {
                             break;
                             case system_song_pointer:
                                 if (pluck_device.last_pin_song_pointer != nullptr) {
-									// Position check
+									// Position beats and ticks
 									const double song_pointer_last_time_ms = pluck_device.last_pin_song_pointer->getTime();
                                     if (pin_actual_time_ms == song_pointer_last_time_ms
                                             && pluck_device.last_pin_song_pointer->getStatusByte() == system_song_pointer
@@ -785,6 +785,7 @@ int PlayList(const char* json_str, bool verbose) {
 
 							if (last_note_on_pin->getNotePressedTimes() > 0) {
 
+								// Position beats and ticks
 								const double last_note_time_ms = last_note_on_pin->getTime();
 
 								last_note_on_pin->increaseNotePressedTimes();	// Because the remaining EXTRA note off
@@ -902,9 +903,9 @@ int PlayList(const char* json_str, bool verbose) {
             skip_to_next_pin: ;	// Does nothing, just processes next pin
             }
 
-            // Get time_ms of last message
+
+			// Position beats and ticks of last message
             auto last_message_time_ms = midiToProcess.back().getTime();
-            
             
             for (auto &device : available_midi_devices) {
                 
@@ -959,6 +960,7 @@ int PlayList(const char* json_str, bool verbose) {
             if (verbose) std::cout << "\tTotal resultant Midi Messages (included): " << std::setw(10) << midiToProcess.size() << std::endl;
 
             MidiPin *last_pin = &midiToProcess.back();
+			// Position time
             size_t duration_time_sec = std::round(last_pin->getTime() / 1000);
             if (verbose) std::cout << "The data will now be played during "
                 << duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
@@ -973,6 +975,7 @@ int PlayList(const char* json_str, bool verbose) {
                 
                 MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
 
+				// Position time
                 long long next_pin_time_us = std::round((midi_pin.getTime() + play_reporting.total_drag) * 1000);
                 auto playing_now = std::chrono::high_resolution_clock::now();
                 auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);

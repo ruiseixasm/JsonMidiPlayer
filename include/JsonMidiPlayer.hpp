@@ -137,7 +137,7 @@ public:
     Tempo(double beats, uint16_t bpm_10)
         : _position_beat(Beat::fromDouble(beats)), _bpm_10(bpm_10) {}
 
-    const Beat& getBeat() const {
+    const Beat& getPositionBeat() const {
         return _position_beat;   // Just return the object, bound to a const ref
     }
 
@@ -217,6 +217,10 @@ public:
 
     double getTime() const {
         return time_ms;
+    }
+
+    const Beat& getPositionBeat() const {
+        return _position_beat;   // Just return the object, bound to a const ref
     }
 
     MidiDevice *getMidiDevice() const {

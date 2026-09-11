@@ -91,6 +91,11 @@
         "semaphore": "cpp",
         "cinttypes": "cpp"
     },
+    "[cpp]": {
+        "editor.insertSpaces": false,
+        "editor.tabSize": 4,
+        "editor.detectIndentation": false
+    },
     "cSpell.words": [
 		"Aftertouch",
 		"channelpitch",

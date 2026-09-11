@@ -110,6 +110,21 @@ public:
         return (uint64_t)_ticks * 625000 / bpm_10;
     }
 
+	// beats_per_second	= (1 / 60) * BPM
+	// seconds_per_ms   = 1,000
+	// ticks_per_beat   = 960
+	//
+	// beats_per_ms = beats_per_second / seconds_per_ms = (1 / 60) * BPM / 1,000
+	// ticks_per_ms = ticks_per_beat * beats_per_ms
+	//		= 960 * (1 / 60) * BPM / 1,000
+	//		= 960 / (1,000 * 60) * BPM
+	//		= 0.016 * BPM
+	//
+	// ms_per_tick = 1 / ticks_per_ms
+	//		= 1 / (960 * (1 / 60) * BPM / 1,000)
+	//		= 60 * 1,000 / (960 * BPM)
+	//		= 62.5 / BPM
+
 	double Beat::beatsToMs(uint16_t bpm_10) const {
 		return (double)_ticks * 625 / bpm_10;
 	}

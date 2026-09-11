@@ -190,7 +190,7 @@ public:
     // Pin DEFAULT constructor, no arguments,
     // needed for emplace and insert of the std::unordered_map inside MidiDevice class !!
     MidiPin()
-        : time_ms(0),                   // Default to 0
+        : time_ms(0.0),                 // Default to 0.0
         priority(0),                    // Default to 0
         midi_device(nullptr),           // Default to nullptr
         midi_message(),                 // Default to an empty vector
@@ -229,6 +229,7 @@ public:
     // Pin copy constructor
     MidiPin(const MidiPin& other)
         : time_ms(other.time_ms),                     // Copy the time_ms
+          _position_beat(other._position_beat),       // Copy the position_beat
           midi_device(other.midi_device),             // Copy the pointer to the MidiDevice
           midi_message(other.midi_message),           // Copy the midi_message vector
           priority(other.priority),                   // Copy the priority

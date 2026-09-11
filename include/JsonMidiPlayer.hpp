@@ -74,8 +74,6 @@ const unsigned char system_active_sensing   = 0xFE; // Active Sensing
 const unsigned char system_system_reset     = 0xFF; // System Reset
 
 
-class Tempo;
-
 
 class Beat {
     const uint32_t _ticks;
@@ -86,6 +84,11 @@ class Beat {
 public:
     static constexpr uint32_t TICKS_PER_BEAT = 960;
 
+	static uint32_t getTicksFromBeats(uint32_t num, uint32_t den) {
+		// Equivalent to Beat((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
+		return (num * TICKS_PER_BEAT + den / 2) / den;
+	}
+
     Beat() : _ticks(0) {}
     
     static Beat fromTicks(uint32_t ticks) {
@@ -93,8 +96,7 @@ public:
     }
 
     static Beat fromFraction(uint32_t num, uint32_t den) {
-		// Equivalent to Beat((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
-        return Beat((num * TICKS_PER_BEAT + den / 2) / den);
+        return Beat(getTicksFromBeats(num, den));
     }
 
     static Beat fromDouble(double beats) {
@@ -104,69 +106,12 @@ public:
     uint32_t getTicks() const { return _ticks; }
     double getBeats() const { return (double)_ticks / TICKS_PER_BEAT; }
 
-    // ── tempo-aware conversion ──
-    uint64_t toMicroseconds(uint16_t bpm_10) const {
-        // µs = ticks × 62,500 / bpm
-        return (uint64_t)_ticks * 625000 / bpm_10;
-    }
-
-	// beats_per_second	= (1 / 60) * BPM
-	// seconds_per_ms   = 1,000
-	// ticks_per_beat   = 960
-	//
-	// beats_per_ms = beats_per_second / seconds_per_ms = (1 / 60) * BPM / 1,000
-	// ticks_per_ms = ticks_per_beat * beats_per_ms
-	//		= 960 * (1 / 60) * BPM / 1,000
-	//		= 960 / (1,000 * 60) * BPM
-	//		= 0.016 * BPM
-	//
-	// ms_per_tick = 1 / ticks_per_ms
-	//		= 1 / (960 * (1 / 60) * BPM / 1,000)
-	//		= 60 * 1,000 / (960 * BPM)
-	//		= 62.5 / BPM
-
-	double Beat::beatsToMs(uint16_t bpm_10) const {
-		return (double)_ticks * 625 / bpm_10;
-	}
-
-    double beatsToMs(Tempo& tempo) const;
-
     bool operator< (const Beat& o) const { return _ticks <  o._ticks; }
     bool operator==(const Beat& o) const { return _ticks == o._ticks; }
     bool operator!=(const Beat& o) const { return _ticks != o._ticks; }
     Beat operator+(const Beat& o) const { return fromTicks(_ticks + o._ticks); }
 };
 
-
-class Tempo {
-    const Beat _position_beat;
-    const uint16_t _bpm_10;
-
-public:
-
-    // ── canonical constructor ──
-    Tempo(const Beat& beat, uint16_t bpm_10)
-        : _position_beat(beat), _bpm_10(bpm_10) {}
-
-    // ── convenience: build the Beat for you ──
-    Tempo(uint32_t ticks, uint16_t bpm_10)
-        : _position_beat(Beat::fromTicks(ticks)), _bpm_10(bpm_10) {}
-
-    Tempo(uint32_t num, uint32_t den, uint16_t bpm_10)
-        : _position_beat(Beat::fromFraction(num, den)), _bpm_10(bpm_10) {}
-
-    Tempo(double beats, uint16_t bpm_10)
-        : _position_beat(Beat::fromDouble(beats)), _bpm_10(bpm_10) {}
-
-    const Beat& getPositionBeat() const {
-        return _position_beat;   // Just return the object, bound to a const ref
-    }
-
-    uint16_t getBPM_10() const {
-        return _bpm_10;
-    }
-
-};
 
 
 class MidiDevice;
@@ -256,12 +201,8 @@ public:
           note_pressed_times(other.note_pressed_times)          // Copy the note_released
     { }
 
-	void setTime(uint16_t bpm_10) {
-		time_ms = _position_beat.beatsToMs(bpm_10);
-	}
-
-	double setTime(Tempo& tempo) {
-		time_ms = _position_beat.beatsToMs(tempo);
+	void setTime(double time_milliseconds) {
+		time_ms = time_milliseconds;
 	}
 
     double getTime() const {
@@ -416,6 +357,73 @@ class MidiDevice {
         void sendMessage(const std::vector<unsigned char> *midi_message);
     };
     
+
+	
+class Tempo {
+    const uint16_t _bpm_10;
+    const uint32_t _ticks;
+
+public:
+
+    // ── canonical constructor ──
+    Tempo(uint16_t bpm_10, uint32_t position_ticks)
+        : _bpm_10(bpm_10), _ticks(position_ticks) {}
+
+	// beats_per_second	= (1 / 60) * BPM
+	// seconds_per_ms   = 1,000
+	// ticks_per_beat   = 960
+	//
+	// beats_per_ms = beats_per_second / seconds_per_ms = (1 / 60) * BPM / 1,000
+	// ticks_per_ms = ticks_per_beat * beats_per_ms
+	//		= 960 * (1 / 60) * BPM / 1,000
+	//		= 960 / (1,000 * 60) * BPM
+	//		= 0.016 * BPM
+	//
+	// ms_per_tick = 1 / ticks_per_ms
+	//		= 1 / (960 * (1 / 60) * BPM / 1,000)
+	//		= 60 * 1,000 / (960 * BPM)
+	//		= 62.5 / BPM
+
+	double beatsToMs() const {
+		return (double)_ticks * 625 / _bpm_10;
+	}
+
+    // ── tempo-aware conversion ──
+    uint64_t toMicroseconds(uint16_t bpm_10) const {
+        // µs = ticks × 62,500 / bpm
+        return (uint64_t)_ticks * 625000 / bpm_10;
+    }
+
+
+    uint16_t getBPM_10() const {
+        return _bpm_10;
+    }
+
+    uint32_t getPositionTicks() const {
+        return _ticks;
+    }
+
+    bool operator< (const Tempo& o) const { return _ticks <  o._ticks; }
+    bool operator==(const Tempo& o) const { return _ticks == o._ticks; }
+    bool operator!=(const Tempo& o) const { return _ticks != o._ticks; }
+};
+
+
+class Clocking {
+	std::list<Tempo> _tempos;
+
+public:
+
+	void addTempo(uint16_t bpm_10, uint32_t position_ticks) {
+		_tempos.emplace_back(bpm_10, position_ticks);
+	}
+
+	void sortTempos() {
+		_tempos.sort();
+	}
+
+	void setPinTime();
+};
 
     
 

@@ -222,7 +222,6 @@ int PlayList(const char* json_str, bool verbose) {
 						if (verbose) std::cerr << "Unknown error occurred." << std::endl;
 						continue;
 					}
-
 				}
 
                 // Dictionary where the key is a JSON list
@@ -970,6 +969,17 @@ int PlayList(const char* json_str, bool verbose) {
                         device.last_pin_clock->setStatusByte(system_clock_stop);    // Clock Stop
                 }
             }
+			
+            //
+            // Where the time_ms is set on each pin
+            //
+
+            for (auto pin_it = midiToProcess.begin(); pin_it != midiToProcess.end(); ++pin_it) {
+
+				uint32_t pin_ticks = pin_it->getPositionTicks();
+				double time_ms = clocking.getClockTime_ms(pin_ticks);
+				pin_it->setTime(time_ms);
+			}
 
             #ifdef DEBUGGING
             debugging_now = std::chrono::high_resolution_clock::now();

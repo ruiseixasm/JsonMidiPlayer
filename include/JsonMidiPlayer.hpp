@@ -370,6 +370,11 @@ public:
     Tempo(uint16_t bpm_10, uint32_t position_ticks)
         : _bpm_10(bpm_10), _ticks(position_ticks) {}
 
+	 
+	double getTimeFromTicks(uint32_t position_ticks) const {
+		return (double)position_ticks * 625 / _bpm_10;
+	}
+
 	double beatsToMs() const {
 		return (double)_ticks * 625 / _bpm_10;
 	}
@@ -427,15 +432,12 @@ public:
 	//		= 60 * 1,000 / (960 * BPM)
 	//		= 62.5 / BPM
 
-	double getClockTime_ms() const {
-		uint16_t bpm_10 = 1200;
-    	uint32_t ticks = 0;
+	double getClockTime_ms(uint32_t position_ticks) const {
 		if (_tempos.size() > 0) {
 			const Tempo first_tempo = *_tempos.begin();
-			uint16_t bpm_10 = first_tempo.getBPM_10();
-			uint32_t tick = first_tempo.getPositionTicks();
+			return first_tempo.getTimeFromTicks(position_ticks);
 		}
-		return (double)ticks * 625 / bpm_10;
+		return 0.0;
 	}
 };
 

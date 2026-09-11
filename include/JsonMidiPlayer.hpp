@@ -118,27 +118,27 @@ public:
 
 
 class Tempo {
-    const Beat _beat;
+    const Beat _position_beat;
     const uint16_t _bpm_10;
 
 public:
 
     // ── canonical constructor ──
     Tempo(const Beat& beat, uint16_t bpm_10)
-        : _beat(beat), _bpm_10(bpm_10) {}
+        : _position_beat(beat), _bpm_10(bpm_10) {}
 
     // ── convenience: build the Beat for you ──
     Tempo(uint32_t ticks, uint16_t bpm_10)
-        : _beat(Beat::fromTicks(ticks)), _bpm_10(bpm_10) {}
+        : _position_beat(Beat::fromTicks(ticks)), _bpm_10(bpm_10) {}
 
     Tempo(uint32_t num, uint32_t den, uint16_t bpm_10)
-        : _beat(Beat::fromFraction(num, den)), _bpm_10(bpm_10) {}
+        : _position_beat(Beat::fromFraction(num, den)), _bpm_10(bpm_10) {}
 
     Tempo(double beats, uint16_t bpm_10)
-        : _beat(Beat::fromDouble(beats)), _bpm_10(bpm_10) {}
+        : _position_beat(Beat::fromDouble(beats)), _bpm_10(bpm_10) {}
 
     const Beat& getBeat() const {
-        return _beat;   // Just return the object, bound to a const ref
+        return _position_beat;   // Just return the object, bound to a const ref
     }
 
     uint16_t getBPM_10() const {
@@ -154,7 +154,8 @@ class MidiDevice;
 class MidiPin {
 
 private:
-    const double time_ms;
+    double time_ms = 0.0;   // Set afterwards based on the _position_beat
+    const Beat _position_beat;
     const unsigned char priority;
     MidiDevice * const midi_device = nullptr;
     std::vector<unsigned char> midi_message;  // Replaces midi_message[3]
@@ -176,10 +177,19 @@ public:
         note_pressed_times(1)           // Default to 1
     { }
 
-    // Pin constructor
+    // Pin constructor from miliseconds
     MidiPin(double time_milliseconds, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
             : time_ms(time_milliseconds),
+            midi_device(midi_device),
+            midi_message(json_midi_message),    // Directly initialize midi_message
+            priority(priority)
+        { }
+
+    // Pin constructor from position_beats (num, den)
+    MidiPin(uint32_t num, uint32_t den, MidiDevice* midi_device,
+        const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
+            : _position_beat(Beat::fromFraction(num, den)),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)

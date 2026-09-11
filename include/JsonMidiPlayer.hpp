@@ -118,6 +118,7 @@ public:
 
     bool operator< (const Beat& o) const { return _ticks <  o._ticks; }
     bool operator==(const Beat& o) const { return _ticks == o._ticks; }
+    bool operator!=(const Beat& o) const { return _ticks != o._ticks; }
     Beat operator+(const Beat& o) const { return fromTicks(_ticks + o._ticks); }
 };
 

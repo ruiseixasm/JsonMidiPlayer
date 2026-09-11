@@ -216,6 +216,15 @@ public:
             priority(priority)
         { }
 
+    // Pin constructor from position_beats (num, den)
+    MidiPin(uint32_t ticks, MidiDevice* midi_device,
+        const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
+            : _position_beat(Beat::fromTicks(ticks)),
+            midi_device(midi_device),
+            midi_message(json_midi_message),    // Directly initialize midi_message
+            priority(priority)
+        { }
+
     // Pin constructor from time_ms and position_beats (num, den)
     MidiPin(double time_milliseconds, uint32_t num, uint32_t den, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)

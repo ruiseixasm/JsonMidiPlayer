@@ -653,7 +653,10 @@ int PlayList(const char* json_str, bool verbose) {
                         switch (pluck_pin.getStatusByte()) {
                             case system_timing_clock:
                                 if (pluck_device.last_pin_clock != nullptr) {
-                                    if (pluck_device.last_pin_clock->getTime() == pluck_pin.getTime()) {
+									// Position check
+									auto pin_actual_time_ms = pluck_pin.getTime();
+									auto device_last_time_ms = pluck_device.last_pin_clock->getTime();
+                                    if (device_last_time_ms == pin_actual_time_ms) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
                                             pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         }

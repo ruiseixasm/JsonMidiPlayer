@@ -671,7 +671,6 @@ int PlayList(const char* json_str, bool verbose) {
                 MidiPin &pluck_pin = *pin_it;	// Just an handy conversion
                 MidiDevice &pluck_device = *pluck_pin.getDevice();
 				// Position beats and ticks
-				const double pin_actual_time_ms = pluck_pin.getTime();
 				const uint32_t pin_actual_position_ticks = pluck_pin.getPositionTicks();
 
                 switch (pluck_pin.getAction()) {
@@ -680,7 +679,6 @@ int PlayList(const char* json_str, bool verbose) {
                             case system_timing_clock:
                                 if (pluck_device.last_pin_clock != nullptr) {
 									// Position beats and ticks
-									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
 									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
                                     if (pin_actual_position_ticks == clock_last_position_ticks) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
@@ -701,7 +699,6 @@ int PlayList(const char* json_str, bool verbose) {
                             case system_clock_start:
                                 if (pluck_device.last_pin_clock != nullptr) {
 									// Position beats and ticks
-									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
 									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
                                     if (pin_actual_position_ticks == clock_last_position_ticks) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
@@ -722,7 +719,6 @@ int PlayList(const char* json_str, bool verbose) {
                             case system_clock_stop:
                                 if (pluck_device.last_pin_clock != nullptr) {
 									// Position beats and ticks
-									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
 									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
                                     if (pin_actual_position_ticks == clock_last_position_ticks) {
                                         pluck_device.last_pin_clock->setStatusByte(system_clock_stop);
@@ -741,7 +737,6 @@ int PlayList(const char* json_str, bool verbose) {
                             case system_clock_continue:
                                 if (pluck_device.last_pin_clock != nullptr) {
 									// Position beats and ticks
-									const double clock_last_time_ms = pluck_device.last_pin_clock->getTime();
 									const uint32_t clock_last_position_ticks = pluck_device.last_pin_clock->getPositionTicks();
                                     if (pin_actual_position_ticks == clock_last_position_ticks) {
                                         pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
@@ -764,7 +759,6 @@ int PlayList(const char* json_str, bool verbose) {
                             case system_song_pointer:
                                 if (pluck_device.last_pin_song_pointer != nullptr) {
 									// Position beats and ticks
-									const double song_pointer_last_time_ms = pluck_device.last_pin_song_pointer->getTime();
 									const uint32_t song_pointer_last_position_ticks = pluck_device.last_pin_song_pointer->getPositionTicks();
                                     if (pin_actual_position_ticks == song_pointer_last_position_ticks
                                             && pluck_device.last_pin_song_pointer->getStatusByte() == system_song_pointer
@@ -815,7 +809,6 @@ int PlayList(const char* json_str, bool verbose) {
 							if (last_note_on_pin->getNotePressedTimes() > 0) {
 
 								// Position beats and ticks
-								const double last_note_time_ms = last_note_on_pin->getTime();
 								const uint32_t last_note_position_ticks = last_note_on_pin->getPositionTicks();
 
 								last_note_on_pin->increaseNotePressedTimes();	// Because the remaining EXTRA note off
@@ -835,7 +828,6 @@ int PlayList(const char* json_str, bool verbose) {
 									};
 									pin_it = midiToProcess.insert(pin_it,   // Makes a copy to the place given by pin_it
 										MidiPin(
-												pin_actual_time_ms,
 												pin_actual_position_ticks,
 												pluck_pin.getMidiDevice(),
 												midi_pin_message
@@ -936,7 +928,6 @@ int PlayList(const char* json_str, bool verbose) {
 
 
 			// Position beats and ticks of last message
-            auto last_message_time_ms = midiToProcess.back().getTime();
 			const uint32_t last_message_position_ticks = midiToProcess.back().getPositionTicks();
             
             for (auto &device : available_midi_devices) {

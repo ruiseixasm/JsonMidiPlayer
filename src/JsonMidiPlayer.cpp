@@ -649,7 +649,6 @@ int PlayList(const char* json_str, bool verbose) {
                 MidiDevice &pluck_device = *pluck_pin.getDevice();
 				// Position check
 				const double pin_actual_time_ms = pluck_pin.getTime();
-				const double device_last_time_ms = pluck_device.last_pin_clock->getTime();
 
                 switch (pluck_pin.getAction()) {
                     case action_system:
@@ -657,7 +656,8 @@ int PlayList(const char* json_str, bool verbose) {
                             case system_timing_clock:
                                 if (pluck_device.last_pin_clock != nullptr) {
 									// Position check
-                                    if (device_last_time_ms == pin_actual_time_ms) {
+									const double device_last_time_ms = pluck_device.last_pin_clock->getTime();
+                                    if (pin_actual_time_ms == device_last_time_ms) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
                                             pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         }
@@ -675,7 +675,9 @@ int PlayList(const char* json_str, bool verbose) {
                             break;
                             case system_clock_start:
                                 if (pluck_device.last_pin_clock != nullptr) {
-                                    if (device_last_time_ms == pin_actual_time_ms) {
+									// Position check
+									const double device_last_time_ms = pluck_device.last_pin_clock->getTime();
+                                    if (pin_actual_time_ms == device_last_time_ms) {
                                         if (pluck_device.last_pin_clock->getStatusByte() == system_clock_stop) {      // Clock Stop
                                             pluck_device.last_pin_clock->setStatusByte(system_timing_clock);
                                         }

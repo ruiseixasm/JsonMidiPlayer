@@ -109,6 +109,10 @@ public:
         return (uint64_t)_ticks * 625000 / bpm_10;
     }
 
+	double Beat::beatsToMs(uint16_t bpm_10) const {
+		return (double)_ticks * 625 / bpm_10;
+	}
+
     double beatsToMs(Tempo& tempo) const;
 
     bool operator< (const Beat& o) const { return _ticks <  o._ticks; }
@@ -214,6 +218,14 @@ public:
           delay_time_ms(other.delay_time_ms),         // Copy the delay_time_ms
           note_pressed_times(other.note_pressed_times)          // Copy the note_released
     { }
+
+	void setTime(uint16_t bpm_10) {
+		time_ms = _position_beat.beatsToMs(bpm_10);
+	}
+
+	double setTime(Tempo& tempo) {
+		time_ms = _position_beat.beatsToMs(tempo);
+	}
 
     double getTime() const {
         return time_ms;

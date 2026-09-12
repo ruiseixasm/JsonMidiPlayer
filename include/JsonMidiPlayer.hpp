@@ -487,9 +487,7 @@ public:
 					return (double)ticks * 625.0 / left_bpm_10;
 				} else if (ticks >= right_ticks) {
 					return (double)(ticks - right_ticks) * 625.0 / right_bpm_10;
-				} else if (left_bpm_10 == right_bpm_10) {
-					return (double)(ticks - left_ticks) * 625.0 / left_bpm_10;
-				} else {	// Trapezoid (exclusion of `left_ticks == right_ticks` and `left_bpm_10 == right_bpm_10`)
+				} else {	// Trapezoid (exclusion of `left_ticks == right_ticks`)
 					double slope = (double)(right_bpm_10 - left_bpm_10) / (double)(right_ticks - left_ticks);
 					double delta_ticks_at_t = (double)(ticks - left_ticks);
 					double bpm_10_at_t = (double)left_bpm_10 + slope * delta_ticks_at_t;

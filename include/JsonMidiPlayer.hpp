@@ -471,6 +471,7 @@ public:
 				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_ticks), device, { system_song_pointer, 0, 0 }, 0xB1) );
 				added_mesages++;
 			}
+			midiToProcess->sort();	// Does the final sorting given the new pins
 		}
 		return added_mesages;
 	}

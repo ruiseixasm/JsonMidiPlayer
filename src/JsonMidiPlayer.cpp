@@ -262,12 +262,14 @@ int PlayList(const char* json_str, bool verbose) {
 						for (auto jsonClockingTempo : jsonFileClocking_tempos) {
 
 							uint16_t bpm_10 = jsonClockingTempo["bpm_10"];
-							const auto& pb = jsonClockingTempo.at("position_beats");
-							uint32_t position_beats_num = pb.at(0).get<uint32_t>();
-							uint32_t position_beats_den = pb.at(1).get<uint32_t>();
-							clocking.addTempo(
-								bpm_10, position_beats_num, position_beats_den
-							);
+							if (bpm_10 > 10) {
+								const auto& pb = jsonClockingTempo.at("position_beats");
+								uint32_t position_beats_num = pb.at(0).get<uint32_t>();
+								uint32_t position_beats_den = pb.at(1).get<uint32_t>();
+								clocking.addTempo(
+									bpm_10, position_beats_num, position_beats_den
+								);
+							}
 						}
 						// Sorts all the added tempos
 						clocking.sortTempos();
@@ -738,12 +740,7 @@ int PlayList(const char* json_str, bool verbose) {
             // Where the time_ms is set on each pin
             //
 
-            for (auto pin_it = midiToProcess.begin(); pin_it != midiToProcess.end(); ++pin_it) {
-
-				uint32_t pin_ticks = pin_it->getPositionTicks();
-				double time_ms = clocking.getClockTime_ms(pin_ticks);
-				pin_it->setTime(time_ms);
-			}
+			bool updated_tempo = clocking.applyTime_ms(&midiToProcess);
 
             #ifdef DEBUGGING
             debugging_now = std::chrono::high_resolution_clock::now();
@@ -767,46 +764,49 @@ int PlayList(const char* json_str, bool verbose) {
             if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
             if (verbose) std::cout << "\tTotal resultant Midi Messages (included): " << std::setw(10) << midiToProcess.size() << std::endl;
 
-            MidiPin *last_pin = &midiToProcess.back();
-			// Position time
-            size_t duration_time_sec = std::round(last_pin->getTime() / 1000);
-            if (verbose) std::cout << "The data will now be played during "
-                << duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
-
-            //
-            // Where the Midi messages are sent to each Device
-            //
-
-            auto playing_start = std::chrono::high_resolution_clock::now();
-
-            while (midiToProcess.size() > 0) {
-                
-                MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
-
+			if (updated_tempo) {	// Safe code
+			
+				MidiPin *last_pin = &midiToProcess.back();
 				// Position time
-                long long next_pin_time_us = std::round((midi_pin.getTime() + play_reporting.total_drag) * 1000);
-                auto playing_now = std::chrono::high_resolution_clock::now();
-                auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
-                long long elapsed_time_us = elapsed_time.count();
-                long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
+				size_t duration_time_sec = std::round(last_pin->getTime() / 1000);
+				if (verbose) std::cout << "The data will now be played during "
+					<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
 
-                highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
+				//
+				// Where the Midi messages are sent to each Device
+				//
 
-                auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
-                midi_pin.pluckTooth();  // as soon as possible! <----- Midi Send
+				auto playing_start = std::chrono::high_resolution_clock::now();
 
-                auto pluck_time_us = static_cast<double>(
-                    std::chrono::duration_cast<std::chrono::microseconds>(pluck_time).count()
-                );
-                double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
-                midi_pin.setDelayTime(delay_time_ms);
-                midiProcessed.push_back(std::move(midiToProcess.front()));  // Move the object
-                midiToProcess.pop_front();  // Remove the first element
+				while (midiToProcess.size() > 0) {
+					
+					MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
 
-                // Process drag if existent
-                if (delay_time_ms > DRAG_DURATION_MS)
-                    play_reporting.total_drag += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
-            }
+					// Position time
+					long long next_pin_time_us = std::round((midi_pin.getTime() + play_reporting.total_drag) * 1000);
+					auto playing_now = std::chrono::high_resolution_clock::now();
+					auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
+					long long elapsed_time_us = elapsed_time.count();
+					long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
+
+					highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
+
+					auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
+					midi_pin.pluckTooth();  // as soon as possible! <----- Midi Send
+
+					auto pluck_time_us = static_cast<double>(
+						std::chrono::duration_cast<std::chrono::microseconds>(pluck_time).count()
+					);
+					double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
+					midi_pin.setDelayTime(delay_time_ms);
+					midiProcessed.push_back(std::move(midiToProcess.front()));  // Move the object
+					midiToProcess.pop_front();  // Remove the first element
+
+					// Process drag if existent
+					if (delay_time_ms > DRAG_DURATION_MS)
+						play_reporting.total_drag += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
+				}
+			}
 
             #ifdef DEBUGGING
             debugging_now = std::chrono::high_resolution_clock::now();

@@ -401,6 +401,14 @@ class Clocking {
     std::vector<MidiDevice*> _clocked_devices;
 	std::list<Tempo> _tempos;
 
+	double getClockTime_ms(uint32_t position_ticks) const {
+		if (_tempos.size() > 0) {
+			const Tempo& first_tempo = *_tempos.begin();
+			return first_tempo.getTimeFromTicks(position_ticks);
+		}
+		return 0.0;
+	}
+
 public:
 
 	void addDevice(MidiDevice* midi_device) {
@@ -461,12 +469,16 @@ public:
 	//		= 60 * 1,000 / (960 * BPM)
 	//		= 62.5 / BPM
 
-	double getClockTime_ms(uint32_t position_ticks) const {
+	bool applyTime_ms(std::list<MidiPin> *midiToProcess) const {
 		if (_tempos.size() > 0) {
-			const Tempo& first_tempo = *_tempos.begin();
-			return first_tempo.getTimeFromTicks(position_ticks);
+            for (auto pin_it = midiToProcess->begin(); pin_it != midiToProcess->end(); ++pin_it) {
+				uint32_t pin_ticks = pin_it->getPositionTicks();
+				double time_ms = getClockTime_ms(pin_ticks);
+				pin_it->setTime(time_ms);
+			}
+			return true;
 		}
-		return 0.0;
+		return false;
 	}
 };
 

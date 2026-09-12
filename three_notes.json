@@ -3,13 +3,28 @@
     "url": "https://github.com/ruiseixasm/JsonMidiPlayer",
     "clocking": {
         "devices": [
-            "loop"
+            "loop",
+            "Microsoft"
         ],
         "tempos": [
             {
-                "bpm_10": 1900,
+                "bpm_10": 1005,
                 "position_beats": [
                     0,
+                    1
+                ]
+            },
+            {
+                "bpm_10": 1005,
+                "position_beats": [
+                    8,
+                    1
+                ]
+            },
+            {
+                "bpm_10": 1900,
+                "position_beats": [
+                    8,
                     1
                 ]
             }

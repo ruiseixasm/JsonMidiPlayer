@@ -545,7 +545,11 @@ public:
 					right_tempo = std::next(left_tempo);
 				}		
 				tempo_time_ms = left_tempo->getTime();
-				pin_time_ms = interpolateTime_ms(*left_tempo, *right_tempo, pin_ticks);
+				if (right_tempo == _tempos.end()) {
+					pin_time_ms = extrapolateTime_ms(*left_tempo, pin_ticks);
+				} else {
+					pin_time_ms = interpolateTime_ms(*left_tempo, *right_tempo, pin_ticks);
+				}
 			}
 			pin_it->setTime(tempo_time_ms + pin_time_ms);
 		}

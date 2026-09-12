@@ -510,7 +510,7 @@ public:
 
 	static double extrapolateTime_ms(const Tempo& tempo, uint32_t ticks) {
 		uint32_t tempo_ticks = tempo.getPositionTicks();
-		if (ticks >= tempo_ticks) {
+		if (ticks > tempo_ticks) {
 			int16_t tempo_bpm_10 = tempo.getBPM_10();
 			return (double)(ticks - tempo_ticks) * 625.0 / (double)tempo_bpm_10;
 		}

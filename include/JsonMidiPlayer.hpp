@@ -535,7 +535,7 @@ public:
 				for (auto tempo_it = right_tempo; tempo_it != _tempos.end(); ++tempo_it) {
 					
 					uint32_t tempo_ticks = tempo_it->getPositionTicks();
-					if (pin_ticks <= tempo_ticks) {	// It's the pin that one needs to keep up
+					if (pin_ticks < tempo_ticks) {	// It's the pin that one needs to keep up
 						right_tempo = tempo_it;
 						left_tempo = std::prev(tempo_it);
 						break;

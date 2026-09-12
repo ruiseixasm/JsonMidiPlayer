@@ -441,11 +441,25 @@ public:
 	}
 
 	bool sortTempos() {
-		if (_tempos.size() > 0) {
-			_tempos.sort();
-			return true;
+    	if (_tempos.empty()) return false;
+
+		_tempos.sort();	// Gurantees the tempos are sorted by ticks first
+
+		for (auto tempo_it = _tempos.begin(); tempo_it != _tempos.end(); ++tempo_it) {
+			auto next_it = std::next(tempo_it);
+			if (next_it == _tempos.end()) {
+				double time_ms = extrapolateTime_ms(
+					*tempo_it, *tempo_it, tempo_it->getPositionTicks()
+				);
+				tempo_it->setTime(time_ms);
+			} else {
+				double time_ms = extrapolateTime_ms(
+					*tempo_it, *next_it, tempo_it->getPositionTicks()
+				);
+				tempo_it->setTime(time_ms);
+			}
 		}
-		return false;
+		return true;
 	}
 
 	size_t addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {

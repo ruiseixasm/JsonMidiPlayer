@@ -509,15 +509,16 @@ public:
 	}
 
 	bool applyTime_ms(std::list<MidiPin> *midiToProcess) const {
-		if (_tempos.size() > 0) {
-            for (auto pin_it = midiToProcess->begin(); pin_it != midiToProcess->end(); ++pin_it) {
-				uint32_t pin_ticks = pin_it->getPositionTicks();
-				double time_ms = getClockTime_ms(pin_ticks);
-				pin_it->setTime(time_ms);
-			}
-			return true;
+    	if (_tempos.empty()) return false;
+		// `const_iterator` because this is a `const` method
+		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();
+		for (auto pin_it = midiToProcess->begin(); pin_it != midiToProcess->end(); ++pin_it) {
+			
+			uint32_t pin_ticks = pin_it->getPositionTicks();
+			double time_ms = getClockTime_ms(pin_ticks);
+			pin_it->setTime(time_ms);
 		}
-		return false;
+		return true;
 	}
 	
 	// beats_per_second	= (1 / 60) * BPM

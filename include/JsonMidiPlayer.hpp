@@ -283,6 +283,11 @@ public:
 	}
 
 public:
+	// For the sorting
+    bool operator< (const MidiPin& mp) const {
+		if (_ticks != mp._ticks) { return _ticks < mp._ticks; }
+		return priority < mp.priority;
+	}
 
     // Intended for Automation messages only
     bool operator != (const MidiPin &midi_pin) {
@@ -299,17 +304,6 @@ public:
         }
         return true;
     }
-
-    bool operator< (const MidiPin& mp) const {
-		if (_ticks < mp._ticks) { return true; }
-		return priority < mp.priority;
-	}
-    bool operator==(const MidiPin& mp) const {
-		return _ticks == mp._ticks && priority == mp.priority;
-	}
-    bool operator!=(const MidiPin& mp) const {
-		return _ticks != mp._ticks || priority != mp.priority;
-	}
 };
 
 

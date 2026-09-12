@@ -493,18 +493,7 @@ int PlayList(const char* json_str, bool verbose) {
             //
 
             // Two levels sorting criteria
-            midiToProcess.sort([]( const MidiPin &a, const MidiPin &b ) {
-                
-                // Time is the primary sorting criteria
-                if (a.getPositionTicks() != b.getPositionTicks())  
-                    return a.getPositionTicks() < b.getPositionTicks();	// Primary: Sort by position (ascending)
-            
-                // Then sort by Priority (Ascendent)
-                // Must be "<" instead of "<=" due to the mysterious "strict weak ordering"
-                // Explanation here: https://youtu.be/fi0CQ7laiXE?si=fysJC-UdG2lJytjU&t=1542
-                return a.getPriority() < b.getPriority();      // Secondary: Sort by priority (ascending)
-                
-            });
+            midiToProcess.sort();
 
             #ifdef DEBUGGING
             debugging_now = std::chrono::high_resolution_clock::now();

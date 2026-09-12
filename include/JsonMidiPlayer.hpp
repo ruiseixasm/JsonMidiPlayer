@@ -454,15 +454,13 @@ public:
 		}
 
 		double cumulative_time_ms = 0.0;
-		for (auto tempo_it = _tempos.begin(); tempo_it != _tempos.end(); ++tempo_it) {
-			if (tempo_it != _tempos.begin()) {	// The first one keeps its time_ms as 0.0
-				auto previous_it = std::prev(tempo_it);
-				uint32_t position_ticks = tempo_it->getPositionTicks();
-				cumulative_time_ms += interpolateTime_ms(
-					*previous_it, *tempo_it, position_ticks
-				);
-				tempo_it->setTime(cumulative_time_ms);
-			}
+		for (auto tempo_it = std::next(_tempos.begin()); tempo_it != _tempos.end(); ++tempo_it) {
+			auto previous_it = std::prev(tempo_it);
+			uint32_t position_ticks = tempo_it->getPositionTicks();
+			cumulative_time_ms += interpolateTime_ms(
+				*previous_it, *tempo_it, position_ticks
+			);
+			tempo_it->setTime(cumulative_time_ms);
 		}
 		return true;
 	}

@@ -208,7 +208,7 @@ int PlayList(const char* json_str, bool verbose) {
 				try {
 					for (auto jsonClockingTempo : jsonFileClocking_tempos) {
 
-						uint16_t bpm_10 = jsonClockingTempo["bpm_10"];
+						int16_t bpm_10 = jsonClockingTempo["bpm_10"];
 						const auto& pb = jsonClockingTempo.at("position_beats");
 						uint32_t position_beats_num = pb.at(0).get<uint32_t>();
 						uint32_t position_beats_den = pb.at(1).get<uint32_t>();

@@ -362,14 +362,14 @@ class MidiDevice {
 
 	
 class Tempo {
-    const uint16_t _bpm_10;
+    const int16_t _bpm_10;
     const uint32_t _ticks;
     double time_ms = 0.0;   // associates a time_ms for each Tempo in order to interpolate afterwards
 
 public:
 
     // ── canonical constructor ──
-    Tempo(uint16_t bpm_10, uint32_t position_ticks)
+    Tempo(int16_t bpm_10, uint32_t position_ticks)
         : _bpm_10(bpm_10), _ticks(position_ticks) {}
 
 	 
@@ -382,13 +382,13 @@ public:
 	}
 
     // ── tempo-aware conversion ──
-    uint64_t toMicroseconds(uint16_t bpm_10) const {
+    uint64_t toMicroseconds(int16_t bpm_10) const {
         // µs = ticks × 62,500 / bpm
         return (uint64_t)_ticks * 625000 / bpm_10;
     }
 
 
-    uint16_t getBPM_10() const {
+    int16_t getBPM_10() const {
         return _bpm_10;
     }
 
@@ -428,13 +428,13 @@ public:
 		_clocked_devices.push_back(midi_device);
 	}
 
-	void addTempo(uint16_t bpm_10, uint32_t position_ticks) {
+	void addTempo(int16_t bpm_10, uint32_t position_ticks) {
 		if (bpm_10 > 0) {
 			_tempos.emplace_back(bpm_10, position_ticks);
 		}
 	}
 
-	void addTempo(uint16_t bpm_10, uint32_t num, uint32_t den) {
+	void addTempo(int16_t bpm_10, uint32_t num, uint32_t den) {
 		if (bpm_10 > 0 && den > 0) {
 			_tempos.emplace_back(bpm_10, Beat::getTicksFromBeats(num, den));
 		}
@@ -480,8 +480,8 @@ public:
 		uint32_t left_ticks = left.getPositionTicks();
 		uint32_t right_ticks = right.getPositionTicks();
 		if (left_ticks <= right_ticks) {
-			int16_t left_bpm_10 = static_cast<int16_t>(left.getBPM_10());
-			int16_t right_bpm_10 = static_cast<int16_t>(right.getBPM_10());
+			int16_t left_bpm_10 = left.getBPM_10();
+			int16_t right_bpm_10 = right.getBPM_10();
 			if (left_bpm_10 > 0 && right_bpm_10 > 0) {
 				if (ticks <= left_ticks) {
 					return (double)ticks * 625.0 / left_bpm_10;

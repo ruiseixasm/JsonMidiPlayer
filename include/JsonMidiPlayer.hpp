@@ -416,11 +416,15 @@ public:
 	}
 
 	void addTempo(uint16_t bpm_10, uint32_t position_ticks) {
-		_tempos.emplace_back(bpm_10, position_ticks);
+		if (bpm_10 > 0 && position_ticks >= 0) {
+			_tempos.emplace_back(bpm_10, position_ticks);
+		}
 	}
 
 	void addTempo(uint16_t bpm_10, uint32_t num, uint32_t den) {
-		_tempos.emplace_back(bpm_10, Beat::getTicksFromBeats(num, den));
+		if (bpm_10 > 0 && num >= 0 && den > 0) {
+			_tempos.emplace_back(bpm_10, Beat::getTicksFromBeats(num, den));
+		}
 	}
 
 	void sortTempos() {

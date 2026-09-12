@@ -262,14 +262,12 @@ int PlayList(const char* json_str, bool verbose) {
 						for (auto jsonClockingTempo : jsonFileClocking_tempos) {
 
 							uint16_t bpm_10 = jsonClockingTempo["bpm_10"];
-							if (bpm_10 > 10) {
-								const auto& pb = jsonClockingTempo.at("position_beats");
-								uint32_t position_beats_num = pb.at(0).get<uint32_t>();
-								uint32_t position_beats_den = pb.at(1).get<uint32_t>();
-								clocking.addTempo(
-									bpm_10, position_beats_num, position_beats_den
-								);
-							}
+							const auto& pb = jsonClockingTempo.at("position_beats");
+							uint32_t position_beats_num = pb.at(0).get<uint32_t>();
+							uint32_t position_beats_den = pb.at(1).get<uint32_t>();
+							clocking.addTempo(
+								bpm_10, position_beats_num, position_beats_den
+							);
 						}
 						// Sorts all the added tempos
 						clocking.sortTempos();

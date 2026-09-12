@@ -491,6 +491,21 @@ public:
 	//		= 60 * 1,000 / (960 * BPM)
 	//		= 62.5 / BPM
 
+	static double interpolateTempo(const Tempo& left, const Tempo& right, uint32_t ticks) {
+		uint32_t left_ticks = left.getPositionTicks();
+		uint32_t right_ticks = right.getPositionTicks();
+		uint16_t left_bpm_10 = left.getBPM_10();
+		uint16_t right_bpm_10 = right.getBPM_10();
+		if (ticks <= left_ticks) {
+
+		} else if (ticks >= right_ticks) {
+
+		} else {
+
+		}
+		return 0.0;
+	}
+
 	bool applyTime_ms(std::list<MidiPin> *midiToProcess) const {
 		if (_tempos.size() > 0) {
             for (auto pin_it = midiToProcess->begin(); pin_it != midiToProcess->end(); ++pin_it) {

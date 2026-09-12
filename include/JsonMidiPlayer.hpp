@@ -480,21 +480,21 @@ public:
 		uint32_t left_ticks = left.getPositionTicks();
 		uint32_t right_ticks = right.getPositionTicks();
 		if (left_ticks <= right_ticks) {
-			int16_t left_bpm_10 = left.getBPM_10();
-			int16_t right_bpm_10 = right.getBPM_10();
-			if (ticks <= left_ticks) {
-				return (double)ticks * 625 / left_bpm_10;
-			} else if (ticks >= right_ticks) {
-				return (double)(ticks - right_ticks) * 625 / right_bpm_10;
-			} else if (left_bpm_10 == right_bpm_10) {
-				return (double)(ticks - left_ticks) * 625 / left_bpm_10;
-			} else {	// Trapezoid (exclusion of `left_ticks == right_ticks` and `left_bpm_10 == right_bpm_10`)
-				uint32_t delta_ticks = right_ticks - left_ticks;	// Never 0 (excluded above)
-				int16_t delta_bpm_10 = right_bpm_10 - left_bpm_10;	// Never 0 (excluded above)
-				double ticks_bpm_10 = (double)delta_bpm_10 / delta_ticks * (ticks - left_ticks);
-				double base_time_ms = (double)ticks * 625 / left_bpm_10;
-				double slope_time_ms = (double)(ticks - left_ticks) * 625 / (ticks_bpm_10 - left_bpm_10) / 2;
-				return base_time_ms + slope_time_ms;
+			int16_t left_bpm_10 = static_cast<int16_t>(left.getBPM_10());
+			int16_t right_bpm_10 = static_cast<int16_t>(right.getBPM_10());
+			if (left_bpm_10 > 0 && right_bpm_10 > 0) {
+				if (ticks <= left_ticks) {
+					return (double)ticks * 625.0 / left_bpm_10;
+				} else if (ticks >= right_ticks) {
+					return (double)(ticks - right_ticks) * 625.0 / right_bpm_10;
+				} else if (left_bpm_10 == right_bpm_10) {
+					return (double)(ticks - left_ticks) * 625.0 / left_bpm_10;
+				} else {	// Trapezoid (exclusion of `left_ticks == right_ticks` and `left_bpm_10 == right_bpm_10`)
+					double slope = (double)(right_bpm_10 - left_bpm_10) / (double)(right_ticks - left_ticks);
+					double delta_ticks_at_t = (double)(ticks - left_ticks);
+					double bpm_10_at_t = (double)left_bpm_10 + slope * delta_ticks_at_t;
+					return delta_ticks_at_t * 625.0 * 2.0 / ((double)left_bpm_10 + bpm_10_at_t);
+				}
 			}
 		}
 		return 0.0;

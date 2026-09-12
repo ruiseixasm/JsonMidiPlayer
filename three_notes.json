@@ -7,23 +7,9 @@
         ],
         "tempos": [
             {
-                "bpm_10": 1005,
+                "bpm_10": 1900,
                 "position_beats": [
                     0,
-                    1
-                ]
-            },
-            {
-                "bpm_10": 1005,
-                "position_beats": [
-                    8,
-                    1
-                ]
-            },
-            {
-                "bpm_10": 1400,
-                "position_beats": [
-                    8,
                     1
                 ]
             }

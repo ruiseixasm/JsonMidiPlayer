@@ -429,13 +429,13 @@ public:
 	}
 
 	void addTempo(uint16_t bpm_10, uint32_t position_ticks) {
-		if (bpm_10 > 0 && position_ticks >= 0) {
+		if (bpm_10 > 0) {
 			_tempos.emplace_back(bpm_10, position_ticks);
 		}
 	}
 
 	void addTempo(uint16_t bpm_10, uint32_t num, uint32_t den) {
-		if (bpm_10 > 0 && num >= 0 && den > 0) {
+		if (bpm_10 > 0 && den > 0) {
 			_tempos.emplace_back(bpm_10, Beat::getTicksFromBeats(num, den));
 		}
 	}
@@ -476,18 +476,21 @@ public:
 		return added_mesages;
 	}
 
-	static double interpolateTempo(const Tempo& left, const Tempo& right, uint32_t ticks) {
+	static double extrapolateTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
 		uint32_t left_ticks = left.getPositionTicks();
 		uint32_t right_ticks = right.getPositionTicks();
-		if (left_ticks <= right_ticks && ticks >= 0) {
-			uint16_t left_bpm_10 = left.getBPM_10();
-			uint16_t right_bpm_10 = right.getBPM_10();
+		if (left_ticks <= right_ticks) {
+			int16_t left_bpm_10 = static_cast<int16_t>(left.getBPM_10());
+			int16_t right_bpm_10 = static_cast<int16_t>(right.getBPM_10());
 			if (ticks <= left_ticks) {
 				return (double)ticks * 625 / left_bpm_10;
 			} else if (ticks >= right_ticks) {
 				return (double)(ticks - right_ticks) * 625 / left_bpm_10;
 			} else {	// Trapezoid (implicit exclusion of `left_ticks == right_ticks` based on the above consitions)
-				
+				uint32_t delta_ticks = right_ticks - left_ticks;
+				int16_t delta_bpm_10 = right_bpm_10 - left_bpm_10;
+				int16_t interpolated_bpm_10 = delta_bpm_10 / delta_ticks * (ticks - left_ticks);
+				return (double)(ticks - left_ticks) * 625 / interpolated_bpm_10 / 2;
 			}
 		}
 		return 0.0;

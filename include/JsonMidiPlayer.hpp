@@ -446,18 +446,23 @@ public:
 		_tempos.sort();	// Gurantees the tempos are sorted by ticks first
 
 		for (auto tempo_it = _tempos.begin(); tempo_it != _tempos.end(); ++tempo_it) {
+			uint32_t position_ticks = tempo_it->getPositionTicks();
+			double time_ms = 0;
 			auto next_it = std::next(tempo_it);
-			if (next_it == _tempos.end()) {
-				double time_ms = extrapolateTime_ms(
-					*tempo_it, *tempo_it, tempo_it->getPositionTicks()
+			if (tempo_it == _tempos.begin()) {
+				time_ms = extrapolateTime_ms(
+					*tempo_it, *tempo_it, position_ticks
 				);
-				tempo_it->setTime(time_ms);
+			} else if (next_it == _tempos.end()) {
+				time_ms = extrapolateTime_ms(
+					*tempo_it, *tempo_it, position_ticks
+				);
 			} else {
-				double time_ms = extrapolateTime_ms(
-					*tempo_it, *next_it, tempo_it->getPositionTicks()
+				time_ms = extrapolateTime_ms(
+					*tempo_it, *next_it, position_ticks
 				);
-				tempo_it->setTime(time_ms);
 			}
+			tempo_it->setTime(time_ms);
 		}
 		return true;
 	}

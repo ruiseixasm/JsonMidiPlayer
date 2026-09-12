@@ -445,24 +445,28 @@ public:
 
 		_tempos.sort();	// Gurantees the tempos are sorted by ticks first
 
+		// Makes sure there are a `Tempo` at the origin (ticks == 0)
+		auto firsy_tempo_it = _tempos.begin();
+		uint32_t first_position_ticks = firsy_tempo_it->getPositionTicks();
+		if (first_position_ticks > 0) {
+			int16_t origin_bpm_10 = firsy_tempo_it->getBPM_10();
+			_tempos.emplace_front(origin_bpm_10, 0);
+		}
+
+		double cumulative_time_ms = 0;
 		for (auto tempo_it = _tempos.begin(); tempo_it != _tempos.end(); ++tempo_it) {
 			uint32_t position_ticks = tempo_it->getPositionTicks();
-			double time_ms = 0;
 			auto next_it = std::next(tempo_it);
-			if (tempo_it == _tempos.begin()) {
-				time_ms = extrapolateTime_ms(
-					*tempo_it, *tempo_it, position_ticks
-				);
-			} else if (next_it == _tempos.end()) {
-				time_ms = extrapolateTime_ms(
+			if (next_it == _tempos.end()) {
+				cumulative_time_ms += extrapolateTime_ms(
 					*tempo_it, *tempo_it, position_ticks
 				);
 			} else {
-				time_ms = extrapolateTime_ms(
+				cumulative_time_ms += extrapolateTime_ms(
 					*tempo_it, *next_it, position_ticks
 				);
 			}
-			tempo_it->setTime(time_ms);
+			tempo_it->setTime(cumulative_time_ms);
 		}
 		return true;
 	}
@@ -502,7 +506,7 @@ public:
 			int16_t left_bpm_10 = left.getBPM_10();
 			int16_t right_bpm_10 = right.getBPM_10();
 			if (left_bpm_10 > 0 && right_bpm_10 > 0) {
-				if (ticks <= left_ticks) {
+				if (ticks < left_ticks) {
 					return (double)ticks * 625.0 / left_bpm_10;
 				} else if (ticks >= right_ticks) {
 					return (double)(ticks - right_ticks) * 625.0 / right_bpm_10;

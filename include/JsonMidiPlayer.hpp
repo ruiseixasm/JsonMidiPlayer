@@ -497,13 +497,17 @@ public:
 		uint32_t left_ticks = left.getPositionTicks();
 		uint32_t right_ticks = right.getPositionTicks();
 		// Trapezoid (exclusion of `left_ticks == right_ticks`)
-		if (left_ticks < right_ticks && ticks >= left_ticks && ticks <= right_ticks) {
-			int16_t left_bpm_10 = left.getBPM_10();
+		if (left_ticks < right_ticks && ticks >= left_ticks) {
 			int16_t right_bpm_10 = right.getBPM_10();
-			double slope = (double)(right_bpm_10 - left_bpm_10) / (double)(right_ticks - left_ticks);
-			double delta_ticks_at_t = (double)(ticks - left_ticks);
-			double bpm_10_at_t = (double)left_bpm_10 + slope * delta_ticks_at_t;
-			return delta_ticks_at_t * 625.0 * 2.0 / ((double)left_bpm_10 + bpm_10_at_t);
+			if (ticks > right_ticks) {
+				return (double)(ticks - right_ticks) * 625.0 / (double)right_bpm_10;
+			} else {
+				int16_t left_bpm_10 = left.getBPM_10();
+				double slope = (double)(right_bpm_10 - left_bpm_10) / (double)(right_ticks - left_ticks);
+				double delta_ticks_at_t = (double)(ticks - left_ticks);
+				double bpm_10_at_t = (double)left_bpm_10 + slope * delta_ticks_at_t;
+				return delta_ticks_at_t * 625.0 * 2.0 / ((double)left_bpm_10 + bpm_10_at_t);
+			}
 		}
 		return 0.0;
 	}

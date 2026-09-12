@@ -456,18 +456,11 @@ public:
 		double cumulative_time_ms = 0.0;
 		for (auto tempo_it = _tempos.begin(); tempo_it != _tempos.end(); ++tempo_it) {
 			if (tempo_it != _tempos.begin()) {	// The first one keeps its time_ms as 0.0
+				auto previous_it = std::prev(tempo_it);
 				uint32_t position_ticks = tempo_it->getPositionTicks();
-				auto next_it = std::next(tempo_it);
-				if (next_it == _tempos.end()) {
-					auto previous_it = std::prev(tempo_it);
-					cumulative_time_ms += interpolateTime_ms(
-						*previous_it, *tempo_it, position_ticks
-					);
-				} else {
-					cumulative_time_ms += interpolateTime_ms(
-						*tempo_it, *next_it, position_ticks
-					);
-				}
+				cumulative_time_ms += interpolateTime_ms(
+					*previous_it, *tempo_it, position_ticks
+				);
 				tempo_it->setTime(cumulative_time_ms);
 			}
 		}

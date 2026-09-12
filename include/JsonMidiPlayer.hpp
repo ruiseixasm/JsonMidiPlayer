@@ -300,6 +300,16 @@ public:
         return true;
     }
 
+    bool operator< (const MidiPin& mp) const {
+		if (_ticks < mp._ticks) { return true; }
+		return priority < mp.priority;
+	}
+    bool operator==(const MidiPin& mp) const {
+		return _ticks == mp._ticks && priority == mp.priority;
+	}
+    bool operator!=(const MidiPin& mp) const {
+		return _ticks != mp._ticks || priority != mp.priority;
+	}
 };
 
 
@@ -360,6 +370,7 @@ class MidiDevice {
 class Tempo {
     const uint16_t _bpm_10;
     const uint32_t _ticks;
+    double time_ms = 0.0;   // associates a time_ms for each Tempo in order to interpolate afterwards
 
 public:
 
@@ -391,9 +402,17 @@ public:
         return _ticks;
     }
 
-    bool operator< (const Tempo& o) const { return _ticks <  o._ticks; }
-    bool operator==(const Tempo& o) const { return _ticks == o._ticks; }
-    bool operator!=(const Tempo& o) const { return _ticks != o._ticks; }
+	void setTime(double time_milliseconds) {
+		time_ms = time_milliseconds;
+	}
+
+    double getTime() const {
+        return time_ms;
+    }
+
+    bool operator< (const Tempo& t) const { return _ticks <  t._ticks; }
+    bool operator==(const Tempo& t) const { return _ticks == t._ticks; }
+    bool operator!=(const Tempo& t) const { return _ticks != t._ticks; }
 };
 
 

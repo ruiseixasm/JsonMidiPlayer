@@ -427,8 +427,12 @@ public:
 		}
 	}
 
-	void sortTempos() {
-		_tempos.sort();
+	bool sortTempos() {
+		if (_tempos.size() > 0) {
+			_tempos.sort();
+			return true;
+		}
+		return false;
 	}
 
 	size_t addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {

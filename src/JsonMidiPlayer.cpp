@@ -170,294 +170,295 @@ int PlayList(const char* json_str, bool verbose) {
 
         try {
 
-            nlohmann::json json_files_data = nlohmann::json::parse(json_str);
+			nlohmann::json root = nlohmann::json::parse(json_str);
 
-            for (nlohmann::json jsonData : json_files_data) {
+			// index the first element, the only one
+			const auto& jsonData = root.at(0);
 
-                nlohmann::json jsonFileType;
-                nlohmann::json jsonFileUrl;
-                nlohmann::json jsonFileClocking;
-                nlohmann::json jsonFilePlaylist;
+			nlohmann::json jsonFileType;
+			nlohmann::json jsonFileUrl;
+			nlohmann::json jsonFileClocking;
+			nlohmann::json jsonFilePlaylist;
 
-                try
-                {
-                    jsonFileType = jsonData["filetype"];
-                    jsonFileUrl = jsonData["url"];
-                    jsonFileClocking = jsonData["clocking"];
-                    jsonFilePlaylist = jsonData["playlist"];
-                }
-                catch (nlohmann::json::parse_error& ex)
-                {
-                    if (verbose) std::cerr << "Unable to extract json data: " << ex.byte << std::endl;
-                    continue;
-                }
-                
-                if (jsonFileType != FILE_TYPE || jsonFileUrl != FILE_URL) {
-                    if (verbose) std::cerr << "Wrong type of file!" << std::endl;
-                    continue;
-                }
+			try
+			{
+				jsonFileType = jsonData["filetype"];
+				jsonFileUrl = jsonData["url"];
+				jsonFileClocking = jsonData["clocking"];
+				jsonFilePlaylist = jsonData["playlist"];
+			}
+			catch (nlohmann::json::parse_error& ex)
+			{
+				if (verbose) std::cerr << "Unable to extract json data: " << ex.byte << std::endl;
+				goto skip_reading_items;
+			}
+			
+			if (jsonFileType != FILE_TYPE || jsonFileUrl != FILE_URL) {
+				if (verbose) std::cerr << "Wrong type of file!" << std::endl;
+				goto skip_reading_items;
+			}
 
-                // Dictionary where the key is a JSON list
-                std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
-                std::unordered_set<std::string> unavailable_devices;
-                
-				nlohmann::json jsonFileClocking_devices = jsonFileClocking.at("devices");
-				nlohmann::json jsonFileClocking_tempos = jsonFileClocking.at("tempos");
+			// Dictionary where the key is a JSON list
+			std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
+			std::unordered_set<std::string> unavailable_devices;
+			
+			// Load the Tempos
+			nlohmann::json jsonFileClocking_tempos = jsonFileClocking.at("tempos");
+			if (jsonFileClocking_tempos.is_array() && !jsonFileClocking_tempos.empty()) {
+				try {
+					for (auto jsonClockingTempo : jsonFileClocking_tempos) {
 
-				// Load the Devices
-                if (jsonFileClocking_devices.is_array() && !jsonFileClocking_devices.empty()) {
+						uint16_t bpm_10 = jsonClockingTempo["bpm_10"];
+						const auto& pb = jsonClockingTempo.at("position_beats");
+						uint32_t position_beats_num = pb.at(0).get<uint32_t>();
+						uint32_t position_beats_den = pb.at(1).get<uint32_t>();
+						clocking.addTempo(
+							bpm_10, position_beats_num, position_beats_den
+						);
+					}
+					// Sorts all the added tempos
+					if (!clocking.sortTempos()) {
+						goto skip_reading_items;
+					}
+				} catch (const nlohmann::json::exception& e) {
+					if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+					goto skip_reading_items;
+				} catch (const std::exception& e) {
+					if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+					goto skip_reading_items;
+				} catch (...) {
+					if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+					goto skip_reading_items;
+				}
+			}
 
-					try {
-						// Keeps the last called device in the JsonMidiPlayer file
-						MidiDevice *last_called_midi_device = nullptr;
+			// Load the Devices
+			nlohmann::json jsonFileClocking_devices = jsonFileClocking.at("devices");
+			if (jsonFileClocking_devices.is_array() && !jsonFileClocking_devices.empty()) {
 
-						for (std::string jsonClockingDevice_name : jsonFileClocking_devices) {
+				try {
+					// Keeps the last called device in the JsonMidiPlayer file
+					MidiDevice *last_called_midi_device = nullptr;
 
-							if (connected_devices_by_name.find(jsonClockingDevice_name) != connected_devices_by_name.end()) {
-								last_called_midi_device = connected_devices_by_name[jsonClockingDevice_name];
-								goto skip_to_next_device;
+					for (std::string jsonClockingDevice_name : jsonFileClocking_devices) {
+
+						if (connected_devices_by_name.find(jsonClockingDevice_name) != connected_devices_by_name.end()) {
+							last_called_midi_device = connected_devices_by_name[jsonClockingDevice_name];
+							goto skip_to_next_device;
+						}
+				
+						if (unavailable_devices.find(jsonClockingDevice_name) != unavailable_devices.end()) {
+							continue;
+						}
+				
+						for (auto &available_device : available_midi_devices) {
+							if (available_device.getName().find(jsonClockingDevice_name) != std::string::npos) {
+								//
+								// Where the Device Port is connected/opened (Main reason for errors)
+								//
+								if (available_device.openPort()) {	// Where the connection happens
+									connected_devices_by_name[jsonClockingDevice_name] = &available_device; 
+									last_called_midi_device = &available_device;
+
+									clocking.addDevice(&available_device);
+
+									goto skip_to_next_device; // For Message devices only the first one found is connected and NOT all of them
+
+								} else {
+									connected_devices_by_name[jsonClockingDevice_name] = nullptr; 
+								}
+							} else {
+								unavailable_devices.insert(jsonClockingDevice_name);
+							}
+						}
+						skip_to_next_device: ;	// Does nothing, just jumps to next device
+					}
+				} catch (const nlohmann::json::exception& e) {
+					if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+					goto skip_reading_items;
+				} catch (const std::exception& e) {
+					if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+					goto skip_reading_items;
+				} catch (...) {
+					if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+					goto skip_reading_items;
+				}
+			}
+
+			// Check if jsonFilePlaylist is a non-empty array
+			if (jsonFilePlaylist.is_array() && !jsonFilePlaylist.empty()) {
+
+				// Keeps the last called device in the JsonMidiPlayer file
+				MidiDevice *last_called_midi_device = nullptr;
+				// Just the declarations, no need to set them
+				unsigned char data_byte_1;
+				unsigned char data_byte_2;
+				unsigned char priority;
+
+				for (auto jsonPlaylistItem : jsonFilePlaylist)
+				{
+					// Most of the time it's a midi_message being processed, so it makes sense to be the first to check
+					if (jsonPlaylistItem.contains("midi_message")) {
+
+						if (last_called_midi_device != nullptr) {
+
+							play_reporting.total_incorrect++;
+
+							// Create an API with the default API
+							try
+							{
+								const auto& pb = jsonPlaylistItem.at("position_beats");
+								uint32_t position_beats_num = pb.at(0).get<uint32_t>();
+								uint32_t position_beats_den = pb.at(1).get<uint32_t>();
+								if (position_beats_num < 0 || position_beats_den <= 0) {
+
+									continue;
+									
+								} else {
+
+									unsigned char status_byte = jsonPlaylistItem["midi_message"]["status_byte"];
+									std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
+									
+									unsigned char message_action = status_byte & 0xF0;
+
+									// Where the Midi message is set
+									switch (message_action) {
+										case action_note_off:
+										case action_note_on:
+										case action_control_change:
+										case action_pitch_bend:
+										case action_key_pressure:
+										{
+											// This is already a try catch situation
+											data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte_1"];
+											data_byte_2 = jsonPlaylistItem["midi_message"]["data_byte_2"];
+											if (data_byte_1 & 128 | data_byte_2 & 128)
+												continue;
+											json_midi_message.push_back(data_byte_1);
+											json_midi_message.push_back(data_byte_2);
+											break;
+										}
+										case action_program_change:
+										case action_channel_pressure:
+										{
+											data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte"];
+											if (data_byte_1 & 128)
+												continue;
+											json_midi_message.push_back(data_byte_1);
+											break;
+										}
+										default:
+											break;
+									}
+
+									// Where the Priority is set
+									switch (message_action) {
+										case action_note_off:
+											priority = 0x40 | status_byte & 0x0F;       // Normal priority 4 for Off
+											break;
+										case action_note_on:
+											priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On
+											break;
+										case action_control_change:
+											if (data_byte_1 == 1) {             // Modulation
+												priority = 0x60 | status_byte & 0x0F;       // Low priority 6
+											} else if (data_byte_1 == 0 || data_byte_1 == 32) {
+												// 0 -  Bank Select (MSB)
+												// 32 - Bank Select (LSB)
+												priority = 0x10;                            // High priority 1.0	(Equivalent to Program Change)
+											} else if (data_byte_1 == 123) {
+												// 123 - All notes off (0x7B)
+												// shall come after Notes On and Off
+												priority = 0x90 | status_byte & 0x0F;       // Low priority 9
+											} else {
+												priority = 0x20 | status_byte & 0x0F;       // High priority 2
+											}
+											break;
+										case action_pitch_bend:
+											priority = 0x70 | status_byte & 0x0F;           // Low priority 7
+											break;
+										case action_key_pressure:
+											priority = 0x80 | status_byte & 0x0F;           // Low priority 8
+											break;
+										case action_program_change:
+											priority = 0x11;                            // High priority 1.1
+											break;
+										case action_channel_pressure:
+											priority = 0x80 | status_byte & 0x0F;       // Low priority 8
+											break;
+										default:
+											continue;   // Not a valid message, no priority given, jumps to the next one
+									}
+
+									midiToProcess.push_back(
+										MidiPin(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority)
+									);
+									play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
+									play_reporting.total_validated++;
+								}
+							}
+							catch (const nlohmann::json::exception& e) {
+								if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+								continue;
+							} catch (const std::exception& e) {
+								if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+								continue;
+							} catch (...) {
+								if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+								continue;
+							}
+						}
+
+					// Where the last device is set based on the json "device" input
+					} else if (jsonPlaylistItem.contains("devices")) {
+
+						// The devices JSON list key
+						nlohmann::json json_device_names = jsonPlaylistItem["devices"];
+
+						last_called_midi_device = nullptr; // No available device found at start
+						// It's a list of Devices that is given as Device
+						for (std::string device_name : json_device_names) {
+							
+							if (connected_devices_by_name.find(device_name) != connected_devices_by_name.end()) {
+								last_called_midi_device = connected_devices_by_name[device_name];
+								goto skip_to_next_item;
 							}
 					
-							if (unavailable_devices.find(jsonClockingDevice_name) != unavailable_devices.end()) {
+							if (unavailable_devices.find(device_name) != unavailable_devices.end()) {
 								continue;
 							}
 					
 							for (auto &available_device : available_midi_devices) {
-								if (available_device.getName().find(jsonClockingDevice_name) != std::string::npos) {
+								if (available_device.getName().find(device_name) != std::string::npos) {
 									//
 									// Where the Device Port is connected/opened (Main reason for errors)
 									//
 									if (available_device.openPort()) {	// Where the connection happens
-										connected_devices_by_name[jsonClockingDevice_name] = &available_device; 
+										connected_devices_by_name[device_name] = &available_device; 
 										last_called_midi_device = &available_device;
 
-										clocking.addDevice(&available_device);
-
-										goto skip_to_next_device; // For Message devices only the first one found is connected and NOT all of them
+										goto skip_to_next_item; // For Message devices only the first one found is connected and NOT all of them
 
 									} else {
-										connected_devices_by_name[jsonClockingDevice_name] = nullptr; 
+										connected_devices_by_name[device_name] = nullptr; 
 									}
 								} else {
-									unavailable_devices.insert(jsonClockingDevice_name);
+									unavailable_devices.insert(device_name);
 								}
 							}
-							skip_to_next_device: ;	// Does nothing, just jumps to next device
 						}
-					} catch (const nlohmann::json::exception& e) {
-						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
-						continue;
-					} catch (const std::exception& e) {
-						if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-						continue;
-					} catch (...) {
-						if (verbose) std::cerr << "Unknown error occurred." << std::endl;
-						continue;
 					}
+				skip_to_next_item: ;    // Does nothing, just jumps to next item
 				}
 
-				// Load the Tempos
-                if (jsonFileClocking_tempos.is_array() && !jsonFileClocking_tempos.empty()) {
-					try {
-						for (auto jsonClockingTempo : jsonFileClocking_tempos) {
-
-							uint16_t bpm_10 = jsonClockingTempo["bpm_10"];
-							const auto& pb = jsonClockingTempo.at("position_beats");
-							uint32_t position_beats_num = pb.at(0).get<uint32_t>();
-							uint32_t position_beats_den = pb.at(1).get<uint32_t>();
-							clocking.addTempo(
-								bpm_10, position_beats_num, position_beats_den
-							);
-						}
-						// Sorts all the added tempos
-						clocking.sortTempos();
-					} catch (const nlohmann::json::exception& e) {
-						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
-						continue;
-					} catch (const std::exception& e) {
-						if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-						continue;
-					} catch (...) {
-						if (verbose) std::cerr << "Unknown error occurred." << std::endl;
-						continue;
-					}
-				}
-
-                // Check if jsonFilePlaylist is a non-empty array
-                if (jsonFilePlaylist.is_array() && !jsonFilePlaylist.empty()) {
-
-					// Keeps the last called device in the JsonMidiPlayer file
-					MidiDevice *last_called_midi_device = nullptr;
-                    // Just the declarations, no need to set them
-                    unsigned char data_byte_1;
-                    unsigned char data_byte_2;
-					unsigned char priority;
-
-					for (auto jsonPlaylistItem : jsonFilePlaylist)
-					{
-						// Most of the time it's a midi_message being processed, so it makes sense to be the first to check
-						if (jsonPlaylistItem.contains("midi_message")) {
-
-							if (last_called_midi_device != nullptr) {
-
-								play_reporting.total_incorrect++;
-
-								// Create an API with the default API
-								try
-								{
-									const auto& pb = jsonPlaylistItem.at("position_beats");
-									uint32_t position_beats_num = pb.at(0).get<uint32_t>();
-									uint32_t position_beats_den = pb.at(1).get<uint32_t>();
-									if (position_beats_num < 0 || position_beats_den <= 0) {
-
-										continue;
-										
-									} else {
-
-										unsigned char status_byte = jsonPlaylistItem["midi_message"]["status_byte"];
-										std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
-										
-										unsigned char message_action = status_byte & 0xF0;
-
-                                        // Where the Midi message is set
-										switch (message_action) {
-											case action_note_off:
-											case action_note_on:
-											case action_control_change:
-											case action_pitch_bend:
-											case action_key_pressure:
-											{
-												// This is already a try catch situation
-												data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte_1"];
-												data_byte_2 = jsonPlaylistItem["midi_message"]["data_byte_2"];
-												if (data_byte_1 & 128 | data_byte_2 & 128)
-													continue;
-												json_midi_message.push_back(data_byte_1);
-												json_midi_message.push_back(data_byte_2);
-												break;
-											}
-											case action_program_change:
-											case action_channel_pressure:
-											{
-												data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte"];
-												if (data_byte_1 & 128)
-													continue;
-												json_midi_message.push_back(data_byte_1);
-												break;
-											}
-											default:
-												break;
-										}
-
-                                        // Where the Priority is set
-										switch (message_action) {
-											case action_note_off:
-                                                priority = 0x40 | status_byte & 0x0F;       // Normal priority 4 for Off
-                                                break;
-											case action_note_on:
-                                                priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On
-                                                break;
-											case action_control_change:
-                                                if (data_byte_1 == 1) {             // Modulation
-                                                    priority = 0x60 | status_byte & 0x0F;       // Low priority 6
-                                                } else if (data_byte_1 == 0 || data_byte_1 == 32) {
-                                                    // 0 -  Bank Select (MSB)
-                                                    // 32 - Bank Select (LSB)
-                                                    priority = 0x10;                            // High priority 1.0	(Equivalent to Program Change)
-                                                } else if (data_byte_1 == 123) {
-                                                    // 123 - All notes off (0x7B)
-                                                    // shall come after Notes On and Off
-                                                    priority = 0x90 | status_byte & 0x0F;       // Low priority 9
-                                                } else {
-                                                    priority = 0x20 | status_byte & 0x0F;       // High priority 2
-                                                }
-                                                break;
-											case action_pitch_bend:
-                                                priority = 0x70 | status_byte & 0x0F;           // Low priority 7
-                                                break;
-											case action_key_pressure:
-                                                priority = 0x80 | status_byte & 0x0F;           // Low priority 8
-                                                break;
-											case action_program_change:
-                                                priority = 0x11;                            // High priority 1.1
-                                                break;
-											case action_channel_pressure:
-                                                priority = 0x80 | status_byte & 0x0F;       // Low priority 8
-                                                break;
-											default:
-												continue;   // Not a valid message, no priority given, jumps to the next one
-										}
-
-										midiToProcess.push_back(
-											MidiPin(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority)
-										);
-										play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
-										play_reporting.total_validated++;
-									}
-								}
-								catch (const nlohmann::json::exception& e) {
-									if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
-									continue;
-								} catch (const std::exception& e) {
-									if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-									continue;
-								} catch (...) {
-									if (verbose) std::cerr << "Unknown error occurred." << std::endl;
-									continue;
-								}
-							}
-
-						// Where the last device is set based on the json "device" input
-						} else if (jsonPlaylistItem.contains("devices")) {
-
-							// The devices JSON list key
-							nlohmann::json json_device_names = jsonPlaylistItem["devices"];
-
-							last_called_midi_device = nullptr; // No available device found at start
-							// It's a list of Devices that is given as Device
-							for (std::string device_name : json_device_names) {
-								
-								if (connected_devices_by_name.find(device_name) != connected_devices_by_name.end()) {
-									last_called_midi_device = connected_devices_by_name[device_name];
-									goto skip_to_next_item;
-								}
-						
-								if (unavailable_devices.find(device_name) != unavailable_devices.end()) {
-									continue;
-								}
-						
-								for (auto &available_device : available_midi_devices) {
-									if (available_device.getName().find(device_name) != std::string::npos) {
-										//
-										// Where the Device Port is connected/opened (Main reason for errors)
-										//
-										if (available_device.openPort()) {	// Where the connection happens
-											connected_devices_by_name[device_name] = &available_device; 
-											last_called_midi_device = &available_device;
-
-											goto skip_to_next_item; // For Message devices only the first one found is connected and NOT all of them
-
-										} else {
-											connected_devices_by_name[device_name] = nullptr; 
-										}
-									} else {
-										unavailable_devices.insert(device_name);
-									}
-								}
-							}
-						}
-					skip_to_next_item: ;    // Does nothing, just jumps to next item
-					}
-
-                } else {
-                    if (verbose) std::cout << "JSON file is empty." << std::endl;
-                }
-
-            }
+			} else {
+				if (verbose) std::cout << "JSON file is empty." << std::endl;
+			}
         } catch (const nlohmann::json::parse_error& e) {
             if (verbose) std::cerr << "JSON parse error: " << e.what() << std::endl;
         }
 
+		skip_reading_items: ;	// Does nothing, just stops reading items
         if (verbose) std::cout << std::endl;
 
         #ifdef DEBUGGING

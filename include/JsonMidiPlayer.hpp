@@ -460,11 +460,11 @@ public:
 				auto next_it = std::next(tempo_it);
 				if (next_it == _tempos.end()) {
 					auto previous_it = std::prev(tempo_it);
-					cumulative_time_ms += extrapolateTime_ms(
+					cumulative_time_ms += interpolateTime_ms(
 						*previous_it, *tempo_it, position_ticks
 					);
 				} else {
-					cumulative_time_ms += extrapolateTime_ms(
+					cumulative_time_ms += interpolateTime_ms(
 						*tempo_it, *next_it, position_ticks
 					);
 				}
@@ -502,24 +502,17 @@ public:
 		return added_mesages;
 	}
 
-	static double extrapolateTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
+	static double interpolateTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
 		uint32_t left_ticks = left.getPositionTicks();
 		uint32_t right_ticks = right.getPositionTicks();
-		if (left_ticks <= right_ticks) {
+		// Trapezoid (exclusion of `left_ticks == right_ticks`)
+		if (left_ticks < right_ticks && ticks >= left_ticks && ticks <= right_ticks) {
 			int16_t left_bpm_10 = left.getBPM_10();
 			int16_t right_bpm_10 = right.getBPM_10();
-			if (left_bpm_10 > 0 && right_bpm_10 > 0) {
-				if (ticks < left_ticks) {
-					return (double)ticks * 625.0 / left_bpm_10;
-				} else if (ticks >= right_ticks) {
-					return (double)(ticks - right_ticks) * 625.0 / right_bpm_10;
-				} else {	// Trapezoid (exclusion of `left_ticks == right_ticks`)
-					double slope = (double)(right_bpm_10 - left_bpm_10) / (double)(right_ticks - left_ticks);
-					double delta_ticks_at_t = (double)(ticks - left_ticks);
-					double bpm_10_at_t = (double)left_bpm_10 + slope * delta_ticks_at_t;
-					return delta_ticks_at_t * 625.0 * 2.0 / ((double)left_bpm_10 + bpm_10_at_t);
-				}
-			}
+			double slope = (double)(right_bpm_10 - left_bpm_10) / (double)(right_ticks - left_ticks);
+			double delta_ticks_at_t = (double)(ticks - left_ticks);
+			double bpm_10_at_t = (double)left_bpm_10 + slope * delta_ticks_at_t;
+			return delta_ticks_at_t * 625.0 * 2.0 / ((double)left_bpm_10 + bpm_10_at_t);
 		}
 		return 0.0;
 	}

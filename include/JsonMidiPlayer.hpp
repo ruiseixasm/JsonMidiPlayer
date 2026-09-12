@@ -479,14 +479,16 @@ public:
 	static double interpolateTempo(const Tempo& left, const Tempo& right, uint32_t ticks) {
 		uint32_t left_ticks = left.getPositionTicks();
 		uint32_t right_ticks = right.getPositionTicks();
-		uint16_t left_bpm_10 = left.getBPM_10();
-		uint16_t right_bpm_10 = right.getBPM_10();
-		if (ticks <= left_ticks) {
-
-		} else if (ticks >= right_ticks) {
-
-		} else {
-
+		if (left_ticks <= right_ticks && ticks >= 0) {
+			uint16_t left_bpm_10 = left.getBPM_10();
+			uint16_t right_bpm_10 = right.getBPM_10();
+			if (ticks <= left_ticks) {
+				return (double)ticks * 625 / left_bpm_10;
+			} else if (ticks >= right_ticks) {
+				return (double)(ticks - right_ticks) * 625 / left_bpm_10;
+			} else {	// Trapezoid (implicit exclusion of `left_ticks == right_ticks` based on the above consitions)
+				
+			}
 		}
 		return 0.0;
 	}

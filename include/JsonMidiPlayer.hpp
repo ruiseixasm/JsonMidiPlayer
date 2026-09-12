@@ -531,7 +531,7 @@ public:
 			if (right_tempo == _tempos.end()) {
 				pin_time_ms = extrapolateTime_ms(*left_tempo, pin_ticks);
 			} else {
-				// Pich the right left tempo
+				// Picks the right left tempo
 				for (auto tempo_it = right_tempo; tempo_it != _tempos.end(); ++tempo_it) {
 					
 					uint32_t tempo_ticks = tempo_it->getPositionTicks();

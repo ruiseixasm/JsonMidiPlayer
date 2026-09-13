@@ -794,7 +794,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					uint32_t position_ticks = 0;
 					auto playing_start = std::chrono::high_resolution_clock::now();
 
-					while (midiToProcess.size() > 0) {
+					while (!midiToProcess.empty()) {
 						
 						MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
 						uint32_t pin_ticks = midi_pin.getPositionTicks();
@@ -851,7 +851,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
             // Where the final Statistics are calculated
             //
 
-            if (midiProcessed.size() > 0) {
+            if (!midiProcessed.empty()) {
 
                 for (auto &midi_pin : midiProcessed) {
                     auto delay_time_ms = midi_pin.getDelayTime();

@@ -148,7 +148,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
                 if (verbose) std::cout << "\tMidi device #" << i << ": " << portName << std::endl;
                 available_midi_devices.push_back(MidiDevice(portName, i, verbose));   // The object is copied
             }
-            if (available_midi_devices.size() == 0) {
+            if (available_midi_devices.empty()) {
                 if (verbose) std::cout << "\tNo output Midi devices available.\n";
                 return 1;
             }
@@ -486,7 +486,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
 
-        if (midiToProcess.size() == 0) {
+        if (midiToProcess.empty()) {
 
             auto data_processing_finish = std::chrono::high_resolution_clock::now();
 

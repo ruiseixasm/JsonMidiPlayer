@@ -372,17 +372,6 @@ public:
 		return (double)position_ticks * 625 / _bpm_10;
 	}
 
-	double beatsToMs() const {
-		return (double)_ticks * 625 / _bpm_10;
-	}
-
-    // ── tempo-aware conversion ──
-    uint64_t toMicroseconds(int16_t bpm_10) const {
-        // µs = ticks × 62,500 / bpm
-        return (uint64_t)_ticks * 625000 / bpm_10;
-    }
-
-
     int16_t getBPM_10() const {
         return _bpm_10;
     }
@@ -400,8 +389,6 @@ public:
     }
 
     bool operator< (const Tempo& t) const { return _ticks <  t._ticks; }
-    bool operator==(const Tempo& t) const { return _ticks == t._ticks; }
-    bool operator!=(const Tempo& t) const { return _ticks != t._ticks; }
 };
 
 
@@ -428,12 +415,6 @@ public:
 
 	void addDevice(MidiDevice* midi_device) {
 		_clocked_devices.push_back(midi_device);
-	}
-
-	void addTempo(int16_t bpm_10, uint32_t position_ticks) {
-		if (bpm_10 > 0) {
-			_tempos.emplace_back(bpm_10, position_ticks);
-		}
 	}
 
 	void addTempo(int16_t bpm_10, uint32_t num, uint32_t den) {

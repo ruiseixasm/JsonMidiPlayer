@@ -45,7 +45,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 // #define DEBUGGING true
 #define FILE_TYPE "Json Midi Player"
 #define FILE_URL  "https://github.com/ruiseixasm/JsonMidiPlayer"
-#define VERSION   "7.0.0"
+#define VERSION   "7.1.0"
 #define DRAG_DURATION_MS (1000.0/((120/60)*24))
 
 
@@ -411,6 +411,9 @@ public:
 
 
 class Clocking {
+	
+    uint32_t _length_ticks = 0;
+    double _length_time_ms = 0.0;
     std::vector<MidiDevice*> _clocked_devices;
 	std::list<Tempo> _tempos;
 

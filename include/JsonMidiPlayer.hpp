@@ -355,6 +355,10 @@ public:
 		return _length_ticks;
 	}
 
+	void setLengthTime_ms(double lengthtime_ms) {
+		_length_time_ms = lengthtime_ms;
+	}
+
 	double getLengthTime_ms() {
 		return _length_time_ms;
 	}

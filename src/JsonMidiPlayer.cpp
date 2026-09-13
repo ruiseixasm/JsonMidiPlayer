@@ -736,6 +736,8 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					}
 				}
 				midiToProcess.splice(midiToProcess.end(), temp);
+				double new_finish_time = time_ms_per_loop * loop;
+				clocking.setLengthTime_ms(new_finish_time);
 			}
 
             #ifdef DEBUGGING
@@ -767,7 +769,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 			if (updated_tempo) {	// Safe code
 			
 				// Position time
-				size_t duration_time_sec = std::round(clocking.getLengthTime_ms() / 1000 * loop);
+				size_t duration_time_sec = std::round(clocking.getLengthTime_ms() / 1000);
 				if (verbose) {
 					if (loop == 1) {
 						std::cout << "The playlist will now be played in " << loop << " loop for "
@@ -789,9 +791,9 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					while (midiToProcess.size() > 0) {
 						
 						MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
-
-						// Position time
+						// Pin position time
 						long long next_pin_time_us = std::round((midi_pin.getTime_ms() + play_reporting.total_drag) * 1000);
+
 						auto playing_now = std::chrono::high_resolution_clock::now();
 						auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
 						long long elapsed_time_us = elapsed_time.count();
@@ -814,6 +816,16 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 						if (delay_time_ms > DRAG_DURATION_MS)
 							play_reporting.total_drag += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
 					}
+
+					// Finish position time
+					long long finish_time_us = std::round((clocking.getLengthTime_ms() + play_reporting.total_drag) * 1000);
+					
+					auto playing_now = std::chrono::high_resolution_clock::now();
+					auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
+					long long elapsed_time_us = elapsed_time.count();
+					long long sleep_time_us = finish_time_us > elapsed_time_us ? finish_time_us - elapsed_time_us : 0;
+
+					highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
 				}
 			}
 

@@ -376,7 +376,9 @@ class Clocking {
 public:
 
 	void setLengthTicks(uint32_t num, uint32_t den) {
-		_length_ticks = getTicksFromBeats(num, den);
+		if (den == 1) {	// Measures have an integer amount of Beats
+			_length_ticks = getTicksFromBeats(num, den);
+		}
 	}
 
 	uint32_t getLengthTicks() {

@@ -387,11 +387,7 @@ public:
 
 	void addTempo(int16_t bpm_10, uint32_t num, uint32_t den) {
 		if (bpm_10 > 0 && den > 0) {
-			uint32_t tempo_ticks = getTicksFromBeats(num, den);
-			// Due to the total time_ms only inside length tempos are considered
-			if (tempo_ticks <= _length_ticks) {
-				_tempos.emplace_back(bpm_10, tempo_ticks);
-			}
+			_tempos.emplace_back(bpm_10, getTicksFromBeats(num, den));
 		}
 	}
 
@@ -450,6 +446,41 @@ public:
 		std::list<Tempo>::const_iterator last_tempo = std::prev(_tempos.end());
 		cumulative_time_ms += extrapolateTime_ms(*last_tempo, _length_ticks);
 		_length_time_ms = cumulative_time_ms;
+
+		// Only applicable for repeating loops
+
+		// Adds the cumulative Time
+		double tempo_time_ms = 0.0;	// The first one is always 0.0
+		double pin_time_ms = 0.0;
+				
+		// `const_iterator` because this is a `const` method
+		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();
+		std::list<Tempo>::const_iterator right_tempo = std::next(left_tempo);
+
+		if (right_tempo == _tempos.end()) {
+			pin_time_ms = extrapolateTime_ms(*left_tempo, _length_ticks);
+		} else {
+			// Picks the right left tempo
+			for (auto tempo_it = right_tempo; tempo_it != _tempos.end(); ++tempo_it) {
+				
+				uint32_t tempo_ticks = tempo_it->getPositionTicks();
+				if (_length_ticks < tempo_ticks) {	// It's the pin that one needs to keep up
+					right_tempo = tempo_it;
+					left_tempo = std::prev(tempo_it);
+					break;
+				}
+				// Only if can't be found it updates the left_tempo
+				left_tempo = tempo_it;
+				right_tempo = std::next(left_tempo);
+			}		
+			tempo_time_ms = left_tempo->getTime();
+			if (right_tempo == _tempos.end()) {
+				pin_time_ms = extrapolateTime_ms(*left_tempo, _length_ticks);
+			} else {
+				pin_time_ms = interpolateTime_ms(*left_tempo, *right_tempo, _length_ticks);
+			}
+		}
+		_length_time_ms = tempo_time_ms + pin_time_ms;
 
 		return true;
 	}

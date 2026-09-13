@@ -373,19 +373,7 @@ class Clocking {
     std::vector<MidiDevice*> _clocked_devices;
 	std::list<Tempo> _tempos;
 
-	double getClockTime_ms(uint32_t position_ticks) const {
-		if (_tempos.size() > 0) {
-			const Tempo& first_tempo = *_tempos.begin();
-			return first_tempo.getTimeFromTicks(position_ticks);
-		}
-		return 0.0;
-	}
-
 public:
-
-	void setLengthTicks(uint32_t num, uint32_t den) {
-		_length_ticks = getTicksFromBeats(num, den);
-	}
 
 	void addDevice(MidiDevice* midi_device) {
 		_clocked_devices.push_back(midi_device);

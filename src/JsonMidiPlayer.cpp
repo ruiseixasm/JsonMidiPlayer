@@ -86,7 +86,7 @@ double get_time_ms(int minutes_numerator, int minutes_denominator) {
 }
 
 
-int PlayList(const char* json_str, bool verbose) {
+int PlayList(const char* json_str, int loop, bool verbose) {
     
     disableBackgroundThrottling();
 
@@ -742,7 +742,11 @@ int PlayList(const char* json_str, bool verbose) {
             if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
             if (verbose) std::cout << "\tTotal resultant Midi Messages (included): " << std::setw(10) << midiToProcess.size() << std::endl;
 
-			if (updated_tempo) {	// Safe code
+            //
+            // Where the each midi pin is triggered
+            //
+
+			if (loop > 0 && updated_tempo) {	// Safe code
 			
 				MidiPin *last_pin = &midiToProcess.back();
 				// Position time

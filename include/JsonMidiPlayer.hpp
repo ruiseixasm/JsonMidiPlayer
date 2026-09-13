@@ -574,7 +574,7 @@ void disableBackgroundThrottling();
 
 void setRealTimeScheduling();
 void highResolutionSleep(long long microseconds);
-int PlayList(const char* json_str, bool verbose = false);
+int PlayList(const char* json_str, int loop = 1, bool verbose = false);
 
 
 #endif // MIDI_JSON_PLAYER_HPP

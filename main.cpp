@@ -118,5 +118,5 @@ int main(int argc, char *argv[]) {
     // Replace last "," with a "]"
     json_files_list.back() = ']';
 
-    return PlayList(json_files_list.c_str(), verbose);
+    return PlayList(json_files_list.c_str(), loop, verbose);
 }

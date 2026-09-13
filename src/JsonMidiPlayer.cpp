@@ -720,6 +720,24 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
 			bool updated_tempo = clocking.applyTime_ms(&midiToProcess);
 
+			if (loop > 1) {	// Needs to be repeated
+
+				double time_ms_per_loop = clocking.getLengthTime_ms();
+
+				std::list<MidiPin> temp;
+				for (int i = 1; i < loop; ++i) {
+					double time_ms_offset = time_ms_per_loop * i;
+					for (const MidiPin& pin : midiToProcess) {
+						double pin_time_ms = pin.getTime_ms();
+						MidiPin copy = pin;
+						copy.setTime_ms(time_ms_offset + pin_time_ms);
+						temp.push_back(copy);
+						play_reporting.total_generated++;
+					}
+				}
+				midiToProcess.splice(midiToProcess.end(), temp);
+			}
+
             #ifdef DEBUGGING
             debugging_now = std::chrono::high_resolution_clock::now();
             completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
@@ -750,7 +768,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 			
 				MidiPin *last_pin = &midiToProcess.back();
 				// Position time
-				size_t duration_time_sec = std::round(last_pin->getTime() / 1000);
+				size_t duration_time_sec = std::round(last_pin->getTime_ms() / 1000);
 				if (verbose) std::cout << "The data will now be played during "
 					<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
 
@@ -765,7 +783,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
 
 					// Position time
-					long long next_pin_time_us = std::round((midi_pin.getTime() + play_reporting.total_drag) * 1000);
+					long long next_pin_time_us = std::round((midi_pin.getTime_ms() + play_reporting.total_drag) * 1000);
 					auto playing_now = std::chrono::high_resolution_clock::now();
 					auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
 					long long elapsed_time_us = elapsed_time.count();

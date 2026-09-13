@@ -177,11 +177,11 @@ public:
           note_pressed_times(other.note_pressed_times)          // Copy the note_released
     { }
 
-	void setTime(double time_milliseconds) {
+	void setTime_ms(double time_milliseconds) {
 		time_ms = time_milliseconds;
 	}
 
-    double getTime() const {
+    double getTime_ms() const {
         return time_ms;
     }
 
@@ -385,6 +385,10 @@ public:
 		return _length_ticks;
 	}
 
+	double getLengthTime_ms() {
+		return _length_time_ms;
+	}
+
 	void addTempo(int16_t bpm_10, uint32_t num, uint32_t den) {
 		if (bpm_10 > 0 && den > 0) {
 			_tempos.emplace_back(bpm_10, getTicksFromBeats(num, den));
@@ -546,7 +550,7 @@ public:
 					pin_time_ms = interpolateTime_ms(*left_tempo, *right_tempo, pin_ticks);
 				}
 			}
-			pin_it->setTime(tempo_time_ms + pin_time_ms);
+			pin_it->setTime_ms(tempo_time_ms + pin_time_ms);
 		}
 		return true;
 	}

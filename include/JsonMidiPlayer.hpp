@@ -458,22 +458,22 @@ public:
 	size_t addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {
 		size_t added_mesages = 0;
 		if (_clocked_devices.size() > 0 && midiToProcess->size() > 0) {
-			const MidiPin& last_message = midiToProcess->back();
-			uint32_t last_tick = last_message.getPositionTicks();
-			size_t total_clock_ticks = (last_tick + TICKS_PER_CLOCK - 1) / TICKS_PER_CLOCK;	// Wraps outside messages
+			
+			// _length_ticks is a multiple of TICKS_PER_CLOCK, beats multiples
+			size_t total_clock_pins = _length_ticks / TICKS_PER_CLOCK;
 			
 			for (const auto& device : _clocked_devices) {
 				// New Start clock message with High Priority 3.0 (Let's messages like Program Change go first)
 				midiToProcess->push_back( MidiPin(TICKS_PER_CLOCK * 0, device, { system_clock_start }, 0x30) );
-				for (size_t tick_i = 1; tick_i < total_clock_ticks; tick_i++) {
+				for (size_t pin_i = 1; pin_i < total_clock_pins; pin_i++) {
 					// New clock message with High Priority 3.1 (Let's messages like Program Change go first)
-					midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * tick_i), device, { system_timing_clock }, 0x31) );
+					midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * pin_i), device, { system_timing_clock }, 0x31) );
 					added_mesages++;
 				}
 				// New Stop clock message with Lowest priority 11.0
-				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_ticks), device, { system_clock_stop }, 0xB0) );
+				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_clock_stop }, 0xB0) );
 				// New Stop clock message with Lowest priority 11.1
-				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_ticks), device, { system_song_pointer, 0, 0 }, 0xB1) );
+				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_song_pointer, 0, 0 }, 0xB1) );
 				added_mesages += 3;	// for Start, Stop and Pointer messages
 			}
 			midiToProcess->sort();	// Does the final sorting given the new pins

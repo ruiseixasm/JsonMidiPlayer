@@ -375,6 +375,14 @@ class Clocking {
 
 public:
 
+	void setLengthTicks(uint32_t num, uint32_t den) {
+		_length_ticks = getTicksFromBeats(num, den);
+	}
+
+	uint32_t getLengthTicks() {
+		return _length_ticks;
+	}
+
 	void addDevice(MidiDevice* midi_device) {
 		_clocked_devices.push_back(midi_device);
 	}

@@ -729,14 +729,18 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
 			if (loop > 1) {	// Needs to be repeated
 
+				double ticks_per_loop = clocking.getLengthTicks();
 				double time_ms_per_loop = clocking.getLengthTime_ms();
 
 				std::list<MidiPin> temp;
 				for (int i = 1; i < loop; ++i) {
+					uint32_t ticks_offset = ticks_per_loop * i;
 					double time_ms_offset = time_ms_per_loop * i;
 					for (const MidiPin& pin : midiToProcess) {
+						uint32_t new_position_ticks = ticks_offset + pin.getPositionTicks();
 						double new_pin_time_ms = time_ms_offset + pin.getTime_ms();
 						MidiPin copy = pin;
+						copy.setPositionTicks(new_position_ticks);
 						copy.setTime_ms(new_pin_time_ms);
 						temp.push_back(copy);
 						play_reporting.total_generated++;
@@ -807,8 +811,10 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 						long long elapsed_time_us = elapsed_time.count();
 						long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
 
-						highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
-						position_ticks = pin_ticks;
+						if (pin_ticks > position_ticks) {
+							highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
+							position_ticks = pin_ticks;
+						}
 
 						auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
 						midi_pin.pluckTooth();  // as soon as possible! <----- Midi Send

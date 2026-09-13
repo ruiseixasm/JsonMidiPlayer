@@ -262,7 +262,7 @@ class MidiDevice {
         
         // Keeps MidiPin dummy copies, thus NOT pointers of MidiPin
         std::unordered_map<unsigned char, MidiPin>  statusbyte_last_pins_pitchbend;    		// For Pitch Bend and Aftertouch
-        std::unordered_map<uint16_t, MidiPin>       statusdatabyte_last_pin_controlchange;	// For Control Changeand and Key Pressure
+        std::unordered_map<uint16_t, MidiPin>       statusdatabyte_last_pin_controlchange;	// For Control Change and Key Pressure
     
     public:
         MidiDevice(std::string device_name, unsigned int device_port, bool verbose = false)

@@ -609,7 +609,9 @@ int PlayList(const char* json_str, int loop, bool verbose) {
                     case action_key_pressure:
                     {
                         auto& dict_last = pluck_device.statusdatabyte_last_pin_controlchange;
-                        uint16_t status_data_byte = pluck_pin.getStatusByte() << 8 | pluck_pin.getDataByte(1);
+						uint16_t status_byte = pluck_pin.getStatusByte();
+						uint16_t data_byte = pluck_pin.getDataByte(1);
+                        uint16_t status_data_byte =  status_byte << 8 | data_byte;
 
                         if (dict_last.find(status_data_byte) != dict_last.end()) {  // Key found
                             auto &last_pin_16 = dict_last[status_data_byte];
@@ -622,8 +624,10 @@ int PlayList(const char* json_str, int loop, bool verbose) {
                                 ++(play_reporting.total_redundant);
                             }
                         } else {
-                            // Needs to use a pin dummy copy given that their midi parameters may be changed
-                            dict_last.emplace(status_data_byte, MidiPin(pluck_pin));    // Just a dummy copy
+							if (data_byte != 0 && data_byte != 32) {	// Bank select messages can be repeated
+								// Needs to use a pin dummy copy given that their midi parameters may be changed
+								dict_last.emplace(status_data_byte, MidiPin(pluck_pin));    // Just a dummy copy
+							}
                             ++pin_it; // Only increment if no removal
                         }
                     }

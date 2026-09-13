@@ -764,47 +764,56 @@ int PlayList(const char* json_str, int loop, bool verbose) {
             // Where the each midi pin is triggered
             //
 
-			if (loop > 0 && updated_tempo) {	// Safe code
+			if (updated_tempo) {	// Safe code
 			
-				MidiPin *last_pin = &midiToProcess.back();
 				// Position time
-				size_t duration_time_sec = std::round(last_pin->getTime_ms() / 1000);
-				if (verbose) std::cout << "The data will now be played during "
-					<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
+				size_t duration_time_sec = std::round(clocking.getLengthTime_ms() / 1000 * loop);
+				if (verbose) {
+					if (loop == 1) {
+						std::cout << "The playlist will now be played in " << loop << " loop for "
+						<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
+					} else {
+						std::cout << "The playlist will now be played in " << loop << " loops for "
+						<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
+					}
+				}
 
-				//
-				// Where the Midi messages are sent to each Device
-				//
+				if (loop > 0) {
 
-				auto playing_start = std::chrono::high_resolution_clock::now();
+					//
+					// Where the Midi messages are sent to each Device
+					//
 
-				while (midiToProcess.size() > 0) {
-					
-					MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
+					auto playing_start = std::chrono::high_resolution_clock::now();
 
-					// Position time
-					long long next_pin_time_us = std::round((midi_pin.getTime_ms() + play_reporting.total_drag) * 1000);
-					auto playing_now = std::chrono::high_resolution_clock::now();
-					auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
-					long long elapsed_time_us = elapsed_time.count();
-					long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
+					while (midiToProcess.size() > 0) {
+						
+						MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
 
-					highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
+						// Position time
+						long long next_pin_time_us = std::round((midi_pin.getTime_ms() + play_reporting.total_drag) * 1000);
+						auto playing_now = std::chrono::high_resolution_clock::now();
+						auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
+						long long elapsed_time_us = elapsed_time.count();
+						long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
 
-					auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
-					midi_pin.pluckTooth();  // as soon as possible! <----- Midi Send
+						highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
 
-					auto pluck_time_us = static_cast<double>(
-						std::chrono::duration_cast<std::chrono::microseconds>(pluck_time).count()
-					);
-					double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
-					midi_pin.setDelayTime(delay_time_ms);
-					midiProcessed.push_back(std::move(midiToProcess.front()));  // Move the object
-					midiToProcess.pop_front();  // Remove the first element
+						auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
+						midi_pin.pluckTooth();  // as soon as possible! <----- Midi Send
 
-					// Process drag if existent
-					if (delay_time_ms > DRAG_DURATION_MS)
-						play_reporting.total_drag += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
+						auto pluck_time_us = static_cast<double>(
+							std::chrono::duration_cast<std::chrono::microseconds>(pluck_time).count()
+						);
+						double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
+						midi_pin.setDelayTime(delay_time_ms);
+						midiProcessed.push_back(std::move(midiToProcess.front()));  // Move the object
+						midiToProcess.pop_front();  // Remove the first element
+
+						// Process drag if existent
+						if (delay_time_ms > DRAG_DURATION_MS)
+							play_reporting.total_drag += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
+					}
 				}
 			}
 

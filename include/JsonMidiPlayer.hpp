@@ -88,20 +88,16 @@ public:
 
 	static uint32_t getTicksFromBeats(uint32_t num, uint32_t den) {
 		// Equivalent to Beat((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
-		if (num < 0 || den <= 0) {
-			return 0;
+		if (den > 0) {
+			return (num * TICKS_PER_BEAT + den / 2) / den;
 		}
-		return (num * TICKS_PER_BEAT + den / 2) / den;
+		return 0;
 	}
 
     Beat() : _ticks(0) {}
     
     static Beat fromTicks(uint32_t ticks) {
         return Beat(ticks);          // ✅ constructs directly
-    }
-
-    static Beat fromFraction(uint32_t num, uint32_t den) {
-        return Beat(getTicksFromBeats(num, den));
     }
 
     static Beat fromDouble(double beats) {
@@ -114,7 +110,6 @@ public:
     bool operator< (const Beat& o) const { return _ticks <  o._ticks; }
     bool operator==(const Beat& o) const { return _ticks == o._ticks; }
     bool operator!=(const Beat& o) const { return _ticks != o._ticks; }
-    Beat operator+(const Beat& o) const { return fromTicks(_ticks + o._ticks); }
 };
 
 
@@ -426,6 +421,10 @@ class Clocking {
 	}
 
 public:
+
+	void setLengthTicks(uint32_t num, uint32_t den) {
+		_length_ticks = Beat::getTicksFromBeats(num, den);
+	}
 
 	void addDevice(MidiDevice* midi_device) {
 		_clocked_devices.push_back(midi_device);

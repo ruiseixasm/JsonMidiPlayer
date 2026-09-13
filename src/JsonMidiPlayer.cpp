@@ -107,6 +107,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
     struct PlayReporting {
         size_t json_processing  = 0;    // milliseconds
+        size_t ports_opening  	= 0;    // milliseconds
         size_t total_generated  = 0;
         size_t total_validated  = 0;
         size_t total_incorrect  = 0;
@@ -270,7 +271,15 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 									//
 									// Where the Device Port is connected/opened (Main reason for errors)
 									//
-									if (available_device.openPort()) {	// Where the connection happens
+									auto port_opening_start = std::chrono::high_resolution_clock::now();
+
+									bool device_available = available_device.openPort();
+
+									auto port_opening_finish = std::chrono::high_resolution_clock::now();
+									auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(port_opening_finish - port_opening_start);
+									play_reporting.ports_opening += port_processing_time.count();
+
+									if (device_available) {	// Where the connection happens
 										connected_devices_by_name[jsonClockingDevice_name] = &available_device; 
 										last_called_midi_device = &available_device;
 
@@ -447,7 +456,15 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 										//
 										// Where the Device Port is connected/opened (Main reason for errors)
 										//
-										if (available_device.openPort()) {	// Where the connection happens
+										auto port_opening_start = std::chrono::high_resolution_clock::now();
+
+										bool device_available = available_device.openPort();
+
+										auto port_opening_finish = std::chrono::high_resolution_clock::now();
+										auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(port_opening_finish - port_opening_start);
+										play_reporting.ports_opening += port_processing_time.count();
+
+										if (device_available) {	// Where the connection happens
 											connected_devices_by_name[device_name] = &available_device; 
 											last_called_midi_device = &available_device;
 
@@ -489,13 +506,17 @@ int PlayList(const char* json_str, int loop, bool verbose) {
         if (midiToProcess.empty()) {
 
             auto data_processing_finish = std::chrono::high_resolution_clock::now();
-
             auto pre_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
             play_reporting.json_processing = pre_processing_time.count();
+			size_t real_processing_json_time = 0;
+			if (play_reporting.json_processing > play_reporting.ports_opening) {
+				real_processing_json_time = play_reporting.json_processing - play_reporting.ports_opening;
+			}
 
             // Where the reporting is finally done
             if (verbose) std::cout << "Data stats reporting:" << std::endl;
-            if (verbose) std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << play_reporting.json_processing << std::endl;
+            if (verbose) std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << real_processing_json_time << std::endl;
+            if (verbose) std::cout << "\tMidi Ports opening time (ms):             " << std::setw(10) << play_reporting.ports_opening << std::endl;
             if (verbose) std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
             if (verbose) std::cout << "\tTotal validated Midi Messages (accepted): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;
@@ -759,12 +780,16 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
             auto data_processing_finish = std::chrono::high_resolution_clock::now();
             auto data_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
-
             play_reporting.json_processing = data_processing_time.count();
+			size_t real_processing_json_time = 0;
+			if (play_reporting.json_processing > play_reporting.ports_opening) {
+				real_processing_json_time = play_reporting.json_processing - play_reporting.ports_opening;
+			}
 
             // Where the reporting is finally done
             if (verbose) std::cout << "Data stats reporting:" << std::endl;
-            if (verbose) std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << play_reporting.json_processing << std::endl;
+            if (verbose) std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << real_processing_json_time << std::endl;
+            if (verbose) std::cout << "\tMidi Ports opening time (ms):             " << std::setw(10) << play_reporting.ports_opening << std::endl;
             if (verbose) std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
             if (verbose) std::cout << "\tTotal validated Midi Messages (accepted): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;

@@ -37,6 +37,7 @@ void printUsage(const char *programName) {
     std::cout << "Usage: " << programName << " [options] input_file_1.json [input_file_2.json]\n"
               << "Options:\n"
               << "  -h, --help       Show this help message and exit\n"
+              << "  -l, --loop       Loops the playlist the amount of times with 1 as the default\n"
               << "  -v, --verbose    Enable verbose mode\n"
               << "  -V, --version    Prints the current version number\n\n"
               << "More info here: https://github.com/ruiseixasm/JsonMidiPlayer\n\n";
@@ -45,12 +46,14 @@ void printUsage(const char *programName) {
 int main(int argc, char *argv[]) {
 
     int verbose = 0;
+	int loop = 1;
     int option_index = 0;
 
     struct option long_options[] = {
         {"help",    no_argument,       nullptr, 'h'},
+    	{"loop",    required_argument, nullptr, 'l'},
         {"verbose", no_argument,       nullptr, 'v'},
-        {"version", no_argument,       nullptr, 'V'}, // New option for version
+        {"version", no_argument,       nullptr, 'V'},
         {nullptr,   0,                 nullptr,  0 }
     };
 
@@ -62,6 +65,17 @@ int main(int argc, char *argv[]) {
             case 'h':
                 printUsage(argv[0]);
                 return 2;   // avoids the execution of any file
+            case 'l': {
+                char* end = nullptr;
+                errno = 0;
+                long n = std::strtol(optarg, &end, 10);
+                if (errno != 0 || end == optarg || *end != '\0' || n < 0) {
+                    std::cerr << "Invalid loop amount: " << optarg << std::endl;
+                    return 1;
+                }
+                loop = static_cast<int>(n);
+                break;
+            }
             case 'v':
                 verbose = 1;
                 break;

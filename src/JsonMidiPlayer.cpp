@@ -88,6 +88,11 @@ double get_time_ms(int minutes_numerator, int minutes_denominator) {
 
 int PlayList(const char* json_str, int loop, bool verbose) {
     
+	if (loop < 0) {
+		if (verbose) std::cout << "\tNo negative loops are acceptable.\n";
+		return 1;
+	}
+
     disableBackgroundThrottling();
 
     // Set real-time scheduling

@@ -807,10 +807,8 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 						long long elapsed_time_us = elapsed_time.count();
 						long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
 
-						if (pin_ticks > position_ticks) {
-							highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
-							position_ticks = pin_ticks;
-						}
+						highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
+						position_ticks = pin_ticks;
 
 						auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
 						midi_pin.pluckTooth();  // as soon as possible! <----- Midi Send

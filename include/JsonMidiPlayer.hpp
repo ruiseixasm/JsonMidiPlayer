@@ -118,16 +118,6 @@ public:
         note_pressed_times(1)           // Default to 1
     { }
 
-    // Pin constructor from miliseconds
-    MidiPin(double time_milliseconds, MidiDevice* midi_device,
-        const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
-            : time_ms(time_milliseconds),
-        	_ticks(0),                    	// Default to 0
-            midi_device(midi_device),
-            midi_message(json_midi_message),    // Directly initialize midi_message
-            priority(priority)
-        { }
-
     // Pin constructor from position_beats (num, den)
     MidiPin(uint32_t num, uint32_t den, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
@@ -141,26 +131,6 @@ public:
     MidiPin(uint32_t ticks, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
             : _ticks(ticks),
-            midi_device(midi_device),
-            midi_message(json_midi_message),    // Directly initialize midi_message
-            priority(priority)
-        { }
-
-    // Pin constructor from time_ms and position_beats (num, den)
-    MidiPin(double time_milliseconds, uint32_t num, uint32_t den, MidiDevice* midi_device,
-        const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
-            : time_ms(time_milliseconds),
-            _ticks(getTicksFromBeats(num, den)),
-            midi_device(midi_device),
-            midi_message(json_midi_message),    // Directly initialize midi_message
-            priority(priority)
-        { }
-
-    // Pin constructor from time_ms and position_beats (num, den)
-    MidiPin(double time_milliseconds, uint32_t ticks, MidiDevice* midi_device,
-        const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
-            : time_ms(time_milliseconds),
-            _ticks(ticks),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)

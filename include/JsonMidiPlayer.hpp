@@ -370,8 +370,8 @@ class Clocking {
 	
     uint32_t _length_ticks = 0;
     double _length_time_ms = 0.0;
-    std::vector<MidiDevice*> _clocked_devices;
 	std::list<Tempo> _tempos;
+    std::vector<MidiDevice*> _clocked_devices;
 
 public:
 
@@ -385,14 +385,18 @@ public:
 		return _length_ticks;
 	}
 
-	void addDevice(MidiDevice* midi_device) {
-		_clocked_devices.push_back(midi_device);
-	}
-
 	void addTempo(int16_t bpm_10, uint32_t num, uint32_t den) {
 		if (bpm_10 > 0 && den > 0) {
-			_tempos.emplace_back(bpm_10, getTicksFromBeats(num, den));
+			uint32_t tempo_ticks = getTicksFromBeats(num, den);
+			// Due to the total time_ms only inside length tempos are considered
+			if (tempo_ticks <= _length_ticks) {
+				_tempos.emplace_back(bpm_10, tempo_ticks);
+			}
 		}
+	}
+
+	void addDevice(MidiDevice* midi_device) {
+		_clocked_devices.push_back(midi_device);
 	}
 
 	bool sortTempos() {

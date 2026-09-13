@@ -229,19 +229,19 @@ public:
 	}
 
     // Intended for Automation messages only
-    bool operator != (const MidiPin &midi_pin) {
+    bool operator == (const MidiPin &midi_pin) {
         // mapped by status byte, so, with the same action type for sure
         switch (this->getAction()) {
-            case action_control_change:
+			// Isn't possible to guarantee independence of action in CC, so, no action_control_change
             case action_key_pressure:
-                return this->getDataByte(2) != midi_pin.getDataByte(2);		// Value or Pressure
+                return this->getDataByte(2) == midi_pin.getDataByte(2);		// Value or Pressure
             case action_pitch_bend:
-                return this->getDataByte(1) != midi_pin.getDataByte(1) ||
-                        this->getDataByte(2) != midi_pin.getDataByte(2);	// LSB and MSB
+                return this->getDataByte(1) == midi_pin.getDataByte(1) ||
+                        this->getDataByte(2) == midi_pin.getDataByte(2);	// LSB and MSB
             case action_channel_pressure:
-                return this->getDataByte(1) != midi_pin.getDataByte(1);		// Pressure
+                return this->getDataByte(1) == midi_pin.getDataByte(1);		// Pressure
         }
-        return true;
+        return false;
     }
 };
 

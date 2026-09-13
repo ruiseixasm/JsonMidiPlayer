@@ -531,8 +531,9 @@ int PlayList(const char* json_str, int loop, bool verbose) {
                 MidiDevice &pluck_device = *pluck_pin.getDevice();
 				// Position beats and ticks
 				const uint32_t pin_actual_position_ticks = pluck_pin.getPositionTicks();
+				const auto midi_action = pluck_pin.getAction();
 
-                switch (pluck_pin.getAction()) {
+                switch (midi_action) {
                     case action_note_off:
                     {
                         auto& dict_last_on = pluck_device.channelpitch_last_pins_note_on;
@@ -615,19 +616,17 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
                         if (dict_last.find(status_data_byte) != dict_last.end()) {  // Key found
                             auto &last_pin_16 = dict_last[status_data_byte];
-                            if (last_pin_16 != pluck_pin) {
 
-                                last_pin_16.setDataByte(2, pluck_pin.getDataByte(2));
-                                ++pin_it; // Only increment if no removal
-                            } else {
+                            if (last_pin_16 == pluck_pin) {
 								pin_it = midiToProcess.erase(pin_it);
                                 ++(play_reporting.total_redundant);
+                            } else {
+                                last_pin_16.setDataByte(2, pluck_pin.getDataByte(2));
+                                ++pin_it; // Only increment if no removal
                             }
                         } else {
-							if (data_byte != 0 && data_byte != 32) {	// Bank select messages can be repeated
-								// Needs to use a pin dummy copy given that their midi parameters may be changed
-								dict_last.emplace(status_data_byte, MidiPin(pluck_pin));    // Just a dummy copy
-							}
+							// Needs to use a pin dummy copy given that their midi parameters may be changed
+							dict_last.emplace(status_data_byte, MidiPin(pluck_pin));    // Just a dummy copy
                             ++pin_it; // Only increment if no removal
                         }
                     }
@@ -639,14 +638,14 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
                         if (dict_last.find(status_byte) != dict_last.end()) {  // Key found
                             auto &last_pin_8 = dict_last[status_byte];
-                            if (last_pin_8 != pluck_pin) {
 
+                            if (last_pin_8 == pluck_pin) {
+								pin_it = midiToProcess.erase(pin_it);
+                                ++(play_reporting.total_redundant);
+                            } else {
                                 last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
                                 last_pin_8.setDataByte(2, pluck_pin.getDataByte(2));
                                 ++pin_it; // Only increment if no removal
-                            } else {
-								pin_it = midiToProcess.erase(pin_it);
-                                ++(play_reporting.total_redundant);
                             }
                         } else {
                             // Needs to use a pin dummy copy given that their midi parameters may be changed
@@ -662,13 +661,13 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
                         if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
                             auto &last_pin_8 = dict_last[dict_key];
-                            if (last_pin_8 != pluck_pin) {
-
-                                last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
-                                ++pin_it; // Only increment if no removal
-                            } else {
+							
+                            if (last_pin_8 == pluck_pin) {
 								pin_it = midiToProcess.erase(pin_it);
                                 ++(play_reporting.total_redundant);
+                            } else {
+                                last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
+                                ++pin_it; // Only increment if no removal
                             }
                         } else {
                             // Needs to use a pin dummy copy given that their midi parameters may be changed

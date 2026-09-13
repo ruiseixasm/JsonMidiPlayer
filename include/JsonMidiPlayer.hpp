@@ -96,20 +96,8 @@ public:
 
     Beat() : _ticks(0) {}
     
-    static Beat fromTicks(uint32_t ticks) {
-        return Beat(ticks);          // ✅ constructs directly
-    }
-
-    static Beat fromDouble(double beats) {
-        return Beat((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
-    }
-
     uint32_t getTicks() const { return _ticks; }
     double getBeats() const { return (double)_ticks / TICKS_PER_BEAT; }
-
-    bool operator< (const Beat& o) const { return _ticks <  o._ticks; }
-    bool operator==(const Beat& o) const { return _ticks == o._ticks; }
-    bool operator!=(const Beat& o) const { return _ticks != o._ticks; }
 };
 
 

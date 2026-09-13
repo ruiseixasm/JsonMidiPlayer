@@ -232,7 +232,7 @@ public:
     bool operator == (const MidiPin &midi_pin) {
         // mapped by status byte, so, with the same action type for sure
         switch (this->getAction()) {
-			// Isn't possible to guarantee independence of action in CC, so, no action_control_change
+            case action_control_change:
             case action_key_pressure:
                 return this->getDataByte(2) == midi_pin.getDataByte(2);		// Value or Pressure
             case action_pitch_bend:
@@ -351,15 +351,11 @@ public:
 		}
 	}
 
-	uint32_t getLengthTicks() {
+	uint32_t getLengthTicks() const {
 		return _length_ticks;
 	}
 
-	void setLengthTime_ms(double lengthtime_ms) {
-		_length_time_ms = lengthtime_ms;
-	}
-
-	double getLengthTime_ms() {
+	double getLengthTime_ms() const {
 		return _length_time_ms;
 	}
 

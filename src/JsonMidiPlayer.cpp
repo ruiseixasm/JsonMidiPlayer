@@ -743,8 +743,6 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					}
 				}
 				midiToProcess.splice(midiToProcess.end(), temp);
-				double new_finish_time = time_ms_per_loop * loop;
-				clocking.setLengthTime_ms(new_finish_time);
 			}
 
             #ifdef DEBUGGING
@@ -776,13 +774,11 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 			if (updated_tempo) {	// Safe code
 			
 				// Position time
-				size_t duration_time_sec = std::round(clocking.getLengthTime_ms() / 1000);
+				size_t duration_time_sec = std::round(clocking.getLengthTime_ms() * loop / 1000);
 				if (verbose) {
 					if (loop == 1) {
 						std::cout << "The playlist will now be played in 1 loop for "
 						<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
-					} else if (loop == 0) {
-						std::cout << "The playlist will now be played in 0 loops for 0 minutes and 0 seconds..." << std::endl;
 					} else {
 						std::cout << "The playlist will now be played in " << loop << " loops for "
 						<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
@@ -827,7 +823,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					}
 
 					// Finish position time
-					long long finish_time_us = std::round((clocking.getLengthTime_ms() + play_reporting.total_drag) * 1000);
+					long long finish_time_us = std::round((clocking.getLengthTime_ms() * loop + play_reporting.total_drag) * 1000);
 					
 					auto playing_now = std::chrono::high_resolution_clock::now();
 					auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);

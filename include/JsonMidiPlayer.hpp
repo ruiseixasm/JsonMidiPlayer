@@ -462,7 +462,7 @@ public:
 
 	size_t addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {
 		size_t added_mesages = 0;
-		if (_clocked_devices.size() > 0 && midiToProcess->size() > 0) {
+		if (!(_clocked_devices.empty() || midiToProcess->empty())) {
 			
 			// _length_ticks is a multiple of TICKS_PER_CLOCK, beats multiples
 			size_t total_clock_pins = _length_ticks / TICKS_PER_CLOCK;

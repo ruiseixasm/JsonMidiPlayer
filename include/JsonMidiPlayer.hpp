@@ -78,28 +78,14 @@ static constexpr uint32_t TICKS_PER_BEAT 	= 960;	// Internal PPQN
 static constexpr uint32_t CLOCKS_PER_BEAT 	= 24;   // MIDI spec
 static constexpr uint32_t TICKS_PER_CLOCK 	= TICKS_PER_BEAT / CLOCKS_PER_BEAT;	// = 40
 
-class Beat {
-    const uint32_t _ticks;
 
-    // private constructor — factories call this
-    explicit Beat(uint32_t ticks) : _ticks(ticks) {}
-
-public:
-
-	static uint32_t getTicksFromBeats(uint32_t num, uint32_t den) {
-		// Equivalent to Beat((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
-		if (den > 0) {
-			return (num * TICKS_PER_BEAT + den / 2) / den;
-		}
-		return 0;
+inline uint32_t getTicksFromBeats(uint32_t num, uint32_t den) {
+	// Equivalent to Beat((uint32_t)(beats * TICKS_PER_BEAT + 0.5));
+	if (den > 0) {
+		return (num * TICKS_PER_BEAT + den / 2) / den;
 	}
-
-    Beat() : _ticks(0) {}
-    
-    uint32_t getTicks() const { return _ticks; }
-    double getBeats() const { return (double)_ticks / TICKS_PER_BEAT; }
-};
-
+	return 0;
+}
 
 
 class MidiDevice;
@@ -145,7 +131,7 @@ public:
     // Pin constructor from position_beats (num, den)
     MidiPin(uint32_t num, uint32_t den, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
-            : _ticks(Beat::getTicksFromBeats(num, den)),
+            : _ticks(getTicksFromBeats(num, den)),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
@@ -164,7 +150,7 @@ public:
     MidiPin(double time_milliseconds, uint32_t num, uint32_t den, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
             : time_ms(time_milliseconds),
-            _ticks(Beat::getTicksFromBeats(num, den)),
+            _ticks(getTicksFromBeats(num, den)),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
@@ -398,7 +384,7 @@ class Clocking {
 public:
 
 	void setLengthTicks(uint32_t num, uint32_t den) {
-		_length_ticks = Beat::getTicksFromBeats(num, den);
+		_length_ticks = getTicksFromBeats(num, den);
 	}
 
 	void addDevice(MidiDevice* midi_device) {
@@ -407,7 +393,7 @@ public:
 
 	void addTempo(int16_t bpm_10, uint32_t num, uint32_t den) {
 		if (bpm_10 > 0 && den > 0) {
-			_tempos.emplace_back(bpm_10, Beat::getTicksFromBeats(num, den));
+			_tempos.emplace_back(bpm_10, getTicksFromBeats(num, den));
 		}
 	}
 

@@ -606,7 +606,6 @@ int PlayList(const char* json_str, int loop, bool verbose) {
                         ++pin_it; // Only increments if no removal
                     }
                     break;
-                    case action_control_change:
                     case action_key_pressure:
                     {
                         auto& dict_last = pluck_device.statusdatabyte_last_pin_controlchange;
@@ -661,7 +660,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
                         if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
                             auto &last_pin_8 = dict_last[dict_key];
-							
+
                             if (last_pin_8 == pluck_pin) {
 								pin_it = midiToProcess.erase(pin_it);
                                 ++(play_reporting.total_redundant);
@@ -677,7 +676,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
                     }
                     break;
 
-                    default:    // Includes Program Change 0xC0 (Never considered redundant!)
+                    default:    // Includes Controle Change and Program Change 0xC0 (Never considered redundant!)
                         ++pin_it; // Only increment if no removal
                     break;
                 }

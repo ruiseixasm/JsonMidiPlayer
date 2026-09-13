@@ -477,7 +477,6 @@ public:
 			for (const auto& device : _clocked_devices) {
 				// New Start clock message with High Priority 3.0 (Let's messages like Program Change go first)
 				midiToProcess->push_back( MidiPin(TICKS_PER_CLOCK * 0, device, { system_clock_start }, 0x30) );
-				added_mesages++;
 				for (size_t tick_i = 1; tick_i < total_clock_ticks; tick_i++) {
 					// New clock message with High Priority 3.1 (Let's messages like Program Change go first)
 					midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * tick_i), device, { system_timing_clock }, 0x31) );
@@ -485,10 +484,9 @@ public:
 				}
 				// New Stop clock message with Lowest priority 11.0
 				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_ticks), device, { system_clock_stop }, 0xB0) );
-				added_mesages++;
 				// New Stop clock message with Lowest priority 11.1
 				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_ticks), device, { system_song_pointer, 0, 0 }, 0xB1) );
-				added_mesages++;
+				added_mesages += 3;	// for Start, Stop and Pointer messages
 			}
 			midiToProcess->sort();	// Does the final sorting given the new pins
 		}

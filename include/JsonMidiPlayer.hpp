@@ -399,6 +399,31 @@ public:
 		_clocked_devices.push_back(midi_device);
 	}
 
+
+	static double interpolateTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
+		uint32_t left_ticks = left.getPositionTicks();
+		uint32_t right_ticks = right.getPositionTicks();
+		// Trapezoid (exclusion of `left_ticks == right_ticks`)
+		if (left_ticks < right_ticks && ticks >= left_ticks && ticks <= right_ticks) {
+			int16_t left_bpm_10 = left.getBPM_10();
+			int16_t right_bpm_10 = right.getBPM_10();
+			double slope = (double)(right_bpm_10 - left_bpm_10) / (double)(right_ticks - left_ticks);
+			double delta_ticks_at_t = (double)(ticks - left_ticks);
+			double bpm_10_at_t = (double)left_bpm_10 + slope * delta_ticks_at_t;
+			return delta_ticks_at_t * 625.0 * 2.0 / ((double)left_bpm_10 + bpm_10_at_t);
+		}
+		return 0.0;
+	}
+
+	static double extrapolateTime_ms(const Tempo& tempo, uint32_t ticks) {
+		uint32_t tempo_ticks = tempo.getPositionTicks();
+		if (ticks > tempo_ticks) {
+			int16_t tempo_bpm_10 = tempo.getBPM_10();
+			return (double)(ticks - tempo_ticks) * 625.0 / (double)tempo_bpm_10;
+		}
+		return 0.0;
+	}
+
 	bool sortTempos() {
     	if (_tempos.empty()) return false;
 
@@ -421,8 +446,14 @@ public:
 			);
 			tempo_it->setTime(cumulative_time_ms);
 		}
+
+		std::list<Tempo>::const_iterator last_tempo = std::prev(_tempos.end());
+		cumulative_time_ms += extrapolateTime_ms(*last_tempo, _length_ticks);
+		_length_time_ms = cumulative_time_ms;
+
 		return true;
 	}
+
 
 	size_t addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {
 		size_t added_mesages = 0;
@@ -448,30 +479,6 @@ public:
 			midiToProcess->sort();	// Does the final sorting given the new pins
 		}
 		return added_mesages;
-	}
-
-	static double interpolateTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
-		uint32_t left_ticks = left.getPositionTicks();
-		uint32_t right_ticks = right.getPositionTicks();
-		// Trapezoid (exclusion of `left_ticks == right_ticks`)
-		if (left_ticks < right_ticks && ticks >= left_ticks && ticks <= right_ticks) {
-			int16_t left_bpm_10 = left.getBPM_10();
-			int16_t right_bpm_10 = right.getBPM_10();
-			double slope = (double)(right_bpm_10 - left_bpm_10) / (double)(right_ticks - left_ticks);
-			double delta_ticks_at_t = (double)(ticks - left_ticks);
-			double bpm_10_at_t = (double)left_bpm_10 + slope * delta_ticks_at_t;
-			return delta_ticks_at_t * 625.0 * 2.0 / ((double)left_bpm_10 + bpm_10_at_t);
-		}
-		return 0.0;
-	}
-
-	static double extrapolateTime_ms(const Tempo& tempo, uint32_t ticks) {
-		uint32_t tempo_ticks = tempo.getPositionTicks();
-		if (ticks > tempo_ticks) {
-			int16_t tempo_bpm_10 = tempo.getBPM_10();
-			return (double)(ticks - tempo_ticks) * 625.0 / (double)tempo_bpm_10;
-		}
-		return 0.0;
 	}
 
 	bool applyTime_ms(std::list<MidiPin> *midiToProcess) const {

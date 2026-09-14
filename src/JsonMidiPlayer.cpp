@@ -758,11 +758,9 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					uint32_t ticks_offset = ticks_per_loop * i;
 					double time_ms_offset = time_ms_per_loop * i;
 					for (const MidiPin& pin : midiToProcess) {
-						uint32_t new_position_ticks = ticks_offset + pin.getPositionTicks();
-						double new_pin_time_ms = time_ms_offset + pin.getTime_ms();
 						MidiPin copy = pin;
-						copy.setPositionTicks(new_position_ticks);
-						copy.setTime_ms(new_pin_time_ms);
+						copy.addPositionTicks(ticks_offset);
+						copy.addTime_ms(time_ms_offset);
 						temp.push_back(copy);
 						play_reporting.total_generated++;
 					}

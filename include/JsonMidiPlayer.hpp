@@ -151,12 +151,16 @@ public:
 		time_ms = time_milliseconds;
 	}
 
+	void addTime_ms(double time_milliseconds) {
+		time_ms += time_milliseconds;
+	}
+
     double getTime_ms() const {
         return time_ms;
     }
 
-	void setPositionTicks(uint32_t position_ticks) {
-		_ticks = position_ticks;
+	void addPositionTicks(uint32_t position_ticks) {
+		_ticks += position_ticks;
 	}
 
     uint32_t getPositionTicks() const {

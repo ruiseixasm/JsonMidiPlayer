@@ -848,7 +848,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 							std::chrono::duration_cast<std::chrono::microseconds>(pluck_time).count()
 						);
 						double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
-						midi_pin.setDelayTime(delay_time_ms);
+						midi_pin.incrementDelayTime(delay_time_ms);
 						midiProcessed.push_back(std::move(midiToProcess.front()));  // Move the object
 						midiToProcess.pop_front();  // Remove the first element
 

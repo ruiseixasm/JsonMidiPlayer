@@ -100,7 +100,7 @@ private:
     MidiDevice * const midi_device = nullptr;
     std::vector<unsigned char> midi_message;  // Replaces midi_message[3]
     // Auxiliary variable for the final playing loop!!
-    double delay_time_ms = -1;
+    double delay_time_ms = 0.0;
 
 	// needed to recognize and already released Note !!
     size_t note_pressed_times = 1;   // BY DEFAULT THE NOTE ON IS 1 TIME PRESSED
@@ -114,7 +114,7 @@ public:
         priority(0),                    // Default to 0
         midi_device(nullptr),           // Default to nullptr
         midi_message(),                 // Default to an empty vector
-        delay_time_ms(-1),              // Default to -1
+        delay_time_ms(0.0),             // Default to 0.0
         note_pressed_times(1)           // Default to 1
     { }
 
@@ -169,8 +169,8 @@ public:
 
     void pluckTooth();
 
-    void setDelayTime(double delay_time_ms) {
-        this->delay_time_ms = delay_time_ms;
+    void incrementDelayTime(double delay_time_ms) {
+        this->delay_time_ms += delay_time_ms;
     }
 
     double getDelayTime() const {

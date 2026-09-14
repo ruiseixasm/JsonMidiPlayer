@@ -173,7 +173,7 @@ public:
 
     void pluckTooth();
 
-    void incrementDelayTime(double delay_time_ms) {
+    void addDelayTime(double delay_time_ms) {
         this->delay_time_ms += delay_time_ms;
     }
 

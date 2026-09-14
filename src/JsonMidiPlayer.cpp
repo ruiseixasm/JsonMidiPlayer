@@ -798,8 +798,8 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
 				for (int loop_i = 0; loop_i < loop; ++loop_i) {
 
+					const double loopTime_ms = lengthTime_ms * loop_i;
 					uint32_t position_ticks = 0;
-					double loopTime_ms = lengthTime_ms * loop_i;
 
 					// Loop through the list and remove elements
 					for (auto pin_it = midiPins.begin(); pin_it != midiPins.end(); ++pin_it) {

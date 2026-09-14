@@ -129,8 +129,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 		Clocking clocking;
         // Under its own scope in order to disconnect all devices before the stats reporting !
         std::vector<MidiDevice> available_midi_devices;
-        std::list<MidiPin> midiToProcess;
-        std::list<MidiPin> midiProcessed;
+        std::list<MidiPin> midiPins;
 
         //
         // Where each Available Device is collected BUT NOT connected
@@ -413,7 +412,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 												continue;   // Not a valid message, no priority given, jumps to the next one
 										}
 
-										midiToProcess.push_back(
+										midiPins.push_back(
 											MidiPin(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority)
 										);
 										play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
@@ -503,7 +502,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
 
-        if (midiToProcess.empty()) {
+        if (midiPins.empty()) {
 
             auto data_processing_finish = std::chrono::high_resolution_clock::now();
             auto pre_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
@@ -521,7 +520,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
             if (verbose) std::cout << "\tTotal validated Midi Messages (accepted): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;
             if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
-            if (verbose) std::cout << "\tTotal resultant Midi Messages (included): " << std::setw(10) << midiToProcess.size() << std::endl;
+            if (verbose) std::cout << "\tTotal resultant Midi Messages (included): " << std::setw(10) << midiPins.size() << std::endl;
 
         } else {
 
@@ -530,7 +529,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
             //
 
             // Two levels sorting criteria
-            midiToProcess.sort();
+            midiPins.sort();
 
             #ifdef DEBUGGING
             debugging_now = std::chrono::high_resolution_clock::now();
@@ -545,7 +544,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
             //
 
             // Loop through the list and remove elements
-            for (auto pin_it = midiToProcess.begin(); pin_it != midiToProcess.end(); ) {
+            for (auto pin_it = midiPins.begin(); pin_it != midiPins.end(); ) {
 
                 // Auxiliary variables
                 MidiPin &pluck_pin = *pin_it;	// Just an handy conversion
@@ -566,7 +565,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
 							last_note_on_pin->decreaseNotePressedTimes();
 							if (last_note_on_pin->getNotePressedTimes() != 0) {	// The Only configuration to release Note is 1
-								pin_it = midiToProcess.erase(pin_it);
+								pin_it = midiPins.erase(pin_it);
                         		++(play_reporting.total_redundant);  // Note Off as no Note On pair (STATS)
 								// By erasing a pin above, there is no need to increase the pin iterator
 								goto skip_to_next_pin;
@@ -592,7 +591,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 								last_note_on_pin->increaseNotePressedTimes();	// Because the remaining EXTRA note off
 								if (pin_actual_position_ticks == last_note_position_ticks) {
 									
-									pin_it = midiToProcess.erase(pin_it);	// Can't trigger the same note twice at the same time
+									pin_it = midiPins.erase(pin_it);	// Can't trigger the same note twice at the same time
 									++(play_reporting.total_redundant);	// STATS
 									// By erasing a pin above, there is no need to increase the pin iterator
 
@@ -604,7 +603,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 										pluck_pin.getDataByte(1),
 										0	// Note off has velocity 0 (Data Byte 2)
 									};
-									pin_it = midiToProcess.insert(pin_it,   // Makes a copy to the place given by pin_it
+									pin_it = midiPins.insert(pin_it,   // Makes a copy to the place given by pin_it
 										MidiPin(
 												pin_actual_position_ticks,
 												pluck_pin.getMidiDevice(),
@@ -638,7 +637,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
                             auto &last_pin_16 = dict_last[status_data_byte];
 
                             if (last_pin_16 == pluck_pin) {
-								pin_it = midiToProcess.erase(pin_it);
+								pin_it = midiPins.erase(pin_it);
                                 ++(play_reporting.total_redundant);
                             } else {
                                 last_pin_16.setDataByte(2, pluck_pin.getDataByte(2));
@@ -660,7 +659,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
                             auto &last_pin_8 = dict_last[status_byte];
 
                             if (last_pin_8 == pluck_pin) {
-								pin_it = midiToProcess.erase(pin_it);
+								pin_it = midiPins.erase(pin_it);
                                 ++(play_reporting.total_redundant);
                             } else {
                                 last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
@@ -683,7 +682,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
                             auto &last_pin_8 = dict_last[dict_key];
 
                             if (last_pin_8 == pluck_pin) {
-								pin_it = midiToProcess.erase(pin_it);
+								pin_it = midiPins.erase(pin_it);
                                 ++(play_reporting.total_redundant);
                             } else {
                                 last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
@@ -707,7 +706,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
 
 			// Position beats and ticks of last message
-			const uint32_t last_message_position_ticks = midiToProcess.back().getPositionTicks();
+			const uint32_t last_message_position_ticks = midiPins.back().getPositionTicks();
             
             for (auto &device : available_midi_devices) {
                 
@@ -728,7 +727,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
                                 0	// Note off has velocity 0 (Data Byte 2)
                             };
                             // Adds a new MidiPin as a copy to the list of pins to be processed
-                            midiToProcess.push_back( MidiPin(last_message_position_ticks, &device, midi_pin_message) );
+                            midiPins.push_back( MidiPin(last_message_position_ticks, &device, midi_pin_message) );
                             play_reporting.total_generated++;
                         }
                     }
@@ -739,34 +738,14 @@ int PlayList(const char* json_str, int loop, bool verbose) {
             //
             // Where the Clock pins are added if existing
             //
-			play_reporting.total_generated += clocking.addClockMessagesToPlay(&midiToProcess);
+			play_reporting.total_generated += clocking.addClockMessagesToPlay(&midiPins);
 
 
             //
             // Where the time_ms is set on each pin
             //
 
-			bool updated_tempo = clocking.applyTime_ms(&midiToProcess);
-
-			// if (loop > 1) {	// Needs to be repeated
-
-			// 	double ticks_per_loop = clocking.getLengthTicks();
-			// 	double time_ms_per_loop = clocking.getLengthTime_ms();
-
-			// 	std::list<MidiPin> temp;
-			// 	for (int i = 1; i < loop; ++i) {
-			// 		uint32_t ticks_offset = ticks_per_loop * i;
-			// 		double time_ms_offset = time_ms_per_loop * i;
-			// 		for (const MidiPin& pin : midiToProcess) {
-			// 			MidiPin copy = pin;
-			// 			copy.addPositionTicks(ticks_offset);
-			// 			copy.addTime_ms(time_ms_offset);
-			// 			temp.push_back(copy);
-			// 			play_reporting.total_generated++;
-			// 		}
-			// 	}
-			// 	midiToProcess.splice(midiToProcess.end(), temp);
-			// }
+			bool updated_tempo = clocking.applyTime_ms(&midiPins);
 
             #ifdef DEBUGGING
             debugging_now = std::chrono::high_resolution_clock::now();
@@ -792,7 +771,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
             if (verbose) std::cout << "\tTotal validated Midi Messages (accepted): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;
             if (verbose) std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
-            if (verbose) std::cout << "\tTotal resultant Midi Messages (included): " << std::setw(10) << midiToProcess.size() << std::endl;
+            if (verbose) std::cout << "\tTotal resultant Midi Messages (included): " << std::setw(10) << midiPins.size() << std::endl;
 
             //
             // Where the each midi pin is triggered
@@ -812,7 +791,6 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					}
 				}
 
-
 				auto playing_start = std::chrono::high_resolution_clock::now();
 				// Play as loops
 				uint32_t lengthTicks = clocking.getLengthTicks();
@@ -824,7 +802,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					double loopTime_ms = lengthTime_ms * loop_i;
 
 					// Loop through the list and remove elements
-					for (auto pin_it = midiToProcess.begin(); pin_it != midiToProcess.end(); ++pin_it) {
+					for (auto pin_it = midiPins.begin(); pin_it != midiPins.end(); ++pin_it) {
 
 						// Auxiliary variables
 						uint32_t pin_ticks = pin_it->getPositionTicks();
@@ -870,66 +848,6 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 						highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
 					}
 				}
-
-				// if (loop > 0) {
-
-				// 	//
-				// 	// Where the Midi messages are sent to each Device
-				// 	//
-
-				// 	uint32_t position_ticks = 0;
-				// 	auto playing_start = std::chrono::high_resolution_clock::now();
-
-				// 	while (!midiToProcess.empty()) {
-						
-				// 		MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
-				// 		uint32_t pin_ticks = midi_pin.getPositionTicks();
-
-				// 		// Pin position time
-				// 		long long next_pin_time_us = std::round((midi_pin.getTime_ms() + play_reporting.total_drag) * 1000);
-				// 		if (pin_ticks > position_ticks) {
-
-				// 			auto playing_now = std::chrono::high_resolution_clock::now();
-				// 			auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
-				// 			long long elapsed_time_us = elapsed_time.count();
-				// 			long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
-
-				// 			highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
-				// 			position_ticks = pin_ticks;
-				// 		}
-
-				// 		auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
-				// 		midi_pin.pluckTooth();  // as soon as possible! <----- Midi Send
-
-				// 		auto pluck_time_us = static_cast<double>(
-				// 			std::chrono::duration_cast<std::chrono::microseconds>(pluck_time).count()
-				// 		);
-				// 		double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
-				// 		midi_pin.addDelayTime(delay_time_ms);
-				// 		midiProcessed.push_back(std::move(midiToProcess.front()));  // Move the object
-				// 		midiToProcess.pop_front();  // Remove the first element
-
-				// 		// Process drag if existent
-				// 		if (delay_time_ms > DRAG_DURATION_MS) {
-				// 			play_reporting.total_drag += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
-				// 		}
-				// 	}
-
-				// 	uint32_t finish_ticks = clocking.getLengthTicks() * loop;
-
-				// 	if (finish_ticks > position_ticks) {
-
-				// 		// Finish position time
-				// 		long long finish_time_us = std::round((clocking.getLengthTime_ms() * loop + play_reporting.total_drag) * 1000);
-						
-				// 		auto playing_now = std::chrono::high_resolution_clock::now();
-				// 		auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
-				// 		long long elapsed_time_us = elapsed_time.count();
-				// 		long long sleep_time_us = finish_time_us > elapsed_time_us ? finish_time_us - elapsed_time_us : 0;
-
-				// 		highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
-				// 	}
-				// }
 			}
 
             #ifdef DEBUGGING
@@ -944,24 +862,24 @@ int PlayList(const char* json_str, int loop, bool verbose) {
             // Where the final Statistics are calculated
             //
 
-            if (!midiProcessed.empty()) {
+            if (!midiPins.empty()) {
 
-                for (auto &midi_pin : midiProcessed) {
+                for (auto &midi_pin : midiPins) {
                     auto delay_time_ms = midi_pin.getDelayTime();
                     play_reporting.total_delay += delay_time_ms;
                     play_reporting.maximum_delay = std::max(play_reporting.maximum_delay, delay_time_ms);
                 }
 
                 play_reporting.minimum_delay = play_reporting.maximum_delay;
-                play_reporting.average_delay = play_reporting.total_delay / midiProcessed.size();
+                play_reporting.average_delay = play_reporting.total_delay / midiPins.size();
 
-                for (auto &midi_pin : midiProcessed) {
+                for (auto &midi_pin : midiPins) {
                     auto delay_time_ms = midi_pin.getDelayTime();
                     play_reporting.minimum_delay = std::min(play_reporting.minimum_delay, delay_time_ms);
                     play_reporting.sd_delay += std::pow(delay_time_ms - play_reporting.average_delay, 2);
                 }
 
-                play_reporting.sd_delay /= midiProcessed.size();
+                play_reporting.sd_delay /= midiPins.size();
                 play_reporting.sd_delay = std::sqrt(play_reporting.sd_delay);
             }
         }

@@ -151,10 +151,6 @@ public:
 		time_ms = time_milliseconds;
 	}
 
-	void addTime_ms(double time_milliseconds) {
-		time_ms += time_milliseconds;
-	}
-
     double getTime_ms() const {
         return time_ms;
     }

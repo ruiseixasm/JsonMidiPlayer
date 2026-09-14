@@ -69,6 +69,21 @@ It is possible to run this program directly from the [JsonMidiCreator](https://g
 ## On Linux
 1. Create the directory `lib` inside the cloned [JsonMidiCreator](https://github.com/ruiseixasm/JsonMidiCreator) repository
 2. Copy the file `libJsonMidiPlayer_ctypes.so` inside the directory `./build/lib/` into the directory created above
+# Help command
+With the help command it is possible to know the diferent parameters to run the program.
+```sh
+PS C:\Users\rui\Documents\GitHub\JsonMidiPlayer> .\build\Release\JsonMidiPlayer.exe -h                        
+Usage: C:\Users\rui\Documents\GitHub\JsonMidiPlayer\build\Release\JsonMidiPlayer.exe [options] input_file_1.json [input_file_2.json]
+Options:
+  -h, --help       Show this help message and exit
+  -l, --loop       Loops the playlist the amount of times with 1 as the default
+  -v, --verbose    Enable verbose mode
+  -V, --version    Prints the current version number
+
+More info here: https://github.com/ruiseixasm/JsonMidiPlayer
+
+PS C:\Users\rui\Documents\GitHub\JsonMidiPlayer> 
+```
 # Midi Drag and Delays
 The program is quite simple and light, it just loops a list so no much Drag or Delay shall be expected to happen.
 Drag is the amount of time the entire playing got out of sync while Delay is just the amount of time each single midi message played out of tempo.

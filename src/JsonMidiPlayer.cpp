@@ -791,10 +791,10 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					}
 				}
 
-				auto playing_start = std::chrono::high_resolution_clock::now();
 				// Play as loops
-				uint32_t lengthTicks = clocking.getLengthTicks();
-				double lengthTime_ms = clocking.getLengthTime_ms();
+				const uint32_t lengthTicks = clocking.getLengthTicks();
+				const double lengthTime_ms = clocking.getLengthTime_ms();
+				const auto playing_start = std::chrono::high_resolution_clock::now();
 
 				for (int loop_i = 0; loop_i < loop; ++loop_i) {
 
@@ -838,7 +838,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					if (lengthTicks > position_ticks) {
 
 						// Finish position time
-						long long finish_time_us = std::round((loopTime_ms + clocking.getLengthTime_ms() + play_reporting.total_drag) * 1000);
+						long long finish_time_us = std::round((loopTime_ms + lengthTime_ms + play_reporting.total_drag) * 1000);
 						
 						auto playing_now = std::chrono::high_resolution_clock::now();
 						auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);

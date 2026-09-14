@@ -748,25 +748,25 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 
 			bool updated_tempo = clocking.applyTime_ms(&midiToProcess);
 
-			if (loop > 1) {	// Needs to be repeated
+			// if (loop > 1) {	// Needs to be repeated
 
-				double ticks_per_loop = clocking.getLengthTicks();
-				double time_ms_per_loop = clocking.getLengthTime_ms();
+			// 	double ticks_per_loop = clocking.getLengthTicks();
+			// 	double time_ms_per_loop = clocking.getLengthTime_ms();
 
-				std::list<MidiPin> temp;
-				for (int i = 1; i < loop; ++i) {
-					uint32_t ticks_offset = ticks_per_loop * i;
-					double time_ms_offset = time_ms_per_loop * i;
-					for (const MidiPin& pin : midiToProcess) {
-						MidiPin copy = pin;
-						copy.addPositionTicks(ticks_offset);
-						copy.addTime_ms(time_ms_offset);
-						temp.push_back(copy);
-						play_reporting.total_generated++;
-					}
-				}
-				midiToProcess.splice(midiToProcess.end(), temp);
-			}
+			// 	std::list<MidiPin> temp;
+			// 	for (int i = 1; i < loop; ++i) {
+			// 		uint32_t ticks_offset = ticks_per_loop * i;
+			// 		double time_ms_offset = time_ms_per_loop * i;
+			// 		for (const MidiPin& pin : midiToProcess) {
+			// 			MidiPin copy = pin;
+			// 			copy.addPositionTicks(ticks_offset);
+			// 			copy.addTime_ms(time_ms_offset);
+			// 			temp.push_back(copy);
+			// 			play_reporting.total_generated++;
+			// 		}
+			// 	}
+			// 	midiToProcess.splice(midiToProcess.end(), temp);
+			// }
 
             #ifdef DEBUGGING
             debugging_now = std::chrono::high_resolution_clock::now();
@@ -812,22 +812,25 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 					}
 				}
 
-				if (loop > 0) {
 
-					//
-					// Where the Midi messages are sent to each Device
-					//
+				auto playing_start = std::chrono::high_resolution_clock::now();
+				// Play as loops
+				uint32_t lengthTicks = clocking.getLengthTicks();
+				double lengthTime_ms = clocking.getLengthTime_ms();
+
+				for (int loop_i = 0; loop_i < loop; ++loop_i) {
 
 					uint32_t position_ticks = 0;
-					auto playing_start = std::chrono::high_resolution_clock::now();
+					double loopTime_ms = lengthTime_ms * loop_i;
 
-					while (!midiToProcess.empty()) {
-						
-						MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
-						uint32_t pin_ticks = midi_pin.getPositionTicks();
+					// Loop through the list and remove elements
+					for (auto pin_it = midiToProcess.begin(); pin_it != midiToProcess.end(); ++pin_it) {
+
+						// Auxiliary variables
+						uint32_t pin_ticks = pin_it->getPositionTicks();
 
 						// Pin position time
-						long long next_pin_time_us = std::round((midi_pin.getTime_ms() + play_reporting.total_drag) * 1000);
+						long long next_pin_time_us = std::round((loopTime_ms + pin_it->getTime_ms() + play_reporting.total_drag) * 1000);
 						if (pin_ticks > position_ticks) {
 
 							auto playing_now = std::chrono::high_resolution_clock::now();
@@ -840,13 +843,13 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 						}
 
 						auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
-						midi_pin.pluckTooth();  // as soon as possible! <----- Midi Send
+						pin_it->pluckTooth();  // as soon as possible! <----- Midi Send
 
 						auto pluck_time_us = static_cast<double>(
 							std::chrono::duration_cast<std::chrono::microseconds>(pluck_time).count()
 						);
 						double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
-						midi_pin.addDelayTime(delay_time_ms);
+						pin_it->addDelayTime(delay_time_ms);
 						midiProcessed.push_back(std::move(midiToProcess.front()));  // Move the object
 						midiToProcess.pop_front();  // Remove the first element
 
@@ -856,12 +859,10 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 						}
 					}
 
-					uint32_t finish_ticks = clocking.getLengthTicks() * loop;
-
-					if (finish_ticks > position_ticks) {
+					if (lengthTicks > position_ticks) {
 
 						// Finish position time
-						long long finish_time_us = std::round((clocking.getLengthTime_ms() * loop + play_reporting.total_drag) * 1000);
+						long long finish_time_us = std::round((loopTime_ms + clocking.getLengthTime_ms() + play_reporting.total_drag) * 1000);
 						
 						auto playing_now = std::chrono::high_resolution_clock::now();
 						auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
@@ -871,6 +872,66 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 						highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
 					}
 				}
+
+				// if (loop > 0) {
+
+				// 	//
+				// 	// Where the Midi messages are sent to each Device
+				// 	//
+
+				// 	uint32_t position_ticks = 0;
+				// 	auto playing_start = std::chrono::high_resolution_clock::now();
+
+				// 	while (!midiToProcess.empty()) {
+						
+				// 		MidiPin &midi_pin = midiToProcess.front();  // Pin MIDI message
+				// 		uint32_t pin_ticks = midi_pin.getPositionTicks();
+
+				// 		// Pin position time
+				// 		long long next_pin_time_us = std::round((midi_pin.getTime_ms() + play_reporting.total_drag) * 1000);
+				// 		if (pin_ticks > position_ticks) {
+
+				// 			auto playing_now = std::chrono::high_resolution_clock::now();
+				// 			auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
+				// 			long long elapsed_time_us = elapsed_time.count();
+				// 			long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
+
+				// 			highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
+				// 			position_ticks = pin_ticks;
+				// 		}
+
+				// 		auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
+				// 		midi_pin.pluckTooth();  // as soon as possible! <----- Midi Send
+
+				// 		auto pluck_time_us = static_cast<double>(
+				// 			std::chrono::duration_cast<std::chrono::microseconds>(pluck_time).count()
+				// 		);
+				// 		double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
+				// 		midi_pin.addDelayTime(delay_time_ms);
+				// 		midiProcessed.push_back(std::move(midiToProcess.front()));  // Move the object
+				// 		midiToProcess.pop_front();  // Remove the first element
+
+				// 		// Process drag if existent
+				// 		if (delay_time_ms > DRAG_DURATION_MS) {
+				// 			play_reporting.total_drag += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
+				// 		}
+				// 	}
+
+				// 	uint32_t finish_ticks = clocking.getLengthTicks() * loop;
+
+				// 	if (finish_ticks > position_ticks) {
+
+				// 		// Finish position time
+				// 		long long finish_time_us = std::round((clocking.getLengthTime_ms() * loop + play_reporting.total_drag) * 1000);
+						
+				// 		auto playing_now = std::chrono::high_resolution_clock::now();
+				// 		auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
+				// 		long long elapsed_time_us = elapsed_time.count();
+				// 		long long sleep_time_us = finish_time_us > elapsed_time_us ? finish_time_us - elapsed_time_us : 0;
+
+				// 		highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
+				// 	}
+				// }
 			}
 
             #ifdef DEBUGGING

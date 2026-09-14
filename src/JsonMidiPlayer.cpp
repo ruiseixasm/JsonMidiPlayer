@@ -816,7 +816,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 							long long elapsed_time_us = elapsed_time.count();
 							long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
 
-							highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
+							if (sleep_time_us > 0) highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
 							position_ticks = pin_ticks;
 						}
 
@@ -845,7 +845,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 						long long elapsed_time_us = elapsed_time.count();
 						long long sleep_time_us = finish_time_us > elapsed_time_us ? finish_time_us - elapsed_time_us : 0;
 
-						highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
+						if (sleep_time_us > 0) highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
 					}
 				}
 			}

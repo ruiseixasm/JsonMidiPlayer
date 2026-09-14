@@ -28,37 +28,37 @@ Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) o
 1. Create the folder `build` inside the repository folder
 2. Open the command line inside the folder created above by typing `cmd` in the windows folder path
 3. While in the `build` folder type these commands, one at a time:
-    ```
+    ```sh
     cmake --no-warn-unused-cli -S .. -B . -T host=x64 -A x64
     ```
-    ```
+    ```sh
     cmake --build . --config Release --target ALL_BUILD --
     ```
 ## On Linux
 1. Create the directory `build` inside the repository directory
 2. Go to the directory created above and type the following commands, one at a time:
-    ```
+    ```sh
     cmake -DCMAKE_BUILD_TYPE:STRING=Release --no-warn-unused-cli -S.. -B.
     ```
-    ```
+    ```sh
     cmake --build . --config Release --target all --
     ```
 # Testing the build
 ## On Windows
 1. Go to the root project folder and open the command line by typing `cmd` in the windows folder path
 2. Type the following commands:
+    ```sh
+    .\build\Release\JsonMidiPlayer.exe -v .\three_notes.json
     ```
-    .\build\Release\JsonMidiPlayer.exe -v .\windows_exported_lead_sheet_melody_jmp.json
-    ```
-    ```
+    ```sh
     .\build\Release\JsonMidiPlayer.exe -Version
     ```
 ## On Linux
 1. Go to the root project directory and type the following commands:
+    ```sh
+    ./build/JsonMidiPlayer.out -v ./three_notes.json
     ```
-    ./build/JsonMidiPlayer.out -v ./linux_exported_lead_sheet_melody_jmp.json
-    ```
-    ```
+    ```sh
     ./build/JsonMidiPlayer.out -Version
     ```
 # Python library for JsonMidiCreator

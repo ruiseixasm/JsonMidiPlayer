@@ -850,8 +850,6 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 						);
 						double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
 						pin_it->addDelayTime(delay_time_ms);
-						midiProcessed.push_back(std::move(midiToProcess.front()));  // Move the object
-						midiToProcess.pop_front();  // Remove the first element
 
 						// Process drag if existent
 						if (delay_time_ms > DRAG_DURATION_MS) {

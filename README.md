@@ -75,6 +75,7 @@ Drag is the amount of time the entire playing got out of sync while Delay is jus
 ## Example of reported Drag and Delay
 Despite some delay, that didn't mean any drag in the example bellow.
 ```
+JsonMidiPlayer version: 7.1.0
 Available output Midi devices:
         Midi device #0: Microsoft GS Wavetable Synth 0
         Midi device #1: Studio 68c MIDI Out 1
@@ -84,12 +85,13 @@ Available output Midi devices:
 Devices connected:       Blofeld 2
 Data stats reporting:
         Midi Messages processing time (ms):                1
+        Midi Ports opening time (ms):                    377
         Total generated Midi Messages (included):        482
         Total validated Midi Messages (accepted):         30
         Total incorrect Midi Messages (excluded):          0
         Total redundant Midi Messages (excluded):          0
         Total resultant Midi Messages (included):        512
-The data will now be played during 0 minutes and 9 seconds...
+The playlist will now be played in 1 loop for 0 minutes and 9 seconds...
 Devices disconnected:    Blofeld 2
 Midi stats reporting:
         Total drag (ms):                                   0.000 \

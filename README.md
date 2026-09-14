@@ -85,7 +85,7 @@ Available output Midi devices:
 Devices connected:       Blofeld 2
 Data stats reporting:
         Midi Messages processing time (ms):                1
-        Midi Ports opening time (ms):                    377
+        Midi Ports opening time (ms):                      1
         Total generated Midi Messages (included):        482
         Total validated Midi Messages (accepted):         30
         Total incorrect Midi Messages (excluded):          0

@@ -8,7 +8,7 @@
         ],
         "devices": [
             "VMPK",
-            "loop"
+            "loopMIDI"
         ],
         "tempos": [
             {
@@ -73,9 +73,8 @@
                 1
             ],
             "midi_message": {
-                "status_byte": 176,
-                "data_byte_1": 0,
-                "data_byte_2": 0
+                "status_byte": 192,
+                "data_byte": 26
             }
         },
         {
@@ -84,8 +83,9 @@
                 1
             ],
             "midi_message": {
-                "status_byte": 192,
-                "data_byte": 26
+                "status_byte": 176,
+                "data_byte_1": 0,
+                "data_byte_2": 1
             }
         },
         {
@@ -156,13 +156,12 @@
         },
         {
             "position_beats": [
-                0,
+                7,
                 1
             ],
             "midi_message": {
-                "status_byte": 176,
-                "data_byte_1": 0,
-                "data_byte_2": 0
+                "status_byte": 192,
+                "data_byte": 26
             }
         },
         {
@@ -171,8 +170,9 @@
                 1
             ],
             "midi_message": {
-                "status_byte": 192,
-                "data_byte": 26
+                "status_byte": 176,
+                "data_byte_1": 0,
+                "data_byte_2": 1
             }
         },
         {
@@ -243,13 +243,12 @@
         },
         {
             "position_beats": [
-                0,
+                14,
                 1
             ],
             "midi_message": {
-                "status_byte": 176,
-                "data_byte_1": 0,
-                "data_byte_2": 0
+                "status_byte": 192,
+                "data_byte": 26
             }
         },
         {
@@ -258,8 +257,9 @@
                 1
             ],
             "midi_message": {
-                "status_byte": 192,
-                "data_byte": 26
+                "status_byte": 176,
+                "data_byte_1": 0,
+                "data_byte_2": 1
             }
         },
         {
@@ -330,13 +330,12 @@
         },
         {
             "position_beats": [
-                0,
+                21,
                 1
             ],
             "midi_message": {
-                "status_byte": 176,
-                "data_byte_1": 0,
-                "data_byte_2": 0
+                "status_byte": 192,
+                "data_byte": 26
             }
         },
         {
@@ -345,8 +344,9 @@
                 1
             ],
             "midi_message": {
-                "status_byte": 192,
-                "data_byte": 26
+                "status_byte": 176,
+                "data_byte_1": 0,
+                "data_byte_2": 1
             }
         },
         {

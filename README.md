@@ -90,7 +90,7 @@ Drag is the amount of time the entire playing got out of sync while Delay is jus
 ## Example of reported Drag and Delay
 Despite some delay, that didn't mean any drag in the example bellow.
 ```
-JsonMidiPlayer version: 7.1.0
+JsonMidiPlayer version: 7.1.1
 Available output Midi devices:
         Midi device #0: Microsoft GS Wavetable Synth 0
         Midi device #1: Studio 68c MIDI Out 1

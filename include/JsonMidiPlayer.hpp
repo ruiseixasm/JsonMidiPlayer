@@ -45,7 +45,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 // #define DEBUGGING true
 #define FILE_TYPE "Json Midi Player"
 #define FILE_URL  "https://github.com/ruiseixasm/JsonMidiPlayer"
-#define VERSION   "7.1.0"
+#define VERSION   "7.1.1"
 #define DRAG_DURATION_MS (1000.0/((120/60)*24))
 
 
@@ -416,12 +416,6 @@ public:
 			);
 			tempo_it->setTime(cumulative_time_ms);
 		}
-
-		std::list<Tempo>::const_iterator last_tempo = std::prev(_tempos.end());
-		cumulative_time_ms += extrapolateTime_ms(*last_tempo, _length_ticks);
-		_length_time_ms = cumulative_time_ms;
-
-		// Only applicable for repeating loops
 
 		// Adds the cumulative Time
 		double tempo_time_ms = 0.0;	// The first one is always 0.0

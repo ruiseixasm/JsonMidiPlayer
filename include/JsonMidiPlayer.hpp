@@ -95,7 +95,7 @@ class MidiPin {
 
 private:
     double time_ms = 0.0;   // Set afterwards based on the _position_beat
-    uint32_t _ticks = 0;
+    const uint32_t _ticks = 0;
     const unsigned char priority;
     MidiDevice * const midi_device = nullptr;
     std::vector<unsigned char> midi_message;  // Replaces midi_message[3]
@@ -158,10 +158,6 @@ public:
     double getTime_ms() const {
         return time_ms;
     }
-
-	void addPositionTicks(uint32_t position_ticks) {
-		_ticks += position_ticks;
-	}
 
     uint32_t getPositionTicks() const {
         return _ticks;

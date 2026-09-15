@@ -466,13 +466,21 @@ public:
 
 		for (auto tempo_it = std::next(_tempos.begin()); tempo_it != _tempos.end(); ++tempo_it) {
 			auto previous_it = std::prev(tempo_it);
-			if (tempo_it->getBPM_10() == previous_it->getBPM_10()) {
-				tempo_it->setTime_ms(
-					extrapolateAbsoluteTime_ms(*previous_it, tempo_it->getPositionTicks())
-				);
+			uint32_t previous_ticks = previous_it->getPositionTicks();
+			uint32_t tempo_ticks = tempo_it->getPositionTicks();
+			if (tempo_ticks > previous_ticks) {
+				if (tempo_it->getBPM_10() == previous_it->getBPM_10()) {
+					tempo_it->setTime_ms(
+						extrapolateAbsoluteTime_ms(*previous_it, tempo_ticks)
+					);
+				} else {
+					tempo_it->setTime_ms(
+						interpolateAbsoluteTime_ms(*previous_it, *tempo_it, tempo_ticks)
+					);
+				}
 			} else {
 				tempo_it->setTime_ms(
-					interpolateAbsoluteTime_ms(*previous_it, *tempo_it, tempo_it->getPositionTicks())
+					previous_it->getTime_ms()
 				);
 			}
 		}

@@ -452,10 +452,6 @@ public:
 			);
 		}
 
-		// Adds the cumulative Time
-		double tempo_time_ms = 0.0;	// The first one is always 0.0
-		double pin_time_ms = 0.0;
-				
 		// `const_iterator` because this is a `const` method
 		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();
 		std::list<Tempo>::const_iterator right_tempo = std::next(left_tempo);
@@ -475,12 +471,11 @@ public:
 				// Only if can't be found it updates the left_tempo
 				left_tempo = tempo_it;
 				right_tempo = std::next(left_tempo);
-			}		
-			tempo_time_ms = left_tempo->getTime_ms();
-			if (right_tempo == _tempos.end()) {
+			}
+			if (right_tempo == _tempos.end() || left_tempo->getBPM_10() == right_tempo->getBPM_10()) {
 				_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, _length_ticks);
 			} else {
-				_length_time_ms = projectAbsoluteTime_ms(*left_tempo, *right_tempo);
+				_length_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *right_tempo, _length_ticks);
 			}
 		}
 		return true;

@@ -416,23 +416,30 @@ public:
 		return left_time_ms;
 	}
 
+
 	static double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
-		uint32_t left_ticks  = left.getPositionTicks();
-		uint32_t right_ticks = right.getPositionTicks();
-		double left_time_ms  = left.getTime_ms();
+		uint32_t left_ticks  = left.getPositionTicks();   // tick position of the left marker
+		uint32_t right_ticks = right.getPositionTicks();  // tick position of the right marker
+		double left_time_ms  = left.getTime_ms();         // absolute time (ms) at the left marker
 		if (left_ticks < right_ticks && ticks > left_ticks && ticks <= right_ticks) {
-			double L = (double)left.getBPM_10();
-			double R = (double)right.getBPM_10();
-			uint32_t N = right_ticks - left_ticks;
-			double t = left_time_ms;
+			double L = (double)left.getBPM_10();          // L = Left BPM, in bpm_10 units (BPM × 10)
+			double R = (double)right.getBPM_10();         // R = Right BPM, in bpm_10 units (BPM × 10)
+			uint32_t N = right_ticks - left_ticks;        // N = number of ticks in the segment
+			double t = left_time_ms;                      // t = accumulated time (ms), starts at the left marker
+			// Walk tick by tick from the left marker up to the requested tick.
+			// k = tick index within the segment, from 1 to (ticks - left_ticks)
 			for (uint32_t k = 1; k <= ticks - left_ticks; ++k) {
+				// bpm = BPM at tick k, linear ramp between L and R over N ticks
 				double bpm = L + (R - L) * (double)k / (double)N;
+				// Add the duration of this single tick, in milliseconds
+				// (625 comes from: 60000 ms/min ÷ 960 ticks/beat ÷ 10 for the bpm_10 scale)
 				t += 625.0 / bpm;
 			}
-			return t;
+			return t;                                     // absolute time (ms) at the requested tick
 		}
-		return left_time_ms;
+		return left_time_ms;                              // outside the segment: fall back to the left marker's time
 	}
+
 
 	bool sortTempos() {
     	if (_tempos.empty()) return false;

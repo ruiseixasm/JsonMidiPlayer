@@ -311,10 +311,6 @@ public:
     Tempo(int16_t bpm_10, uint32_t position_ticks)
         : _bpm_10(bpm_10), _ticks(position_ticks) {}
 
-	 
-	double getTimeFromTicks(uint32_t position_ticks) const {
-		return (double)position_ticks * 625 / _bpm_10;
-	}
 
     int16_t getBPM_10() const {
         return _bpm_10;

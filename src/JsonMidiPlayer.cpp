@@ -734,7 +734,11 @@ int PlayList(const char* json_str, int loop, bool verbose) {
             //
             // Where the Clock pins are added if existing
             //
-			play_reporting.total_generated += clocking.addClockMessagesToPlay(&midiPins);
+			size_t total_clock_messages = clocking.addClockMessagesToPlay(&midiPins);
+			if (total_clock_messages > 0) {
+				play_reporting.total_generated += total_clock_messages;
+				midiPins.sort();
+			}
 
 
             //

@@ -7,7 +7,7 @@
             1
         ],
         "devices": [
-            "VMPK",
+            "FLUID",
             "loopMIDI"
         ],
         "tempos": [
@@ -19,9 +19,16 @@
                 ]
             },
             {
+                "bpm_10": 1000,
+                "position_beats": [
+                    14,
+                    1
+                ]
+            },
+            {
                 "bpm_10": 2000,
                 "position_beats": [
-                    28,
+                    14,
                     1
                 ]
             }

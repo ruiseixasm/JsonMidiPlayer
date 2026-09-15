@@ -320,7 +320,7 @@ public:
         return _ticks;
     }
 
-	void setTime(double time_milliseconds) {
+	void setTime_ms(double time_milliseconds) {
 		time_ms = time_milliseconds;
 	}
 
@@ -447,8 +447,7 @@ public:
 
 		for (auto tempo_it = std::next(_tempos.begin()); tempo_it != _tempos.end(); ++tempo_it) {
 			auto previous_it = std::prev(tempo_it);
-			uint32_t position_ticks = tempo_it->getPositionTicks();
-			tempo_it->setTime(
+			tempo_it->setTime_ms(
 				projectAbsoluteTime_ms(*previous_it, *tempo_it)
 			);
 		}

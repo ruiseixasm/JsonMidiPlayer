@@ -406,7 +406,6 @@ public:
 	static double projectAbsoluteTime_ms(const Tempo& left, const Tempo& right) {
 		uint32_t left_ticks = left.getPositionTicks();
 		uint32_t right_ticks = right.getPositionTicks();
-		// Trapezoid (exclusion of `left_ticks == right_ticks`)
 		double left_time_ms = left.getTime_ms();
 		if (right_ticks > left_ticks) {
 			int16_t left_bpm_10 = left.getBPM_10();
@@ -425,6 +424,7 @@ public:
 		double left_time_ms = left.getTime_ms();
 		if (left_ticks < right_ticks && ticks > left_ticks && ticks <= right_ticks) {
 			double right_time_ms = right.getTime_ms();
+			// Time ms allows a linear projection instad of BPM
 			double slope = (double)(right_time_ms - left_time_ms) / (double)(right_ticks - left_ticks);
 			double delta_ticks_at_t = (double)(ticks - left_ticks);
 			return left_time_ms + slope * delta_ticks_at_t;
@@ -506,17 +506,13 @@ public:
 					pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_ticks);
 				} else {
 					// Picks the right left tempo
-					for (auto tempo_it = right_tempo; tempo_it != _tempos.end(); ++tempo_it) {
+					for (auto tempo_it = right_tempo; ; ++tempo_it) {
 						
-						uint32_t tempo_ticks = tempo_it->getPositionTicks();
-						if (tempo_ticks > pin_ticks) {	// It's the pin that one needs to keep up
+						if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > pin_ticks) {	// It's the pin that one needs to keep up
 							right_tempo = tempo_it;
 							left_tempo = std::prev(tempo_it);
 							break;
 						}
-						// Only if can't be found it updates the left_tempo
-						left_tempo = tempo_it;
-						right_tempo = std::next(left_tempo);
 					}
 					if (right_tempo == _tempos.end() || left_tempo->getBPM_10() == right_tempo->getBPM_10()) {
 						pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_ticks);

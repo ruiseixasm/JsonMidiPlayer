@@ -441,7 +441,21 @@ public:
 	}
 
 
-	bool sortTempos() {
+	std::list<Tempo>::const_iterator pickLeftTempo_it(
+			std::list<Tempo>::const_iterator left_tempo_it,
+			uint32_t at_position_ticks
+		) const {
+
+		// Picks the left tempo iterator
+		for (auto tempo_it = std::next(left_tempo_it); ; ++tempo_it) {
+			if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > at_position_ticks) {	// It's the pin that one needs to keep up
+				return std::prev(tempo_it);
+			}
+		}
+		return left_tempo_it;
+	}
+
+	bool applyTime_ms(std::list<MidiPin> *midiToProcess) {
     	if (_tempos.empty()) return false;	// Failsafe
 
 		_tempos.sort();	// Gurantees the tempos are sorted by ticks first
@@ -466,26 +480,6 @@ public:
 				);
 			}
 		}
-		return true;
-	}
-
-
-	std::list<Tempo>::const_iterator pickLeftTempo_it(
-			std::list<Tempo>::const_iterator left_tempo_it,
-			uint32_t at_position_ticks
-		) const {
-
-		// Picks the left tempo iterator
-		for (auto tempo_it = std::next(left_tempo_it); ; ++tempo_it) {
-			if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > at_position_ticks) {	// It's the pin that one needs to keep up
-				return std::prev(tempo_it);
-			}
-		}
-		return left_tempo_it;
-	}
-
-	bool applyTime_ms(std::list<MidiPin> *midiToProcess) {
-    	if (_tempos.empty()) return false;	// Failsafe
 
 		// To be compatible with the `pickLeftTempo_it` method
 		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();

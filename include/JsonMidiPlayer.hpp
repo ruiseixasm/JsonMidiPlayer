@@ -482,7 +482,7 @@ public:
 		}
 
 		// To be compatible with the `pickLeftTempo_it` method
-		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();
+		std::list<Tempo>::const_iterator left_tempo_it = _tempos.begin();
 		// Adds the cumulative Time
 		uint32_t previous_pin_position_ticks = 0;
 		double pin_time_ms = 0.0;	// The tick 0 one is by definition at 0.0
@@ -498,11 +498,11 @@ public:
 			// Updates the pin_time_ms if needed
 			if (pin_ticks > previous_pin_position_ticks) {
 				// Picks the right left tempo
-				left_tempo = pickLeftTempo_it(left_tempo, pin_ticks);
-				if (std::next(left_tempo) == _tempos.end() || left_tempo->getBPM_10() == std::next(left_tempo)->getBPM_10()) {
-					pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_ticks);
+				left_tempo_it = pickLeftTempo_it(left_tempo_it, pin_ticks);
+				if (std::next(left_tempo_it) == _tempos.end() || left_tempo_it->getBPM_10() == std::next(left_tempo_it)->getBPM_10()) {
+					pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo_it, pin_ticks);
 				} else {
-					pin_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *std::next(left_tempo), pin_ticks);
+					pin_time_ms = interpolateAbsoluteTime_ms(*left_tempo_it, *std::next(left_tempo_it), pin_ticks);
 				}
 				previous_pin_position_ticks = pin_ticks;
 			}
@@ -514,11 +514,11 @@ public:
 			_length_time_ms = pin_time_ms;
 		} else {
 			// Picks the right left tempo
-			left_tempo = pickLeftTempo_it(left_tempo, _length_ticks);
-			if (std::next(left_tempo) == _tempos.end() || left_tempo->getBPM_10() == std::next(left_tempo)->getBPM_10()) {
-				_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, _length_ticks);
+			left_tempo_it = pickLeftTempo_it(left_tempo_it, _length_ticks);
+			if (std::next(left_tempo_it) == _tempos.end() || left_tempo_it->getBPM_10() == std::next(left_tempo_it)->getBPM_10()) {
+				_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo_it, _length_ticks);
 			} else {
-				_length_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *std::next(left_tempo), _length_ticks);
+				_length_time_ms = interpolateAbsoluteTime_ms(*left_tempo_it, *std::next(left_tempo_it), _length_ticks);
 			}
 		}
 		return true;

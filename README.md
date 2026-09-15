@@ -89,7 +89,7 @@ The program is quite simple and light, it just loops a list so no much Drag or D
 Drag is the amount of time the entire playing got out of sync while Delay is just the amount of time each single midi message played out of tempo.
 ## Example of reported Drag and Delay
 Despite some delay, that didn't mean any drag in the example bellow.
-```sh
+```
 PS C:\Users\rui\Documents\GitHub\JsonMidiPlayer> .\build\Release\JsonMidiPlayer.exe -v -l 2 .\three_notes.json
 JsonMidiPlayer version: 7.2.0
 Available output Midi devices:

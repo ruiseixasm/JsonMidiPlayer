@@ -410,10 +410,8 @@ public:
 		if (right_ticks > left_ticks) {
 			int16_t left_bpm_10 = left.getBPM_10();
 			int16_t right_bpm_10 = right.getBPM_10();
-			double slope = (double)(right_bpm_10 - left_bpm_10) / (double)(right_ticks - left_ticks);
-			double delta_ticks_at_t = (double)(right_ticks - left_ticks);
-			double bpm_10_at_t = (double)left_bpm_10 + slope * delta_ticks_at_t;
-			return left_time_ms + delta_ticks_at_t * 625.0 * 2.0 / ((double)left_bpm_10 + bpm_10_at_t);
+			double delta_ticks = (double)(right_ticks - left_ticks);
+			return left_time_ms + delta_ticks * 625.0 * 2.0 / (double)(left_bpm_10 + right_bpm_10);
 		}
 		return left_time_ms;
 	}

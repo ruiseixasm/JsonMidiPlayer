@@ -475,15 +475,13 @@ public:
 			uint32_t at_position_ticks
 		) const {
 
-		auto left_tempo_pick_it = left_tempo_it;
 		// Picks the left tempo iterator
 		for (auto tempo_it = std::next(left_tempo_it); ; ++tempo_it) {
 			if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > at_position_ticks) {	// It's the pin that one needs to keep up
-				left_tempo_pick_it = std::prev(tempo_it);
-				break;
+				return std::prev(tempo_it);
 			}
 		}
-		return left_tempo_pick_it;
+		return left_tempo_it;
 	}
 
 	bool applyTime_ms(std::list<MidiPin> *midiToProcess) {

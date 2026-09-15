@@ -408,7 +408,7 @@ public:
 		uint32_t left_ticks  = left.getPositionTicks();   // tick position of the left marker
 		uint32_t right_ticks = right.getPositionTicks();  // tick position of the right marker
 		double left_time_ms  = left.getTime_ms();         // absolute time (ms) at the left marker
-		if (left_ticks < right_ticks && ticks > left_ticks && ticks <= right_ticks) {
+		if (left_ticks < right_ticks && ticks > left_ticks && ticks < right_ticks) {
 			double L = (double)left.getBPM_10();          // L = Left BPM, in bpm_10 units (BPM × 10)
 			double R = (double)right.getBPM_10();         // R = Right BPM, in bpm_10 units (BPM × 10)
 			uint32_t N = right_ticks - left_ticks;        // N = number of ticks in the segment

@@ -403,19 +403,6 @@ public:
 		return left_time_ms;
 	}
 
-	static double projectAbsoluteTime_ms(const Tempo& left, const Tempo& right) {
-		uint32_t left_ticks = left.getPositionTicks();
-		uint32_t right_ticks = right.getPositionTicks();
-		double left_time_ms = left.getTime_ms();
-		if (right_ticks > left_ticks) {
-			int16_t left_bpm_10 = left.getBPM_10();
-			int16_t right_bpm_10 = right.getBPM_10();
-			double delta_ticks = (double)(right_ticks - left_ticks);
-			return left_time_ms + delta_ticks * 625.0 * 2.0 / (double)(left_bpm_10 + right_bpm_10);
-		}
-		return left_time_ms;
-	}
-
 	// Most compatible method for varying BPMs
 	static double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
 		uint32_t left_ticks  = left.getPositionTicks();   // tick position of the left marker
@@ -462,10 +449,15 @@ public:
 
 		for (auto tempo_it = std::next(_tempos.begin()); tempo_it != _tempos.end(); ++tempo_it) {
 			auto previous_it = std::prev(tempo_it);
-			tempo_it->setTime_ms(
-				projectAbsoluteTime_ms(*previous_it, *tempo_it)
-			);
-			std::cout << "PROJECTION: " << tempo_it->getTime_ms() << std::endl;
+			if (tempo_it->getBPM_10() == previous_it->getBPM_10()) {
+				tempo_it->setTime_ms(
+					extrapolateAbsoluteTime_ms(*previous_it, tempo_it->getPositionTicks())
+				);
+			} else {
+				tempo_it->setTime_ms(
+					interpolateAbsoluteTime_ms(*previous_it, *tempo_it, tempo_it->getPositionTicks())
+				);
+			}
 		}
 
 

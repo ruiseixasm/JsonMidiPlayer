@@ -502,7 +502,7 @@ public:
 
 			// Updates the pin_time_ms if needed
 			if (pin_ticks > previous_pin_position_ticks) {
-				if (right_tempo == _tempos.end() || left_tempo->getBPM_10() == right_tempo->getBPM_10()) {
+				if (right_tempo == _tempos.end()) {
 					pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_ticks);
 				} else {
 					// Picks the right left tempo

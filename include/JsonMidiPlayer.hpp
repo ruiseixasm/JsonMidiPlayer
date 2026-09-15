@@ -334,6 +334,7 @@ public:
 
 class Clocking {
 	
+	uint32_t _length_beats = 0;
     uint32_t _length_ticks = 0;
     double _length_time_ms = 0.0;
 	std::list<Tempo> _tempos;
@@ -341,10 +342,16 @@ class Clocking {
 
 public:
 
+	// First to run
 	void setLengthTicks(uint32_t num, uint32_t den) {
 		if (den == 1) {	// Measures have an integer amount of Beats
+			_length_beats = num;
 			_length_ticks = getTicksFromBeats(num, den);
 		}
+	}
+
+	uint32_t getLengthBeats() const {
+		return _length_beats;
 	}
 
 	uint32_t getLengthTicks() const {
@@ -368,7 +375,7 @@ public:
 
 	size_t addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {
 		size_t added_mesages = 0;
-		if (!(_clocked_devices.empty() || midiToProcess->empty())) {
+		if (!_clocked_devices.empty()) {
 			
 			// _length_ticks is a multiple of TICKS_PER_CLOCK, beats multiples
 			size_t total_clock_pins = _length_ticks / TICKS_PER_CLOCK;
@@ -408,7 +415,7 @@ public:
 		uint32_t left_ticks  = left.getPositionTicks();   // tick position of the left marker
 		uint32_t right_ticks = right.getPositionTicks();  // tick position of the right marker
 		double left_time_ms  = left.getTime_ms();         // absolute time (ms) at the left marker
-		if (left_ticks < right_ticks && ticks > left_ticks && ticks < right_ticks) {
+		if (left_ticks < right_ticks && ticks > left_ticks && ticks <= right_ticks) {
 			double L = (double)left.getBPM_10();          // L = Left BPM, in bpm_10 units (BPM × 10)
 			double R = (double)right.getBPM_10();         // R = Right BPM, in bpm_10 units (BPM × 10)
 			uint32_t N = right_ticks - left_ticks;        // N = number of ticks in the segment
@@ -435,7 +442,7 @@ public:
 
 
 	bool sortTempos() {
-    	if (_tempos.empty()) return false;
+    	if (_tempos.empty()) return false;	// Failsafe
 
 		_tempos.sort();	// Gurantees the tempos are sorted by ticks first
 
@@ -459,68 +466,74 @@ public:
 				);
 			}
 		}
-
-		// `const_iterator` because this is a `const` method
-		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();
-		std::list<Tempo>::const_iterator right_tempo = std::next(left_tempo);
-
-		if (right_tempo == _tempos.end()) {
-			_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, _length_ticks);
-		} else {
-			// Picks the right left tempo
-			for (auto tempo_it = right_tempo; ; ++tempo_it) {
-				
-				if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > _length_ticks) {	// It's the pin that one needs to keep up
-					right_tempo = tempo_it;
-					left_tempo = std::prev(tempo_it);
-					break;
-				}
-			}
-			if (right_tempo == _tempos.end() || left_tempo->getBPM_10() == right_tempo->getBPM_10()) {
-				_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, _length_ticks);
-			} else {
-				_length_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *right_tempo, _length_ticks);
-			}
-		}
 		return true;
 	}
 
 
-	bool applyTime_ms(std::list<MidiPin> *midiToProcess) const {
-    	if (_tempos.empty()) return false;
-		// `const_iterator` because this is a `const` method
+	std::list<Tempo>::const_iterator pickLeftTempo_it(
+			std::list<Tempo>::const_iterator left_tempo_it,
+			uint32_t at_position_ticks
+		) const {
+
+		auto left_tempo_pick_it = left_tempo_it;
+		// Picks the left tempo iterator
+		for (auto tempo_it = std::next(left_tempo_it); ; ++tempo_it) {
+			if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > at_position_ticks) {	// It's the pin that one needs to keep up
+				left_tempo_pick_it = std::prev(tempo_it);
+				break;
+			}
+		}
+		return left_tempo_pick_it;
+	}
+
+	bool applyTime_ms(std::list<MidiPin> *midiToProcess) {
+    	if (_tempos.empty()) return false;	// Failsafe
+
+		// To be compatible with the `pickLeftTempo_it` method
 		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();
-		std::list<Tempo>::const_iterator right_tempo = std::next(left_tempo);
 		// Adds the cumulative Time
 		uint32_t previous_pin_position_ticks = 0;
 		double pin_time_ms = 0.0;	// The tick 0 one is by definition at 0.0
-		for (auto pin_it = midiToProcess->begin(); pin_it != midiToProcess->end(); ++pin_it) {
+		for (auto pin_it = midiToProcess->begin(); pin_it != midiToProcess->end(); ) {
 
 			uint32_t pin_ticks = pin_it->getPositionTicks();
+			// Makes sure no out of clocking length pins are processed
+			if (pin_ticks > _length_ticks) {
+				pin_it = midiToProcess->erase(pin_it);
+				continue;
+			}
 
 			// Updates the pin_time_ms if needed
 			if (pin_ticks > previous_pin_position_ticks) {
-				if (right_tempo == _tempos.end()) {
+				if (std::next(left_tempo) == _tempos.end()) {
 					pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_ticks);
 				} else {
 					// Picks the right left tempo
-					for (auto tempo_it = right_tempo; ; ++tempo_it) {
-						
-						if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > pin_ticks) {	// It's the pin that one needs to keep up
-							right_tempo = tempo_it;
-							left_tempo = std::prev(tempo_it);
-							break;
-						}
-					}
-					if (right_tempo == _tempos.end() || left_tempo->getBPM_10() == right_tempo->getBPM_10()) {
+					left_tempo = pickLeftTempo_it(left_tempo, pin_ticks);
+					if (std::next(left_tempo) == _tempos.end() || left_tempo->getBPM_10() == std::next(left_tempo)->getBPM_10()) {
 						pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_ticks);
 					} else {
-						pin_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *right_tempo, pin_ticks);
+						pin_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *std::next(left_tempo), pin_ticks);
 					}
 				}
 				previous_pin_position_ticks = pin_ticks;
 			}
 			pin_it->setTime_ms(pin_time_ms);
+			++pin_it;	// Next pin
+		}
+		// Sets the Clocking length time_ms
+		if (_length_ticks == previous_pin_position_ticks) {
+			_length_time_ms = pin_time_ms;
+		} else if (std::next(left_tempo) == _tempos.end()) {
+			_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, _length_ticks);
+		} else {
+			// Picks the right left tempo
+			left_tempo = pickLeftTempo_it(left_tempo, _length_ticks);
+			if (std::next(left_tempo) == _tempos.end() || left_tempo->getBPM_10() == std::next(left_tempo)->getBPM_10()) {
+				_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, _length_ticks);
+			} else {
+				_length_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *std::next(left_tempo), _length_ticks);
+			}
 		}
 		return true;
 	}

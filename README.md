@@ -93,26 +93,25 @@ Despite some delay, that didn't mean any drag in the example bellow.
 JsonMidiPlayer version: 7.2.0
 Available output Midi devices:
         Midi device #0: Microsoft GS Wavetable Synth 0
-        Midi device #1: Studio 68c MIDI Out 1
-        Midi device #2: Blofeld 2
-        Midi device #3: loopMIDI Port 3
-        Midi device #4: Virtual Instrument 4
-Devices connected:       Blofeld 2
+        Midi device #1: loopMIDI Port 1
+        Midi device #2: DAW_Port 2
+Devices connected:       loopMIDI Port 1
 Data stats reporting:
-        Midi Messages processing time (ms):                1
-        Midi Ports opening time (ms):                      1
-        Total generated Midi Messages (included):        482
-        Total validated Midi Messages (accepted):         30
+        Midi Messages processing time (ms):               81
+        Midi Ports opening time (ms):                      0
+        Single loop length (beats):                       28
+        Total generated Midi Messages (included):        674
+        Total validated Midi Messages (accepted):         32
         Total incorrect Midi Messages (excluded):          0
         Total redundant Midi Messages (excluded):          0
-        Total resultant Midi Messages (included):        512
-The playlist will now be played in 1 loop for 0 minutes and 9 seconds...
-Devices disconnected:    Blofeld 2
+        Total resultant Midi Messages (included):        706
+The playlist will now be played in 1 loop for 0 minutes and 12 seconds...
+Devices disconnected:    loopMIDI Port 1
 Midi stats reporting:
         Total drag (ms):                                   0.000 \
-        Cumulative delay (ms):                            21.923 /
-        Maximum delay (ms):                                1.260 \
-        Minimum delay (ms):                                0.001 /
-        Average delay (ms):                                0.043 \
-        Standard deviation of delays (ms):                 0.172 /
+        Cumulative delay (ms):                             6.877 /
+        Maximum delay (ms):                                0.399 \
+        Minimum delay (ms):                                0.000 /
+        Average delay (ms):                                0.010 \
+        Standard deviation of delays (ms):                 0.040 /
 ```

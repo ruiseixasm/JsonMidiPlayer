@@ -516,6 +516,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
             if (verbose) std::cout << "Data stats reporting:" << std::endl;
             if (verbose) std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << real_processing_json_time << std::endl;
             if (verbose) std::cout << "\tMidi Ports opening time (ms):             " << std::setw(10) << play_reporting.ports_opening << std::endl;
+            if (verbose) std::cout << "\tSingle loop length (beats):               " << std::setw(10) << clocking.getLengthBeats() << std::endl;
             if (verbose) std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
             if (verbose) std::cout << "\tTotal validated Midi Messages (accepted): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;
@@ -767,6 +768,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
             if (verbose) std::cout << "Data stats reporting:" << std::endl;
             if (verbose) std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << real_processing_json_time << std::endl;
             if (verbose) std::cout << "\tMidi Ports opening time (ms):             " << std::setw(10) << play_reporting.ports_opening << std::endl;
+            if (verbose) std::cout << "\tSingle loop length (beats):               " << std::setw(10) << clocking.getLengthBeats() << std::endl;
             if (verbose) std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
             if (verbose) std::cout << "\tTotal validated Midi Messages (accepted): " << std::setw(10) << play_reporting.total_validated << std::endl;
             if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;

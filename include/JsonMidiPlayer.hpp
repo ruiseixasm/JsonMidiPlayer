@@ -373,7 +373,7 @@ public:
 	}
 
 
-	size_t addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {
+	size_t addClockMessagesToPlay(std::list<MidiPin> *midiPins) const {
 		size_t added_mesages = 0;
 		if (!_clocked_devices.empty()) {
 			
@@ -382,19 +382,19 @@ public:
 			
 			for (const auto& device : _clocked_devices) {
 				// New Start clock message with High Priority 3.0 (Let's messages like Program Change go first)
-				midiToProcess->push_back( MidiPin(TICKS_PER_CLOCK * 0, device, { system_clock_start }, 0x30) );
+				midiPins->push_back( MidiPin(TICKS_PER_CLOCK * 0, device, { system_clock_start }, 0x30) );
 				for (size_t pin_i = 1; pin_i < total_clock_pins; pin_i++) {
 					// New clock message with High Priority 3.1 (Let's messages like Program Change go first)
-					midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * pin_i), device, { system_timing_clock }, 0x31) );
+					midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * pin_i), device, { system_timing_clock }, 0x31) );
 					added_mesages++;
 				}
 				// New Stop clock message with Lowest priority 11.0
-				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_clock_stop }, 0xB0) );
+				midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_clock_stop }, 0xB0) );
 				// New Stop clock message with Lowest priority 11.1
-				midiToProcess->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_song_pointer, 0, 0 }, 0xB1) );
+				midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_song_pointer, 0, 0 }, 0xB1) );
 				added_mesages += 3;	// for Start, Stop and Pointer messages
 			}
-			midiToProcess->sort();	// Does the final sorting given the new pins
+			midiPins->sort();	// Does the final sorting given the new pins
 		}
 		return added_mesages;
 	}
@@ -455,7 +455,7 @@ public:
 		return left_tempo_it;
 	}
 
-	bool applyTime_ms(std::list<MidiPin> *midiToProcess) {
+	bool applyTime_ms(std::list<MidiPin> *midiPins_sorted) {
     	if (_tempos.empty()) return false;	// Failsafe
 
 		_tempos.sort();	// Gurantees the tempos are sorted by ticks first
@@ -486,12 +486,12 @@ public:
 		// Adds the cumulative Time
 		uint32_t previous_pin_position_ticks = 0;
 		double pin_time_ms = 0.0;	// The tick 0 one is by definition at 0.0
-		for (auto pin_it = midiToProcess->begin(); pin_it != midiToProcess->end(); ) {
+		for (auto pin_it = midiPins_sorted->begin(); pin_it != midiPins_sorted->end(); ) {
 
 			uint32_t pin_ticks = pin_it->getPositionTicks();
 			// Makes sure no out of clocking length pins are processed
 			if (pin_ticks > _length_ticks) {
-				pin_it = midiToProcess->erase(pin_it);
+				pin_it = midiPins_sorted->erase(pin_it);
 				continue;
 			}
 

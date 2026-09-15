@@ -460,17 +460,13 @@ public:
 			_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, _length_ticks);
 		} else {
 			// Picks the right left tempo
-			for (auto tempo_it = right_tempo; tempo_it != _tempos.end(); ++tempo_it) {
+			for (auto tempo_it = right_tempo; ; ++tempo_it) {
 				
-				uint32_t tempo_ticks = tempo_it->getPositionTicks();
-				if (_length_ticks < tempo_ticks) {	// It's the pin that one needs to keep up
+				if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > _length_ticks) {	// It's the pin that one needs to keep up
 					right_tempo = tempo_it;
 					left_tempo = std::prev(tempo_it);
 					break;
 				}
-				// Only if can't be found it updates the left_tempo
-				left_tempo = tempo_it;
-				right_tempo = std::next(left_tempo);
 			}
 			if (right_tempo == _tempos.end() || left_tempo->getBPM_10() == right_tempo->getBPM_10()) {
 				_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, _length_ticks);

@@ -45,7 +45,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 // #define DEBUGGING true
 #define FILE_TYPE "Json Midi Player"
 #define FILE_URL  "https://github.com/ruiseixasm/JsonMidiPlayer"
-#define VERSION   "7.1.1"
+#define VERSION   "7.2.0"
 #define DRAG_DURATION_MS (1000.0/((120/60)*24))
 
 
@@ -459,7 +459,6 @@ public:
 				);
 			}
 		}
-
 
 		// `const_iterator` because this is a `const` method
 		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();

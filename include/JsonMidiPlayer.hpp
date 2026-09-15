@@ -476,8 +476,8 @@ public:
 		) const {
 
 		// Picks the left tempo iterator
-		for (auto tempo_it = std::next(left_tempo_it); ; ++tempo_it) {
-			if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > at_position_ticks) {	// It's the pin that one needs to keep up
+		for (auto tempo_it = std::next(left_tempo_it); tempo_it != _tempos.end(); ++tempo_it) {
+			if (tempo_it->getPositionTicks() > at_position_ticks) {	// It's the pin that one needs to keep up
 				return std::prev(tempo_it);
 			}
 		}
@@ -503,16 +503,12 @@ public:
 
 			// Updates the pin_time_ms if needed
 			if (pin_ticks > previous_pin_position_ticks) {
-				if (std::next(left_tempo) == _tempos.end()) {
+				// Picks the right left tempo
+				left_tempo = pickLeftTempo_it(left_tempo, pin_ticks);
+				if (std::next(left_tempo) == _tempos.end() || left_tempo->getBPM_10() == std::next(left_tempo)->getBPM_10()) {
 					pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_ticks);
 				} else {
-					// Picks the right left tempo
-					left_tempo = pickLeftTempo_it(left_tempo, pin_ticks);
-					if (std::next(left_tempo) == _tempos.end() || left_tempo->getBPM_10() == std::next(left_tempo)->getBPM_10()) {
-						pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_ticks);
-					} else {
-						pin_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *std::next(left_tempo), pin_ticks);
-					}
+					pin_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *std::next(left_tempo), pin_ticks);
 				}
 				previous_pin_position_ticks = pin_ticks;
 			}
@@ -522,8 +518,6 @@ public:
 		// Sets the Clocking length time_ms
 		if (_length_ticks == previous_pin_position_ticks) {
 			_length_time_ms = pin_time_ms;
-		} else if (std::next(left_tempo) == _tempos.end()) {
-			_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, _length_ticks);
 		} else {
 			// Picks the right left tempo
 			left_tempo = pickLeftTempo_it(left_tempo, _length_ticks);

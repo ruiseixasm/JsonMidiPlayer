@@ -476,8 +476,8 @@ public:
 		) const {
 
 		// Picks the left tempo iterator
-		for (auto tempo_it = std::next(left_tempo_it); tempo_it != _tempos.end(); ++tempo_it) {
-			if (tempo_it->getPositionTicks() > at_position_ticks) {	// It's the pin that one needs to keep up
+		for (auto tempo_it = std::next(left_tempo_it); ; ++tempo_it) {
+			if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > at_position_ticks) {	// It's the pin that one needs to keep up
 				return std::prev(tempo_it);
 			}
 		}

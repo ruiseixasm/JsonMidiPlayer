@@ -89,7 +89,8 @@ The program is quite simple and light, it just loops a list so no much Drag or D
 Drag is the amount of time the entire playing got out of sync while Delay is just the amount of time each single midi message played out of tempo.
 ## Example of reported Drag and Delay
 Despite some delay, that didn't mean any drag in the example bellow.
-```
+```sh
+PS C:\Users\rui\Documents\GitHub\JsonMidiPlayer> .\build\Release\JsonMidiPlayer.exe -v -l 2 .\three_notes.json
 JsonMidiPlayer version: 7.2.0
 Available output Midi devices:
         Midi device #0: Microsoft GS Wavetable Synth 0
@@ -97,7 +98,7 @@ Available output Midi devices:
         Midi device #2: DAW_Port 2
 Devices connected:       loopMIDI Port 1
 Data stats reporting:
-        Midi Messages processing time (ms):               81
+        Midi Messages processing time (ms):                0
         Midi Ports opening time (ms):                      0
         Single loop length (beats):                       28
         Total generated Midi Messages (included):        674
@@ -105,13 +106,14 @@ Data stats reporting:
         Total incorrect Midi Messages (excluded):          0
         Total redundant Midi Messages (excluded):          0
         Total resultant Midi Messages (included):        706
-The playlist will now be played in 1 loop for 0 minutes and 12 seconds...
+The playlist will now be played in 2 loops for 0 minutes and 25 seconds...
 Devices disconnected:    loopMIDI Port 1
 Midi stats reporting:
         Total drag (ms):                                   0.000 \
-        Cumulative delay (ms):                             6.877 /
-        Maximum delay (ms):                                0.399 \
-        Minimum delay (ms):                                0.000 /
-        Average delay (ms):                                0.010 \
-        Standard deviation of delays (ms):                 0.040 /
+        Cumulative delay (ms):                            14.742 /
+        Maximum delay (ms):                                0.832 \
+        Minimum delay (ms):                                0.001 /
+        Average delay (ms):                                0.021 \
+        Standard deviation of delays (ms):                 0.088 /
+PS C:\Users\rui\Documents\GitHub\JsonMidiPlayer> 
 ```

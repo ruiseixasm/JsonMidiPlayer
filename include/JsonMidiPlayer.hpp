@@ -416,7 +416,7 @@ public:
 		return left_time_ms;
 	}
 
-
+	// Most compatible method for varying BPMs
 	static double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
 		uint32_t left_ticks  = left.getPositionTicks();   // tick position of the left marker
 		uint32_t right_ticks = right.getPositionTicks();  // tick position of the right marker
@@ -431,6 +431,12 @@ public:
 			for (uint32_t k = 1; k <= ticks - left_ticks; ++k) {
 				// bpm = BPM at tick k, linear ramp between L and R over N ticks
 				double bpm = L + (R - L) * (double)k / (double)N;
+					// bpm = L + (R - L) * k / N
+					//       │      │      │   │
+					//       │      │      │   └──── N = total ticks in the segment (the divisor)
+					//       │      │      └──────── k = current tick index (1 … N)
+					//       │      └─────────────── (R - L) = total BPM change across the segment
+					//       └────────────────────── L = starting BPM
 				// Add the duration of this single tick, in milliseconds
 				// (625 comes from: 60000 ms/min ÷ 960 ticks/beat ÷ 10 for the bpm_10 scale)
 				t += 625.0 / bpm;

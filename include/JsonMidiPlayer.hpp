@@ -324,7 +324,7 @@ public:
 		time_ms = time_milliseconds;
 	}
 
-    double getTime() const {
+    double getTime_ms() const {
         return time_ms;
     }
 
@@ -366,90 +366,6 @@ public:
 	}
 
 
-	static double interpolateTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
-		uint32_t left_ticks = left.getPositionTicks();
-		uint32_t right_ticks = right.getPositionTicks();
-		// Trapezoid (exclusion of `left_ticks == right_ticks`)
-		if (left_ticks < right_ticks && ticks >= left_ticks && ticks <= right_ticks) {
-			int16_t left_bpm_10 = left.getBPM_10();
-			int16_t right_bpm_10 = right.getBPM_10();
-			double slope = (double)(right_bpm_10 - left_bpm_10) / (double)(right_ticks - left_ticks);
-			double delta_ticks_at_t = (double)(ticks - left_ticks);
-			double bpm_10_at_t = (double)left_bpm_10 + slope * delta_ticks_at_t;
-			return delta_ticks_at_t * 625.0 * 2.0 / ((double)left_bpm_10 + bpm_10_at_t);
-		}
-		return 0.0;
-	}
-
-	static double extrapolateTime_ms(const Tempo& tempo, uint32_t ticks) {
-		uint32_t tempo_ticks = tempo.getPositionTicks();
-		if (ticks > tempo_ticks) {
-			int16_t tempo_bpm_10 = tempo.getBPM_10();
-			return (double)(ticks - tempo_ticks) * 625.0 / (double)tempo_bpm_10;
-		}
-		return 0.0;
-	}
-
-	bool sortTempos() {
-    	if (_tempos.empty()) return false;
-
-		_tempos.sort();	// Gurantees the tempos are sorted by ticks first
-
-		// Makes sure there are a `Tempo` at the origin (ticks == 0)
-		auto firsy_tempo_it = _tempos.begin();
-		uint32_t first_position_ticks = firsy_tempo_it->getPositionTicks();
-		if (first_position_ticks > 0) {
-			int16_t origin_bpm_10 = firsy_tempo_it->getBPM_10();
-			_tempos.emplace_front(origin_bpm_10, 0);
-		}
-
-		double cumulative_time_ms = 0.0;
-		for (auto tempo_it = std::next(_tempos.begin()); tempo_it != _tempos.end(); ++tempo_it) {
-			auto previous_it = std::prev(tempo_it);
-			uint32_t position_ticks = tempo_it->getPositionTicks();
-			cumulative_time_ms += interpolateTime_ms(
-				*previous_it, *tempo_it, position_ticks
-			);
-			tempo_it->setTime(cumulative_time_ms);
-		}
-
-		// Adds the cumulative Time
-		double tempo_time_ms = 0.0;	// The first one is always 0.0
-		double pin_time_ms = 0.0;
-				
-		// `const_iterator` because this is a `const` method
-		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();
-		std::list<Tempo>::const_iterator right_tempo = std::next(left_tempo);
-
-		if (right_tempo == _tempos.end()) {
-			pin_time_ms = extrapolateTime_ms(*left_tempo, _length_ticks);
-		} else {
-			// Picks the right left tempo
-			for (auto tempo_it = right_tempo; tempo_it != _tempos.end(); ++tempo_it) {
-				
-				uint32_t tempo_ticks = tempo_it->getPositionTicks();
-				if (_length_ticks < tempo_ticks) {	// It's the pin that one needs to keep up
-					right_tempo = tempo_it;
-					left_tempo = std::prev(tempo_it);
-					break;
-				}
-				// Only if can't be found it updates the left_tempo
-				left_tempo = tempo_it;
-				right_tempo = std::next(left_tempo);
-			}		
-			tempo_time_ms = left_tempo->getTime();
-			if (right_tempo == _tempos.end()) {
-				pin_time_ms = extrapolateTime_ms(*left_tempo, _length_ticks);
-			} else {
-				pin_time_ms = interpolateTime_ms(*left_tempo, *right_tempo, _length_ticks);
-			}
-		}
-		_length_time_ms = tempo_time_ms + pin_time_ms;
-
-		return true;
-	}
-
-
 	size_t addClockMessagesToPlay(std::list<MidiPin> *midiToProcess) const {
 		size_t added_mesages = 0;
 		if (!(_clocked_devices.empty() || midiToProcess->empty())) {
@@ -476,44 +392,145 @@ public:
 		return added_mesages;
 	}
 
+
+	static double extrapolateAbsoluteTime_ms(const Tempo& tempo, uint32_t ticks) {
+		uint32_t tempo_ticks = tempo.getPositionTicks();
+		double left_time_ms = tempo.getTime_ms();
+		if (ticks > tempo_ticks) {
+			int16_t tempo_bpm_10 = tempo.getBPM_10();
+			return left_time_ms + (double)(ticks - tempo_ticks) * 625.0 / (double)tempo_bpm_10;
+		}
+		return left_time_ms;
+	}
+
+	static double projectAbsoluteTime_ms(const Tempo& left, const Tempo& right) {
+		uint32_t left_ticks = left.getPositionTicks();
+		uint32_t right_ticks = right.getPositionTicks();
+		// Trapezoid (exclusion of `left_ticks == right_ticks`)
+		double left_time_ms = left.getTime_ms();
+		if (right_ticks > left_ticks) {
+			int16_t left_bpm_10 = left.getBPM_10();
+			int16_t right_bpm_10 = right.getBPM_10();
+			double slope = (double)(right_bpm_10 - left_bpm_10) / (double)(right_ticks - left_ticks);
+			double delta_ticks_at_t = (double)(right_ticks - left_ticks);
+			double bpm_10_at_t = (double)left_bpm_10 + slope * delta_ticks_at_t;
+			return left_time_ms + delta_ticks_at_t * 625.0 * 2.0 / ((double)left_bpm_10 + bpm_10_at_t);
+		}
+		return left_time_ms;
+	}
+
+	static double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
+		uint32_t left_ticks = left.getPositionTicks();
+		uint32_t right_ticks = right.getPositionTicks();
+		double left_time_ms = left.getTime_ms();
+		if (left_ticks < right_ticks && ticks > left_ticks && ticks <= right_ticks) {
+			double right_time_ms = right.getTime_ms();
+			double slope = (double)(right_time_ms - left_time_ms) / (double)(right_ticks - left_ticks);
+			double delta_ticks_at_t = (double)(ticks - left_ticks);
+			return left_time_ms + slope * delta_ticks_at_t;
+		}
+		return left_time_ms;
+	}
+
+	bool sortTempos() {
+    	if (_tempos.empty()) return false;
+
+		_tempos.sort();	// Gurantees the tempos are sorted by ticks first
+
+		// Makes sure there are a `Tempo` at the origin (ticks == 0)
+		auto firsy_tempo_it = _tempos.begin();
+		uint32_t first_position_ticks = firsy_tempo_it->getPositionTicks();
+		if (first_position_ticks > 0) {
+			int16_t origin_bpm_10 = firsy_tempo_it->getBPM_10();
+			_tempos.emplace_front(origin_bpm_10, 0);
+		}
+
+		for (auto tempo_it = std::next(_tempos.begin()); tempo_it != _tempos.end(); ++tempo_it) {
+			auto previous_it = std::prev(tempo_it);
+			uint32_t position_ticks = tempo_it->getPositionTicks();
+			tempo_it->setTime(
+				projectAbsoluteTime_ms(*previous_it, *tempo_it)
+			);
+		}
+
+		// Adds the cumulative Time
+		double tempo_time_ms = 0.0;	// The first one is always 0.0
+		double pin_time_ms = 0.0;
+				
+		// `const_iterator` because this is a `const` method
+		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();
+		std::list<Tempo>::const_iterator right_tempo = std::next(left_tempo);
+
+		if (right_tempo == _tempos.end()) {
+			_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, _length_ticks);
+		} else {
+			// Picks the right left tempo
+			for (auto tempo_it = right_tempo; tempo_it != _tempos.end(); ++tempo_it) {
+				
+				uint32_t tempo_ticks = tempo_it->getPositionTicks();
+				if (_length_ticks < tempo_ticks) {	// It's the pin that one needs to keep up
+					right_tempo = tempo_it;
+					left_tempo = std::prev(tempo_it);
+					break;
+				}
+				// Only if can't be found it updates the left_tempo
+				left_tempo = tempo_it;
+				right_tempo = std::next(left_tempo);
+			}		
+			tempo_time_ms = left_tempo->getTime_ms();
+			if (right_tempo == _tempos.end()) {
+				_length_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, _length_ticks);
+			} else {
+				_length_time_ms = projectAbsoluteTime_ms(*left_tempo, *right_tempo);
+			}
+		}
+		return true;
+	}
+
+
 	bool applyTime_ms(std::list<MidiPin> *midiToProcess) const {
     	if (_tempos.empty()) return false;
 		// `const_iterator` because this is a `const` method
 		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();
 		std::list<Tempo>::const_iterator right_tempo = std::next(left_tempo);
 		// Adds the cumulative Time
-		double tempo_time_ms = 0.0;	// The first one is always 0.0
+		uint32_t pin_position_ticks = 0;
+		double pin_time_ms = 0.0;	// The first one is always 0.0
 		for (auto pin_it = midiToProcess->begin(); pin_it != midiToProcess->end(); ++pin_it) {
 
-			uint32_t pin_ticks = pin_it->getPositionTicks();
-			double pin_time_ms = 0.0;
-			if (right_tempo == _tempos.end()) {
-				pin_time_ms = extrapolateTime_ms(*left_tempo, pin_ticks);
-			} else {
-				// Picks the right left tempo
-				for (auto tempo_it = right_tempo; tempo_it != _tempos.end(); ++tempo_it) {
-					
-					uint32_t tempo_ticks = tempo_it->getPositionTicks();
-					if (pin_ticks < tempo_ticks) {	// It's the pin that one needs to keep up
-						right_tempo = tempo_it;
-						left_tempo = std::prev(tempo_it);
-						break;
-					}
-					// Only if can't be found it updates the left_tempo
-					left_tempo = tempo_it;
-					right_tempo = std::next(left_tempo);
-				}		
-				tempo_time_ms = left_tempo->getTime();
-				if (right_tempo == _tempos.end()) {
-					pin_time_ms = extrapolateTime_ms(*left_tempo, pin_ticks);
+			uint32_t pin_it_ticks = pin_it->getPositionTicks();
+
+			// Updates the pin_time_ms if needed
+			if (pin_it_ticks > pin_position_ticks) {
+				if (right_tempo == _tempos.end() || left_tempo->getBPM_10() == right_tempo->getBPM_10()) {
+					pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_it_ticks);
 				} else {
-					pin_time_ms = interpolateTime_ms(*left_tempo, *right_tempo, pin_ticks);
+					// Picks the right left tempo
+					for (auto tempo_it = right_tempo; tempo_it != _tempos.end(); ++tempo_it) {
+						
+						uint32_t tempo_ticks = tempo_it->getPositionTicks();
+						if (pin_it_ticks < tempo_ticks) {	// It's the pin that one needs to keep up
+							right_tempo = tempo_it;
+							left_tempo = std::prev(tempo_it);
+							break;
+						}
+						// Only if can't be found it updates the left_tempo
+						left_tempo = tempo_it;
+						right_tempo = std::next(left_tempo);
+					}
+					if (right_tempo == _tempos.end() || left_tempo->getBPM_10() == right_tempo->getBPM_10()) {
+						pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_it_ticks);
+					} else {
+						pin_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *right_tempo, pin_it_ticks);
+					}
 				}
+				pin_position_ticks = pin_it_ticks;
 			}
-			pin_it->setTime_ms(tempo_time_ms + pin_time_ms);
+			pin_it->setTime_ms(pin_time_ms);
 		}
 		return true;
 	}
+	
 	
 	// beats_per_second	= (1 / 60) * BPM
 	// seconds_per_ms   = 1,000

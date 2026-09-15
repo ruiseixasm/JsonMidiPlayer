@@ -417,15 +417,19 @@ public:
 	}
 
 	static double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
-		uint32_t left_ticks = left.getPositionTicks();
+		uint32_t left_ticks  = left.getPositionTicks();
 		uint32_t right_ticks = right.getPositionTicks();
-		double left_time_ms = left.getTime_ms();
+		double left_time_ms  = left.getTime_ms();
 		if (left_ticks < right_ticks && ticks > left_ticks && ticks <= right_ticks) {
-			double right_time_ms = right.getTime_ms();
-			// Time ms allows a linear projection instad of BPM
-			double slope = (double)(right_time_ms - left_time_ms) / (double)(right_ticks - left_ticks);
-			double delta_ticks_at_t = (double)(ticks - left_ticks);
-			return left_time_ms + slope * delta_ticks_at_t;
+			double L = (double)left.getBPM_10();
+			double R = (double)right.getBPM_10();
+			uint32_t N = right_ticks - left_ticks;
+			double t = left_time_ms;
+			for (uint32_t k = 1; k <= ticks - left_ticks; ++k) {
+				double bpm = L + (R - L) * (double)k / (double)N;
+				t += 625.0 / bpm;
+			}
+			return t;
 		}
 		return left_time_ms;
 	}
@@ -448,7 +452,9 @@ public:
 			tempo_it->setTime_ms(
 				projectAbsoluteTime_ms(*previous_it, *tempo_it)
 			);
+			std::cout << "PROJECTION: " << tempo_it->getTime_ms() << std::endl;
 		}
+
 
 		// `const_iterator` because this is a `const` method
 		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();

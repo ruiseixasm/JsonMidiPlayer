@@ -494,22 +494,22 @@ public:
 		std::list<Tempo>::const_iterator left_tempo = _tempos.begin();
 		std::list<Tempo>::const_iterator right_tempo = std::next(left_tempo);
 		// Adds the cumulative Time
-		uint32_t pin_position_ticks = 0;
-		double pin_time_ms = 0.0;	// The first one is always 0.0
+		uint32_t previous_pin_position_ticks = 0;
+		double pin_time_ms = 0.0;	// The tick 0 one is by definition at 0.0
 		for (auto pin_it = midiToProcess->begin(); pin_it != midiToProcess->end(); ++pin_it) {
 
-			uint32_t pin_it_ticks = pin_it->getPositionTicks();
+			uint32_t pin_ticks = pin_it->getPositionTicks();
 
 			// Updates the pin_time_ms if needed
-			if (pin_it_ticks > pin_position_ticks) {
+			if (pin_ticks > previous_pin_position_ticks) {
 				if (right_tempo == _tempos.end() || left_tempo->getBPM_10() == right_tempo->getBPM_10()) {
-					pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_it_ticks);
+					pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_ticks);
 				} else {
 					// Picks the right left tempo
 					for (auto tempo_it = right_tempo; tempo_it != _tempos.end(); ++tempo_it) {
 						
 						uint32_t tempo_ticks = tempo_it->getPositionTicks();
-						if (pin_it_ticks < tempo_ticks) {	// It's the pin that one needs to keep up
+						if (pin_ticks < tempo_ticks) {	// It's the pin that one needs to keep up
 							right_tempo = tempo_it;
 							left_tempo = std::prev(tempo_it);
 							break;
@@ -519,12 +519,12 @@ public:
 						right_tempo = std::next(left_tempo);
 					}
 					if (right_tempo == _tempos.end() || left_tempo->getBPM_10() == right_tempo->getBPM_10()) {
-						pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_it_ticks);
+						pin_time_ms = extrapolateAbsoluteTime_ms(*left_tempo, pin_ticks);
 					} else {
-						pin_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *right_tempo, pin_it_ticks);
+						pin_time_ms = interpolateAbsoluteTime_ms(*left_tempo, *right_tempo, pin_ticks);
 					}
 				}
-				pin_position_ticks = pin_it_ticks;
+				previous_pin_position_ticks = pin_ticks;
 			}
 			pin_it->setTime_ms(pin_time_ms);
 		}

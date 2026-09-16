@@ -513,6 +513,7 @@ public:
 		double pin_time_ms = 0.0;	// The tick 0 one is by definition at 0.0
 		for (auto pin_it = midiPins_sorted->begin(); pin_it != midiPins_sorted->end(); ) {
 
+			// Pins above the length of the clocking are removed
 			uint32_t pin_ticks = pin_it->getPositionTicks();
 			// Makes sure no out of clocking length pins are processed
 			if (pin_ticks > _length_ticks) {

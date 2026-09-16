@@ -354,7 +354,7 @@ struct RampCursor {
 		bpm_slope  = ((double)right.getBPM_10() - bpm) / (double)N;  // BPM change per tick
 	}
 
-	
+
     // Advance the cursor up to `target_ticks`, summing 625/BPM per tick.
     // Each step adds the duration of one tick and moves the BPM one step along the ramp.
     //   625.0 = 60000 ms/min ÷ 960 ticks/beat ÷ 10 (the bpm_10 scale)
@@ -472,8 +472,8 @@ public:
 	}
 
 
-	bool applyTime_ms(std::list<MidiPin> *midiPins_sorted) {
-    	if (_tempos.empty()) return false;	// Failsafe
+	void applyTime_ms(std::list<MidiPin> *midiPins_sorted) {
+    	if (_tempos.empty()) return;	// Failsafe
 
 		_tempos.sort();	// Gurantees the tempos are sorted by ticks first
 
@@ -546,7 +546,6 @@ public:
 				_length_time_ms = interpolateAbsoluteTime_ms(*left_tempo_it, *std::next(left_tempo_it), _length_ticks);
 			}
 		}
-		return true;
 	}
 	
 	

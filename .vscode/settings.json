@@ -103,15 +103,16 @@
 	},
 	"github.copilot.renameSuggestions.triggerAutomatically": false,
     "cSpell.words": [
-		"Aftertouch",
-		"channelpitch",
-		"Monteiro",
-		"pitchbend",
-		"Seixas",
-		"statusbyte",
-		"statusdatabyte",
-		"sysex",
-		"triggerable",
-		"winmm"
-	]
+        "Aftertouch",
+        "channelpitch",
+        "Monteiro",
+        "pitchbend",
+        "PPQN",
+        "Seixas",
+        "statusbyte",
+        "statusdatabyte",
+        "sysex",
+        "triggerable",
+        "winmm"
+    ]
 }

@@ -841,7 +841,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 		// Where the final Statistics are calculated
 		//
 
-		if (!midiPins.empty()) {
+		if (!midiPins.empty()) {	// Avoids division by 0 with `midiPins.size() == 0`
 
 			for (auto &midi_pin : midiPins) {
 				auto delay_time_ms = midi_pin.getDelayTime();

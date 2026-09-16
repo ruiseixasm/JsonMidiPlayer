@@ -374,7 +374,6 @@ struct RampCursor {
 
 class Clocking {
 	
-	uint32_t _length_beats = 0;
     uint32_t _length_ticks = 0;
     double _length_time_ms = 0.0;
 	std::list<Tempo> _tempos;
@@ -429,13 +428,8 @@ public:
 	// First to run
 	void setLengthTicks(uint32_t num, uint32_t den) {
 		if (den == 1) {	// Measures have an integer amount of Beats
-			_length_beats = num;
 			_length_ticks = getTicksFromBeats(num, den);
 		}
-	}
-
-	uint32_t getLengthBeats() const {
-		return _length_beats;
 	}
 
 	uint32_t getLengthTicks() const {

@@ -725,7 +725,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 		// Where the time_ms is set on each pin
 		//
 
-		bool updated_tempo = clocking.applyTime_ms(&midiPins);
+		bool applied_pins_time_ms = clocking.applyTime_ms(&midiPins);
 
 		#ifdef DEBUGGING
 		debugging_now = std::chrono::high_resolution_clock::now();
@@ -758,7 +758,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 		// Where the each midi pin is triggered
 		//
 
-		if (updated_tempo) {	// Safe code
+		if (applied_pins_time_ms) {	// Safe code
 		
 			// Position time
 			size_t duration_time_sec = std::round(clocking.getLengthTime_ms() * loop / 1000);

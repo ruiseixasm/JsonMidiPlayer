@@ -128,3 +128,14 @@ Midi stats reporting:
         Standard deviation of delays (ms):                 0.088 /
 PS C:\Users\rui\Documents\GitHub\JsonMidiPlayer> 
 ```
+
+# Troubleshooting
+## On Linux
+Some distributions don't run **ALSA** by default, in those cases make sure the **VMPK** is
+configured to use **ALSA** as the Midi in port and then check it by running these commands.
+```sh
+aconnect -l
+ps aux | grep -i vmpk
+```
+
+

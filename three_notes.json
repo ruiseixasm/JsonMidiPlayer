@@ -8,7 +8,7 @@
         ],
         "devices": [
             "FLUID",
-            "loopMIDI"
+            "MIDI"
         ],
         "tempos": [
             {
@@ -39,7 +39,7 @@
             "devices": [
                 "VMPK",
                 "FLUID",
-                "loopMIDI",
+                "MIDI",
                 "Microsoft",
                 "IAC Bus",
                 "Apple"

@@ -332,6 +332,26 @@ public:
 };
 
 
+// Remembers where the last accumulation stopped, so the next call
+// only sums the ticks between here and the requested tick.
+struct RampCursor {
+    uint32_t left_ticks = 0;     // tick of the segment's left marker
+    uint32_t tick       = 0;     // last tick accumulated
+    double   time_ms    = 0.0;   // absolute time at that tick
+    double   bpm        = 0.0;   // BPM at that tick
+    double   bpm_slope  = 0.0;   // BPM change per tick
+
+	void updateCursor(const Tempo& left, const Tempo& right) {
+		left_ticks 	= left.getPositionTicks();
+		tick       	= left_ticks;
+		time_ms    	= left.getTime_ms();
+		bpm        	= (double)left.getBPM_10();
+		uint32_t N  = right.getPositionTicks() - left_ticks;
+		bpm_slope  	= ((double)right.getBPM_10() - bpm) / (double)N;
+	}
+};
+
+
 class Clocking {
 	
 	uint32_t _length_beats = 0;
@@ -339,6 +359,55 @@ class Clocking {
     double _length_time_ms = 0.0;
 	std::list<Tempo> _tempos;
     std::vector<MidiDevice*> _clocked_devices;
+	RampCursor _ramp_cursor;   // zero-initialized by the in-class defaults
+
+
+	static double extrapolateAbsoluteTime_ms(const Tempo& tempo, uint32_t ticks) {
+		uint32_t tempo_ticks = tempo.getPositionTicks();
+		double left_time_ms = tempo.getTime_ms();
+		if (ticks > tempo_ticks) {
+			int16_t tempo_bpm_10 = tempo.getBPM_10();
+			return left_time_ms + (double)(ticks - tempo_ticks) * 625.0 / (double)tempo_bpm_10;
+		}
+		return left_time_ms;
+	}
+
+
+	// Most compatible method for varying BPMs
+	double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
+		uint32_t left_ticks  = left.getPositionTicks();
+		uint32_t right_ticks = right.getPositionTicks();
+
+		if (left_ticks < right_ticks && ticks > left_ticks && ticks <= right_ticks) {
+			// Update cursor
+			if (_ramp_cursor.tick <= left_ticks) {
+				_ramp_cursor.updateCursor(left, right);
+			}
+			// Move cursor
+			while (_ramp_cursor.tick < ticks) {
+				_ramp_cursor.bpm     += _ramp_cursor.bpm_slope;
+				_ramp_cursor.time_ms += 625.0 / _ramp_cursor.bpm;
+				++_ramp_cursor.tick;
+			}
+			return _ramp_cursor.time_ms;
+		}
+		return left.getTime_ms();
+	}
+
+
+	std::list<Tempo>::const_iterator pickLeftTempo_it(
+			std::list<Tempo>::const_iterator left_tempo_it,
+			uint32_t at_position_ticks
+		) const {
+
+		// Picks the left tempo iterator
+		for (auto tempo_it = std::next(left_tempo_it); ; ++tempo_it) {
+			if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > at_position_ticks) {	// It's the pin that one needs to keep up
+				return std::prev(tempo_it);
+			}
+		}
+		return left_tempo_it;
+	}
 
 public:
 
@@ -396,61 +465,6 @@ public:
 	}
 
 
-	static double extrapolateAbsoluteTime_ms(const Tempo& tempo, uint32_t ticks) {
-		uint32_t tempo_ticks = tempo.getPositionTicks();
-		double left_time_ms = tempo.getTime_ms();
-		if (ticks > tempo_ticks) {
-			int16_t tempo_bpm_10 = tempo.getBPM_10();
-			return left_time_ms + (double)(ticks - tempo_ticks) * 625.0 / (double)tempo_bpm_10;
-		}
-		return left_time_ms;
-	}
-
-	// Most compatible method for varying BPMs
-	static double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
-		uint32_t left_ticks  = left.getPositionTicks();   // tick position of the left marker
-		uint32_t right_ticks = right.getPositionTicks();  // tick position of the right marker
-		double left_time_ms  = left.getTime_ms();         // absolute time (ms) at the left marker
-		if (left_ticks < right_ticks && ticks > left_ticks && ticks <= right_ticks) {
-			double L = (double)left.getBPM_10();          // L = Left BPM, in bpm_10 units (BPM × 10)
-			double R = (double)right.getBPM_10();         // R = Right BPM, in bpm_10 units (BPM × 10)
-			uint32_t N = right_ticks - left_ticks;        // N = number of ticks in the segment
-			double t = left_time_ms;                      // t = accumulated time (ms), starts at the left marker
-			// Walk tick by tick from the left marker up to the requested tick.
-			// k = tick index within the segment, from 1 to (ticks - left_ticks)
-			for (uint32_t k = 1; k <= ticks - left_ticks; ++k) {
-				// bpm = BPM at tick k, linear ramp between L and R over N ticks
-				double bpm = L + (R - L) * (double)k / (double)N;
-					// bpm = L + (R - L) * k / N
-					//       │      │      │   │
-					//       │      │      │   └──── N = total ticks in the segment (the divisor)
-					//       │      │      └──────── k = current tick index (1 … N)
-					//       │      └─────────────── (R - L) = total BPM change across the segment
-					//       └────────────────────── L = starting BPM
-				// Add the duration of this single tick, in milliseconds
-				// (625 comes from: 60000 ms/min ÷ 960 ticks/beat ÷ 10 for the bpm_10 scale)
-				t += 625.0 / bpm;
-			}
-			return t;                                     // absolute time (ms) at the requested tick
-		}
-		return left_time_ms;                              // outside the segment: fall back to the left marker's time
-	}
-
-
-	std::list<Tempo>::const_iterator pickLeftTempo_it(
-			std::list<Tempo>::const_iterator left_tempo_it,
-			uint32_t at_position_ticks
-		) const {
-
-		// Picks the left tempo iterator
-		for (auto tempo_it = std::next(left_tempo_it); ; ++tempo_it) {
-			if (tempo_it == _tempos.end() || tempo_it->getPositionTicks() > at_position_ticks) {	// It's the pin that one needs to keep up
-				return std::prev(tempo_it);
-			}
-		}
-		return left_tempo_it;
-	}
-
 	bool applyTime_ms(std::list<MidiPin> *midiPins_sorted) {
     	if (_tempos.empty()) return false;	// Failsafe
 
@@ -463,6 +477,9 @@ public:
 			int16_t origin_bpm_10 = firsy_tempo_it->getBPM_10();
 			_tempos.emplace_front(origin_bpm_10, 0);
 		}
+
+		// For Tempos
+		_ramp_cursor = RampCursor{}; // fresh cursor for this run
 
 		for (auto tempo_it = std::next(_tempos.begin()); tempo_it != _tempos.end(); ++tempo_it) {
 			auto previous_it = std::prev(tempo_it);
@@ -484,6 +501,9 @@ public:
 				);
 			}
 		}
+
+		// For Midi Pins
+		_ramp_cursor = RampCursor{}; // fresh cursor for this run
 
 		// To be compatible with the `pickLeftTempo_it` method
 		std::list<Tempo>::const_iterator left_tempo_it = _tempos.begin();

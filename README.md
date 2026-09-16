@@ -23,6 +23,16 @@ https://sourceforge.net/projects/json-midi-player/files/Linux/
 1. Install the fluidsynth and its fonts with `sudo apt install fluidsynth fluid-soundfont-gm`
 1. Load the font into it `fluidsynth -v -a alsa /usr/share/sounds/sf2/FluidR3_GM.sf2`
 1. Create a `GitHub` directory and clone the repository into it with `git clone https://github.com/ruiseixasm/JsonMidiPlayer.git`
+# Helper software
+## On Windows
+1. The [loopMidi](https://www.tobias-erichsen.de/software/loopmidi.html) allows the creation of virtual midi ports that interconnect different midi devices.
+
+## On Linux
+1. The **VMPK** is a virtual piano that make is possible seeing which keys are being pressed
+```sh
+sudo apt update
+sudo apt install vmpk qsynth fluid-soundfont-gm
+```
 # Compiling the repository
 ## On Windows
 Please note that for [`ctypes`](https://docs.python.org/3/library/ctypes.html) only the Visual Studio 2017+ is capable of generating working `.dll` files, the MinGW compiler isn't!

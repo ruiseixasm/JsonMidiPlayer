@@ -378,7 +378,7 @@ class Clocking {
     double _length_time_ms = 0.0;
 	std::list<Tempo> _tempos;
     std::vector<MidiDevice*> _clocked_devices;
-	RampCursor _ramp_cursor;   // zero-initialized by the in-class defaults
+	mutable RampCursor _ramp_cursor;   // zero-initialized by the in-class defaults
 
 
 	static double extrapolateAbsoluteTime_ms(const Tempo& tempo, uint32_t ticks) {
@@ -393,7 +393,7 @@ class Clocking {
 
 
 	// Most compatible method for varying BPMs
-	double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
+	double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) const {
 		uint32_t left_ticks  = left.getPositionTicks();
 		uint32_t right_ticks = right.getPositionTicks();
 

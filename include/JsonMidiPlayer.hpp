@@ -450,7 +450,7 @@ public:
 
 
 	size_t addClockMessagesToPlay(std::list<MidiPin> *midiPins) const {
-		size_t added_mesages = 0;
+		size_t added_messages = 0;
 		// _length_ticks is a multiple of TICKS_PER_CLOCK, beats multiples
 		size_t total_clock_pins = _length_ticks / TICKS_PER_CLOCK;
 		
@@ -460,28 +460,32 @@ public:
 			for (size_t pin_i = 1; pin_i < total_clock_pins; pin_i++) {
 				// New clock message with High Priority 3.1 (Let's messages like Program Change go first)
 				midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * pin_i), device, { system_timing_clock }, 0x31) );
-				added_mesages++;
+				added_messages++;
 			}
 			// New Stop clock message with Lowest priority 11.0
 			midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_clock_stop }, 0xB0) );
 			// New Stop clock message with Lowest priority 11.1
 			midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_song_pointer, 0, 0 }, 0xB1) );
-			added_mesages += 3;	// for Start, Stop and Pointer messages
+			added_messages += 3;	// for Start, Stop and Pointer messages
 		}
-		return added_mesages;
+		return added_messages;
 	}
 
 
 	void applyTime_ms(std::list<MidiPin> *midiPins_sorted) {
-    	if (_tempos.empty()) return;	// Failsafe
+    	if (_tempos.empty()) {
+			// In this scenario all the pins ned to be removed or they will be triggered at the same time at 0 ms !
+    		midiPins_sorted->clear();
+			return;	// Failsafe
+		}
 
-		_tempos.sort();	// Gurantees the tempos are sorted by ticks first
+		_tempos.sort();	// Guarantees the tempos are sorted by ticks first
 
 		// Makes sure there are a `Tempo` at the origin (ticks == 0)
-		auto firsy_tempo_it = _tempos.begin();
-		uint32_t first_position_ticks = firsy_tempo_it->getPositionTicks();
+		auto first_tempo_it = _tempos.begin();
+		uint32_t first_position_ticks = first_tempo_it->getPositionTicks();
 		if (first_position_ticks > 0) {
-			int16_t origin_bpm_10 = firsy_tempo_it->getBPM_10();
+			int16_t origin_bpm_10 = first_tempo_it->getBPM_10();
 			_tempos.emplace_front(origin_bpm_10, 0);
 		}
 

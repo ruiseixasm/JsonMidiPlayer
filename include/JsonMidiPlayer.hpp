@@ -336,28 +336,39 @@ public:
 // only sums the ticks between here and the requested tick.
 struct RampCursor {
     uint32_t left_ticks = 0;     // tick of the segment's left marker
-    uint32_t tick       = 0;     // last tick accumulated
-    double   time_ms    = 0.0;   // absolute time at that tick
-    double   bpm        = 0.0;   // BPM at that tick
-    double   bpm_slope  = 0.0;   // BPM change per tick
+    uint32_t tick       = 0;     // cursor position: the last tick accumulated
+    double   time_ms    = 0.0;   // absolute time (ms) at that cursor position
+    double   bpm        = 0.0;   // BPM (in bpm_10 units) at the cursor position
+    double   bpm_slope  = 0.0;   // BPM change per tick across the segment
+
+    void resetCursor() {
+        tick = 0;                // forces a re-anchor on the next updateCursor()
+    }
 
 	void updateCursor(const Tempo& left, const Tempo& right) {
-		left_ticks 	= left.getPositionTicks();
-		tick       	= left_ticks;
-		time_ms    	= left.getTime_ms();
-		bpm        	= (double)left.getBPM_10();
-		uint32_t N  = right.getPositionTicks() - left_ticks;
-		bpm_slope  	= ((double)right.getBPM_10() - bpm) / (double)N;
+		uint32_t right_ticks = right.getPositionTicks();  // tick of the segment's right marker
+
+		left_ticks = left.getPositionTicks();             // tick of the segment's left marker
+		tick       = left_ticks;                          // cursor starts at the left marker
+		time_ms    = left.getTime_ms();                   // absolute time (ms) at the left marker
+		bpm        = (double)left.getBPM_10();            // BPM at the left marker, in bpm_10 units
+
+		uint32_t N = right_ticks - left_ticks;            // N = number of ticks in the segment
+		bpm_slope  = ((double)right.getBPM_10() - bpm) / (double)N;  // BPM change per tick
 	}
 
-	double moveCursor(uint32_t ticks) {
-		while (tick < ticks) {
-			bpm 	+= bpm_slope;
-			time_ms += 625.0 / bpm;
-			++tick;
-		}
-		return time_ms;
-	}
+    // Advance the cursor up to `target_ticks`, summing 625/BPM per tick.
+    // Each step adds the duration of one tick and moves the BPM one step along the ramp.
+    //   625.0 = 60000 ms/min ÷ 960 ticks/beat ÷ 10 (the bpm_10 scale)
+    // Returns the absolute time (ms) at `target_ticks`.
+    double moveCursor(uint32_t target_ticks) {
+        while (tick < target_ticks) {
+            bpm     += bpm_slope;            // BPM at the tick being added
+            time_ms += 625.0 / bpm;          // duration of that tick, in ms
+            ++tick;                          // advance the cursor
+        }
+        return time_ms;
+    }
 };
 
 
@@ -483,7 +494,7 @@ public:
 		}
 
 		// For Tempos
-		_ramp_cursor = RampCursor{}; // fresh cursor for this run
+		_ramp_cursor.resetCursor(); // fresh cursor for this run
 
 		for (auto tempo_it = std::next(_tempos.begin()); tempo_it != _tempos.end(); ++tempo_it) {
 			auto previous_it = std::prev(tempo_it);
@@ -507,7 +518,7 @@ public:
 		}
 
 		// For Midi Pins
-		_ramp_cursor = RampCursor{}; // fresh cursor for this run
+		_ramp_cursor.resetCursor(); // fresh cursor for this run
 
 		// To be compatible with the `pickLeftTempo_it` method
 		std::list<Tempo>::const_iterator left_tempo_it = _tempos.begin();

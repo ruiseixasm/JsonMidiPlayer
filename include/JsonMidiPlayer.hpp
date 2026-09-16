@@ -349,6 +349,15 @@ struct RampCursor {
 		uint32_t N  = right.getPositionTicks() - left_ticks;
 		bpm_slope  	= ((double)right.getBPM_10() - bpm) / (double)N;
 	}
+
+	double moveCursor(uint32_t ticks) {
+		while (tick < ticks) {
+			bpm 	+= bpm_slope;
+			time_ms += 625.0 / bpm;
+			++tick;
+		}
+		return time_ms;
+	}
 };
 
 
@@ -384,12 +393,7 @@ class Clocking {
 				_ramp_cursor.updateCursor(left, right);
 			}
 			// Move cursor
-			while (_ramp_cursor.tick < ticks) {
-				_ramp_cursor.bpm     += _ramp_cursor.bpm_slope;
-				_ramp_cursor.time_ms += 625.0 / _ramp_cursor.bpm;
-				++_ramp_cursor.tick;
-			}
-			return _ramp_cursor.time_ms;
+			return _ramp_cursor.moveCursor(ticks);
 		}
 		return left.getTime_ms();
 	}

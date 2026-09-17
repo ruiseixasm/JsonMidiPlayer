@@ -26,6 +26,9 @@ project(JsonMidiPlayer
 # Generates a compile_commands.json file containing the exact compiler calls for all translation units of the project in machine-readable form.
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Makes sure the Language Standard is the C++17 or above
+set(CMAKE_CXX_STANDARD 17)
+
 # Include directories
 include_directories(include single_include)
 

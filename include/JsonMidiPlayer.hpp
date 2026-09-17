@@ -275,7 +275,6 @@ class MidiDevice {
     public:
         MidiDevice(std::string device_name, unsigned int device_port, bool verbose = false)
                     : name(device_name), port(device_port), verbose(verbose) { }
-        ~MidiDevice() { closePort(); }
     
         // Move constructor
         MidiDevice(MidiDevice &&other) noexcept : midiOut(std::move(other.midiOut)),
@@ -1363,6 +1362,12 @@ public:
 
 			std::cout << "Devices disconnected: ";
 			// Exiting devices scope automatically disconnects them
+
+			// Disconnect midi devices
+			
+						for (auto &available_device : available_midi_devices) {
+							available_device.closePort();
+						}
 
 			// Where the reporting is finally done
 			std::cout << std::endl << "Midi stats reporting:" << std::endl;

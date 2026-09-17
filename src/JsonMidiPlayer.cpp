@@ -81,7 +81,7 @@ void setRealTimeScheduling() {
 int PlayList(const char* json_str, int loop, bool verbose) {
     
 	if (loop < 0) {
-		if (verbose) std::cout << "\tNo negative loops are acceptable.\n";
+		if (verbose) std::cout << "\tNegative loops are NOT acceptable.\n";
 		return 1;
 	}
 

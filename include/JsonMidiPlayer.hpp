@@ -646,6 +646,15 @@ public:
             error.printMessage();
             return EXIT_FAILURE;
         }
+		
+        #ifdef DEBUGGING
+        debugging_now = std::chrono::high_resolution_clock::now();
+        auto completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+        completion_time_us = completion_time.count();
+        std::cout << "MIDI DEVICES FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+        debugging_last = std::chrono::high_resolution_clock::now();
+        #endif
+
 		return 0;
 	}
 
@@ -971,11 +980,22 @@ public:
 		
 		skip_reading_items: ;	// Does nothing, just stops reading items
         if (verbose) std::cout << std::endl;
+		
+        #ifdef DEBUGGING
+        debugging_now = std::chrono::high_resolution_clock::now();
+        completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+        completion_time_us = completion_time.count();
+        std::cout << "JSON DATA FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+        debugging_last = std::chrono::high_resolution_clock::now();
+        #endif
+
 		return 0;
 	}
 
 
 	void processMidiPins() {
+
+		midiPins.sort();	// Makes sure pins are sorted first
 
 		#ifdef DEBUGGING
 		debugging_now = std::chrono::high_resolution_clock::now();
@@ -984,8 +1004,6 @@ public:
 		std::cout << "SORTING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
 		debugging_last = std::chrono::high_resolution_clock::now();
 		#endif
-
-		midiPins.sort();	// Makes sure pins are sorted first
 
 		// remove redundant pins
 		for (auto pin_it = midiPins.begin(); pin_it != midiPins.end(); ) {

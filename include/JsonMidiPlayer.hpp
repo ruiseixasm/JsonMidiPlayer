@@ -591,7 +591,7 @@ struct PlayReporting {
 };
 
 
-class PlayList {
+class Player {
 
 	std::chrono::high_resolution_clock::time_point data_processing_start;
 	PlayReporting play_reporting;
@@ -609,7 +609,7 @@ class PlayList {
 
 public:
 
-	PlayList() {
+	Player() {
 		
 		disableBackgroundThrottling();
 		// Set real-time scheduling

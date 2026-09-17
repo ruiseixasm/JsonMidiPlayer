@@ -107,7 +107,7 @@ private:
     const unsigned char priority;
     MidiDevice * const midi_device = nullptr;
     std::vector<unsigned char> midi_message;  // Replaces midi_message[3]
-    // Auxiliary variable for the final playing loop!!
+    // Auxiliary variable for the final loops playing!!
     double delay_time_ms = 0.0;
 
 	// needed to recognize and already released Note !!
@@ -902,7 +902,7 @@ public:
 										midiPins.push_back(
 											MidiPin(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority)
 										);
-										play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
+										play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the for loop
 										play_reporting.total_validated++;
 									}
 								}

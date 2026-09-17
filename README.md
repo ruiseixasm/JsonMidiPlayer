@@ -87,7 +87,7 @@ PS C:\Users\rui\Documents\GitHub\JsonMidiPlayer> .\build\Release\JsonMidiPlayer.
 Usage: C:\Users\rui\Documents\GitHub\JsonMidiPlayer\build\Release\JsonMidiPlayer.exe [options] input_file_1.json [input_file_2.json]
 Options:
   -h, --help       Show this help message and exit
-  -l, --loop       Loops the playlist the amount of times with 1 as the default
+  -l, --loops      The amount of loops the playlist will be played with 1 loop as the default
   -v, --verbose    Enable verbose mode
   -V, --version    Prints the current version number
 

@@ -37,7 +37,7 @@ void printUsage(const char *programName) {
     std::cout << "Usage: " << programName << " [options] input_file_1.json [input_file_2.json]\n"
               << "Options:\n"
               << "  -h, --help       Show this help message and exit\n"
-              << "  -l, --loop       Loops the playlist the amount of times with 1 as the default\n"
+              << "  -l, --loops      The amount of loops the playlist will be played with 1 loop as the default\n"
               << "  -v, --verbose    Enable verbose mode\n"
               << "  -V, --version    Prints the current version number\n\n"
               << "More info here: https://github.com/ruiseixasm/JsonMidiPlayer\n\n";
@@ -51,7 +51,7 @@ int main(int argc, char *argv[]) {
 
     struct option long_options[] = {
         {"help",    no_argument,       nullptr, 'h'},
-    	{"loop",    required_argument, nullptr, 'l'},
+    	{"loops",   required_argument, nullptr, 'l'},
         {"verbose", no_argument,       nullptr, 'v'},
         {"version", no_argument,       nullptr, 'V'},
         {nullptr,   0,                 nullptr,  0 }
@@ -70,7 +70,7 @@ int main(int argc, char *argv[]) {
                 errno = 0;
                 long n = std::strtol(optarg, &end, 10);
                 if (errno != 0 || end == optarg || *end != '\0' || n < 0) {
-                    std::cerr << "Invalid loop amount: " << optarg << std::endl;
+                    std::cerr << "Invalid amount of loops: " << optarg << std::endl;
                     return 1;
                 }
                 loops = static_cast<int>(n);

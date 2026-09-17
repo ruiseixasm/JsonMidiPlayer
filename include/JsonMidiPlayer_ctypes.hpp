@@ -26,7 +26,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #endif
 
 extern "C" {    // Needed for Python ctypes
-    DLL_EXPORT int PlayList_ctypes(const char* json_str, int loop, int verbose);
+    DLL_EXPORT int PlayList_ctypes(const char* json_str, int loops, int verbose);
     DLL_EXPORT int add_ctypes(int a, int b);
 }
 

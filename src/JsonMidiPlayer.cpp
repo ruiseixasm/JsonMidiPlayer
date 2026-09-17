@@ -78,9 +78,9 @@ void setRealTimeScheduling() {
 }
 
 
-int PlayList(const char* json_str, int loop, bool verbose) {
+int PlayList(const char* json_str, int loops, bool verbose) {
     
-	if (loop < 0) {
+	if (loops < 0) {
 		if (verbose) std::cout << "\tNegative loops are NOT acceptable.\n";
 		return 1;
 	}
@@ -91,13 +91,13 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 	if (read_error) return read_error;
 	int load_error = player.loadJsonContent(json_str, verbose);
 	if (load_error) return load_error;
-	
+
 	player.processMidiPins();
 	player.addClockingPins();
 	player.applyTime_ms();
 	player.reportProcessing(verbose);
-	player.printPlayingTime(loop, verbose);
-	player.loopPlaylist(loop);
+	player.printPlayingTime(loops, verbose);
+	player.loopPlaylist(loops);
 	player.reportPlaying(verbose);
 
 
@@ -418,7 +418,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 	// 									midiPins.push_back(
 	// 										MidiPin(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority)
 	// 									);
-	// 									play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
+	// 									play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the 
 	// 									play_reporting.total_validated++;
 	// 								}
 	// 							}
@@ -762,7 +762,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 	// 	if (verbose) std::cout << "Data stats reporting:" << std::endl;
 	// 	if (verbose) std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << real_processing_json_time << std::endl;
 	// 	if (verbose) std::cout << "\tMidi Ports opening time (ms):             " << std::setw(10) << play_reporting.ports_opening << std::endl;
-	// 	if (verbose) std::cout << "\tSingle loop length (beats):               " << std::setw(10) << clocking.getLengthTicks() / TICKS_PER_BEAT << std::endl;
+	// 	if (verbose) std::cout << "\tSingle  length (beats):               " << std::setw(10) << clocking.getLengthTicks() / TICKS_PER_BEAT << std::endl;
 	// 	if (verbose) std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
 	// 	if (verbose) std::cout << "\tTotal validated Midi Messages (accepted): " << std::setw(10) << play_reporting.total_validated << std::endl;
 	// 	if (verbose) std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;
@@ -775,12 +775,12 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 		
 	// 	// Position time
 	// 	if (verbose) {
-	// 		size_t duration_time_sec = std::round(clocking.getLengthTime_ms() * loop / 1000);
-	// 		if (loop == 1) {
-	// 			std::cout << "The playlist will now be played in 1 loop for "
+	// 		size_t duration_time_sec = std::round(clocking.getLengthTime_ms() *  / 1000);
+	// 		if ( == 1) {
+	// 			std::cout << "The playlist will now be played in 1  for "
 	// 			<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
 	// 		} else {
-	// 			std::cout << "The playlist will now be played in " << loop << " loops for "
+	// 			std::cout << "The playlist will now be played in " <<  << " loops for "
 	// 			<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
 	// 		}
 	// 	}
@@ -790,7 +790,7 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 	// 	const double lengthTime_ms = clocking.getLengthTime_ms();
 	// 	const auto playing_start = std::chrono::high_resolution_clock::now();
 
-	// 	for (int loop_i = 0; loop_i < loop; ++loop_i) {
+	// 	for (int loop_i = 0; loop_i < ; ++loop_i) {
 
 	// 		const double loopTime_ms = lengthTime_ms * loop_i;
 	// 		uint32_t position_ticks = 0;

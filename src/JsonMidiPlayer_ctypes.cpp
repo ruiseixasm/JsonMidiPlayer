@@ -15,8 +15,8 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 */
 #include "JsonMidiPlayer_ctypes.hpp"
 
-int PlayList_ctypes(const char* json_str, int loop, int verbose) {
-    return PlayList(json_str, loop, verbose);
+int PlayList_ctypes(const char* json_str, int loops, int verbose) {
+    return PlayList(json_str, loops, verbose);
 }
 
 int add_ctypes(int a, int b) {

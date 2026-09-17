@@ -46,7 +46,7 @@ void printUsage(const char *programName) {
 int main(int argc, char *argv[]) {
 
     int verbose = 0;
-	int loop = 1;
+	int loops = 1;
     int option_index = 0;
 
     struct option long_options[] = {
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
                     std::cerr << "Invalid loop amount: " << optarg << std::endl;
                     return 1;
                 }
-                loop = static_cast<int>(n);
+                loops = static_cast<int>(n);
                 break;
             }
             case 'v':
@@ -118,5 +118,5 @@ int main(int argc, char *argv[]) {
     // Replace last "," with a "]"
     json_files_list.back() = ']';
 
-    return PlayList(json_files_list.c_str(), loop, verbose);
+    return PlayList(json_files_list.c_str(), loops, verbose);
 }

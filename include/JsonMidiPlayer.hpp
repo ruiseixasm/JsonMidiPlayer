@@ -51,10 +51,10 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 
 // Declare the function in the header file
 void disableBackgroundThrottling();
-
 void setRealTimeScheduling();
 void highResolutionSleep(long long microseconds);
-int PlayList(const char* json_str, int loop = 1, bool verbose = false);
+
+int PlayList(const char* json_str, int loops = 1, bool verbose = false);
 
 
 // Taken from: https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
@@ -1250,27 +1250,27 @@ public:
 	}
 
 
-	void printPlayingTime(int loop, bool verbose) {
+	void printPlayingTime(int loops, bool verbose) {
 		if (verbose) {
-			size_t duration_time_sec = std::round(clocking.getLengthTime_ms() * loop / 1000);
-			if (loop == 1) {
+			size_t duration_time_sec = std::round(clocking.getLengthTime_ms() * loops / 1000);
+			if (loops == 1) {
 				std::cout << "The playlist will now be played in 1 loop for "
 				<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
 			} else {
-				std::cout << "The playlist will now be played in " << loop << " loops for "
+				std::cout << "The playlist will now be played in " << loops << " loops for "
 				<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
 			}
 		}
 	}
 
 
-	void loopPlaylist(int loop) {
+	void loopPlaylist(int loops) {
 
 		const uint32_t lengthTicks = clocking.getLengthTicks();
 		const double lengthTime_ms = clocking.getLengthTime_ms();
 		const auto playing_start = std::chrono::high_resolution_clock::now();
 
-		for (int loop_i = 0; loop_i < loop; ++loop_i) {
+		for (int loop_i = 0; loop_i < loops; ++loop_i) {
 
 			const double loopTime_ms = lengthTime_ms * loop_i;
 			uint32_t position_ticks = 0;

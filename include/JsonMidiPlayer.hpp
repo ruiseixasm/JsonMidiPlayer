@@ -42,7 +42,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
     #include <time.h>
 #endif
 
-// #define DEBUGGING true
+// #define DEBUGGING true	// UNCOMMENT THIS LINE FOR DEBUGGING METRICS
 #define FILE_TYPE "Json Midi Player"
 #define FILE_URL  "https://github.com/ruiseixasm/JsonMidiPlayer"
 #define VERSION   "7.3.1"
@@ -604,7 +604,6 @@ class Player {
     std::chrono::high_resolution_clock::time_point debugging_start;
     std::chrono::high_resolution_clock::time_point debugging_now;
     std::chrono::high_resolution_clock::time_point debugging_last;
-    long long completion_time_us = 0;
     #endif
 
 public:
@@ -650,8 +649,8 @@ public:
         #ifdef DEBUGGING
         debugging_now = std::chrono::high_resolution_clock::now();
         auto completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
-        completion_time_us = completion_time.count();
-        std::cout << "MIDI DEVICES FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+        long long completion_time_us = completion_time.count();
+        std::cout << "\t\tMIDI DEVICES FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
 
@@ -983,9 +982,9 @@ public:
 		
         #ifdef DEBUGGING
         debugging_now = std::chrono::high_resolution_clock::now();
-        completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
-        completion_time_us = completion_time.count();
-        std::cout << "JSON DATA FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+        auto completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+        long long completion_time_us = completion_time.count();
+        std::cout << "\t\tJSON DATA FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
         debugging_last = std::chrono::high_resolution_clock::now();
         #endif
 
@@ -999,9 +998,9 @@ public:
 
 		#ifdef DEBUGGING
 		debugging_now = std::chrono::high_resolution_clock::now();
-		completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
-		completion_time_us = completion_time.count();
-		std::cout << "SORTING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+		auto completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+		long long completion_time_us = completion_time.count();
+		std::cout << "\t\tSORTING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
 		debugging_last = std::chrono::high_resolution_clock::now();
 		#endif
 
@@ -1218,9 +1217,9 @@ public:
 
 		#ifdef DEBUGGING
 		debugging_now = std::chrono::high_resolution_clock::now();
-		completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
-		completion_time_us = completion_time.count();
-		std::cout << "SORTING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+		auto completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+		long long completion_time_us = completion_time.count();
+		std::cout << "\t\tSETTING TIME MS IN: " << completion_time_us << " microseconds" << std::endl;
 		debugging_last = std::chrono::high_resolution_clock::now();
 		#endif
 	}
@@ -1325,9 +1324,9 @@ public:
 		
 		#ifdef DEBUGGING
 		debugging_now = std::chrono::high_resolution_clock::now();
-		completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
-		completion_time_us = completion_time.count();
-		std::cout << "PLAYING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+		auto completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+		long long completion_time_us = completion_time.count();
+		std::cout << "\t\tPLAYING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
 		debugging_last = std::chrono::high_resolution_clock::now();
 		#endif
 	}

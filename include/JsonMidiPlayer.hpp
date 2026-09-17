@@ -372,10 +372,11 @@ struct RampCursor {
 
 class Clocking {
 	
-    inline static uint32_t _length_ticks = 0;
-    inline static double _length_time_ms = 0.0;
-	inline static std::list<Tempo> _tempos;
-    inline static std::vector<MidiDevice*> _clocked_devices;
+    uint32_t _length_ticks = 0;
+    double _length_time_ms = 0.0;
+	std::list<Tempo> _tempos;
+    std::vector<MidiDevice*> _clocked_devices;
+	mutable RampCursor _ramp_cursor;
 
 
 	static double extrapolateAbsoluteTime_ms(const Tempo& tempo, uint32_t ticks) {
@@ -390,20 +391,18 @@ class Clocking {
 
 
 	// Most compatible method for varying BPMs
-	static double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
-		// Cursor is shared by all instances each time this method is called, just one clocking (static member variables) !
-		static RampCursor ramp_cursor;
+	double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) const {
 
 		uint32_t left_ticks  = left.getPositionTicks();
 		uint32_t right_ticks = right.getPositionTicks();
 
 		if (left_ticks < right_ticks && ticks > left_ticks && ticks <= right_ticks) {
-			// Update cursor (`ramp_cursor.tick > ticks` because cursor can't move backwards)
-			if (ramp_cursor.position_ticks <= left_ticks || ramp_cursor.position_ticks > ticks) {
-				ramp_cursor.updateCursor(left, right);
+			// Update cursor (`_ramp_cursor.tick > ticks` because cursor can't move backwards)
+			if (_ramp_cursor.position_ticks <= left_ticks || _ramp_cursor.position_ticks > ticks) {
+				_ramp_cursor.updateCursor(left, right);
 			}
 			// Move cursor
-			return ramp_cursor.moveCursor(ticks);
+			return _ramp_cursor.moveCursor(ticks);
 		}
 		return left.getTime_ms();
 	}
@@ -564,6 +563,70 @@ public:
 	//		= 1 / (960 * (1 / 60) * BPM / 1,000)
 	//		= 60 * 1,000 / (960 * BPM)
 	//		= 62.5 / BPM
+};
+
+
+
+struct PlayReporting {
+	size_t json_processing  = 0;    // milliseconds
+	size_t ports_opening  	= 0;    // milliseconds
+	size_t total_generated  = 0;
+	size_t total_validated  = 0;
+	size_t total_incorrect  = 0;
+	size_t total_redundant  = 0;
+	double total_drag       = 0.0;
+	double total_delay      = 0.0;
+	double maximum_delay    = 0.0;
+	double minimum_delay    = 0.0;
+	double average_delay    = 0.0;
+	double sd_delay         = 0.0;
+};
+
+
+class PlayList {
+
+	int loop;
+	bool verbose;
+	std::chrono::high_resolution_clock::time_point data_processing_start;
+	PlayReporting play_reporting;
+	Clocking clocking;
+    std::vector<MidiDevice> available_midi_devices;
+    std::list<MidiPin> midiPins;
+
+public:
+
+	int readAvailableDevices() {
+
+        try {
+            RtMidiOut midiOut;  // Temporary MidiOut manipulator
+            unsigned int nPorts = midiOut.getPortCount();
+            if (nPorts == 0) {
+                if (verbose) std::cout << "No output Midi devices available.\n";
+                return 1;
+            }
+            if (verbose) std::cout << "Available output Midi devices:\n";
+            for (unsigned int i = 0; i < nPorts; i++) {
+                std::string portName = midiOut.getPortName(i);
+                if (verbose) std::cout << "\tMidi device #" << i << ": " << portName << std::endl;
+                available_midi_devices.push_back(MidiDevice(portName, i, verbose));   // The object is copied
+            }
+            if (available_midi_devices.empty()) {
+                if (verbose) std::cout << "\tNo output Midi devices available.\n";
+                return 1;
+            }
+        } catch (RtMidiError &error) {
+            error.printMessage();
+            return EXIT_FAILURE;
+        }
+		return 0;
+	}
+
+	int loadJsonContent() {
+
+
+	}
+
+
 };
 
     

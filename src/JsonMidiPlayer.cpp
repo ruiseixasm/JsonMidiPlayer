@@ -80,6 +80,8 @@ void setRealTimeScheduling() {
 
 int PlayList(const char* json_str, int loops, bool verbose) {
     
+    if (verbose) std::cout << "JsonMidiPlayer version: " << VERSION << std::endl;
+
 	if (loops < 0) {
 		if (verbose) std::cout << "\tNegative loops are NOT acceptable.\n";
 		return 1;

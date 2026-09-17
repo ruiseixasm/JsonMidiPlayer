@@ -993,7 +993,7 @@ public:
 	}
 
 
-	void processMidiPins() {
+	void prepareMidiPins() {
 
 		midiPins.sort();	// Makes sure pins are sorted first
 

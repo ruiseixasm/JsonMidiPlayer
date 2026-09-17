@@ -91,7 +91,14 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 	if (read_error) return read_error;
 	int load_error = player.loadJsonContent(json_str, verbose);
 	if (load_error) return load_error;
+	
 	player.processMidiPins();
+	player.addClockingPins();
+	player.applyTime_ms();
+	player.reportProcessing(verbose);
+	player.printPlayingTime(loop, verbose);
+	player.loopPlaylist(loop);
+	player.reportPlaying(verbose);
 
 
     // disableBackgroundThrottling();

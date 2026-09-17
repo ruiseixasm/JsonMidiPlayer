@@ -663,7 +663,7 @@ public:
 
         if (verbose) std::cout << "Devices connected:    ";
 
-        auto data_processing_start = std::chrono::high_resolution_clock::now();
+        data_processing_start = std::chrono::high_resolution_clock::now();
 
         try {
 

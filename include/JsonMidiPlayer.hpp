@@ -372,11 +372,10 @@ struct RampCursor {
 
 class Clocking {
 	
-    uint32_t _length_ticks = 0;
-    double _length_time_ms = 0.0;
-	std::list<Tempo> _tempos;
-    std::vector<MidiDevice*> _clocked_devices;
-	mutable RampCursor _ramp_cursor;   // zero-initialized by the in-class defaults
+    inline static uint32_t _length_ticks = 0;
+    inline static double _length_time_ms = 0.0;
+	inline static std::list<Tempo> _tempos;
+    inline static std::vector<MidiDevice*> _clocked_devices;
 
 
 	static double extrapolateAbsoluteTime_ms(const Tempo& tempo, uint32_t ticks) {
@@ -391,17 +390,20 @@ class Clocking {
 
 
 	// Most compatible method for varying BPMs
-	double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) const {
+	static double interpolateAbsoluteTime_ms(const Tempo& left, const Tempo& right, uint32_t ticks) {
+		// Cursor is shared by all instances each time this method is called, just one clocking (static member variables) !
+		static RampCursor ramp_cursor;
+
 		uint32_t left_ticks  = left.getPositionTicks();
 		uint32_t right_ticks = right.getPositionTicks();
 
 		if (left_ticks < right_ticks && ticks > left_ticks && ticks <= right_ticks) {
-			// Update cursor (`_ramp_cursor.tick > ticks` because cursor can't move backwards)
-			if (_ramp_cursor.position_ticks <= left_ticks || _ramp_cursor.position_ticks > ticks) {
-				_ramp_cursor.updateCursor(left, right);
+			// Update cursor (`ramp_cursor.tick > ticks` because cursor can't move backwards)
+			if (ramp_cursor.position_ticks <= left_ticks || ramp_cursor.position_ticks > ticks) {
+				ramp_cursor.updateCursor(left, right);
 			}
 			// Move cursor
-			return _ramp_cursor.moveCursor(ticks);
+			return ramp_cursor.moveCursor(ticks);
 		}
 		return left.getTime_ms();
 	}

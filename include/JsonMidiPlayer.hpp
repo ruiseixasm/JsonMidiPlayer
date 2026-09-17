@@ -49,6 +49,14 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 #define DRAG_DURATION_MS (1000.0/((120/60)*24))
 
 
+// Declare the function in the header file
+void disableBackgroundThrottling();
+
+void setRealTimeScheduling();
+void highResolutionSleep(long long microseconds);
+int PlayList(const char* json_str, int loop = 1, bool verbose = false);
+
+
 // Taken from: https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
 
 const unsigned char action_note_off         = 0x80; // Note off
@@ -585,17 +593,16 @@ struct PlayReporting {
 
 class PlayList {
 
-	int loop;
-	bool verbose;
 	std::chrono::high_resolution_clock::time_point data_processing_start;
 	PlayReporting play_reporting;
+
 	Clocking clocking;
     std::vector<MidiDevice> available_midi_devices;
     std::list<MidiPin> midiPins;
 
 public:
 
-	int readAvailableDevices() {
+	int readAvailableDevices(bool verbose) {
 
         try {
             RtMidiOut midiOut;  // Temporary MidiOut manipulator
@@ -621,22 +628,694 @@ public:
 		return 0;
 	}
 
-	int loadJsonContent() {
 
+	int loadJsonContent(const char* json_str, bool verbose) {
 
+        if (verbose) std::cout << "Devices connected:    ";
+
+        auto data_processing_start = std::chrono::high_resolution_clock::now();
+
+        try {
+
+			nlohmann::json root = nlohmann::json::parse(json_str);
+
+			// index the first element, the only one
+			const auto& jsonData = root.at(0);
+
+			nlohmann::json jsonFileType;
+			nlohmann::json jsonFileUrl;
+			nlohmann::json jsonFileClocking;
+			nlohmann::json jsonFilePlaylist;
+
+			try
+			{
+				jsonFileType = jsonData["filetype"];
+				jsonFileUrl = jsonData["url"];
+				jsonFileClocking = jsonData["clocking"];
+				jsonFilePlaylist = jsonData["playlist"];
+			}
+			catch (nlohmann::json::parse_error& ex)
+			{
+				if (verbose) std::cerr << "Unable to extract json data: " << ex.byte << std::endl;
+				goto skip_reading_items;
+			}
+			
+			if (jsonFileType != FILE_TYPE || jsonFileUrl != FILE_URL) {
+				if (verbose) std::cerr << "Wrong type of file!" << std::endl;
+				goto skip_reading_items;
+			}
+
+			// Set Length
+			const auto& lb = jsonFileClocking.at("length_beats");
+			uint32_t length_beats_num = lb.at(0).get<uint32_t>();
+			uint32_t length_beats_den = lb.at(1).get<uint32_t>();
+			clocking.setLengthTicks(length_beats_num, length_beats_den);
+
+			if (clocking.getLengthTicks() > 0) {
+
+				// Load the Tempos
+				nlohmann::json jsonFileClocking_tempos = jsonFileClocking.at("tempos");
+				if (jsonFileClocking_tempos.is_array() && !jsonFileClocking_tempos.empty()) {
+					try {
+						for (auto jsonClockingTempo : jsonFileClocking_tempos) {
+
+							int16_t bpm_10 = jsonClockingTempo["bpm_10"];
+							const auto& pb = jsonClockingTempo.at("position_beats");
+							uint32_t position_beats_num = pb.at(0).get<uint32_t>();
+							uint32_t position_beats_den = pb.at(1).get<uint32_t>();
+							clocking.addTempo(
+								bpm_10, position_beats_num, position_beats_den
+							);
+						}
+					} catch (const nlohmann::json::exception& e) {
+						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+						goto skip_reading_items;
+					} catch (const std::exception& e) {
+						if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+						goto skip_reading_items;
+					} catch (...) {
+						if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+						goto skip_reading_items;
+					}
+				}
+
+				// Dictionary where the key is a JSON list
+				std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
+				std::unordered_set<std::string> unavailable_devices;
+				
+				// Load the Devices
+				nlohmann::json jsonFileClocking_devices = jsonFileClocking.at("devices");
+				if (jsonFileClocking_devices.is_array() && !jsonFileClocking_devices.empty()) {
+
+					try {
+						// Keeps the last called device in the JsonMidiPlayer file
+						MidiDevice *last_called_midi_device = nullptr;
+
+						for (std::string jsonClockingDevice_name : jsonFileClocking_devices) {
+
+							if (connected_devices_by_name.find(jsonClockingDevice_name) != connected_devices_by_name.end()) {
+								last_called_midi_device = connected_devices_by_name[jsonClockingDevice_name];
+								goto skip_to_next_device;
+							}
+					
+							if (unavailable_devices.find(jsonClockingDevice_name) != unavailable_devices.end()) {
+								continue;
+							}
+					
+							for (auto &available_device : available_midi_devices) {
+								if (available_device.getName().find(jsonClockingDevice_name) != std::string::npos) {
+									//
+									// Where the Device Port is connected/opened (Main reason for errors)
+									//
+									auto port_opening_start = std::chrono::high_resolution_clock::now();
+
+									bool device_available = available_device.openPort();
+
+									auto port_opening_finish = std::chrono::high_resolution_clock::now();
+									auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(port_opening_finish - port_opening_start);
+									play_reporting.ports_opening += port_processing_time.count();
+
+									if (device_available) {	// Where the connection happens
+										connected_devices_by_name[jsonClockingDevice_name] = &available_device; 
+										last_called_midi_device = &available_device;
+
+										clocking.addDevice(&available_device);
+
+										goto skip_to_next_device; // For Message devices only the first one found is connected and NOT all of them
+
+									} else {
+										connected_devices_by_name[jsonClockingDevice_name] = nullptr; 
+									}
+								} else {
+									unavailable_devices.insert(jsonClockingDevice_name);
+								}
+							}
+							skip_to_next_device: ;	// Does nothing, just jumps to next device
+						}
+					} catch (const nlohmann::json::exception& e) {
+						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+						goto skip_reading_items;
+					} catch (const std::exception& e) {
+						if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+						goto skip_reading_items;
+					} catch (...) {
+						if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+						goto skip_reading_items;
+					}
+				}
+
+				// Check if jsonFilePlaylist is a non-empty array
+				if (jsonFilePlaylist.is_array() && !jsonFilePlaylist.empty()) {
+
+					// Keeps the last called device in the JsonMidiPlayer file
+					MidiDevice *last_called_midi_device = nullptr;
+					// Just the declarations, no need to set them
+					unsigned char data_byte_1;
+					unsigned char data_byte_2;
+					unsigned char priority;
+
+					for (auto jsonPlaylistItem : jsonFilePlaylist)
+					{
+						// Most of the time it's a midi_message being processed, so it makes sense to be the first to check
+						if (jsonPlaylistItem.contains("midi_message")) {
+
+							if (last_called_midi_device != nullptr) {
+
+								play_reporting.total_incorrect++;
+
+								// Create an API with the default API
+								try
+								{
+									const auto& pb = jsonPlaylistItem.at("position_beats");
+									uint32_t position_beats_num = pb.at(0).get<uint32_t>();
+									uint32_t position_beats_den = pb.at(1).get<uint32_t>();
+									if (position_beats_num < 0 || position_beats_den <= 0) {
+
+										continue;
+										
+									} else {
+
+										unsigned char status_byte = jsonPlaylistItem["midi_message"]["status_byte"];
+										std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
+										
+										unsigned char message_action = status_byte & 0xF0;
+
+										// Where the Midi message is set
+										switch (message_action) {
+											case action_note_off:
+											case action_note_on:
+											case action_control_change:
+											case action_pitch_bend:
+											case action_key_pressure:
+											{
+												// This is already a try catch situation
+												data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte_1"];
+												data_byte_2 = jsonPlaylistItem["midi_message"]["data_byte_2"];
+												if (data_byte_1 & 128 | data_byte_2 & 128)
+													continue;
+												json_midi_message.push_back(data_byte_1);
+												json_midi_message.push_back(data_byte_2);
+												break;
+											}
+											case action_program_change:
+											case action_channel_pressure:
+											{
+												data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte"];
+												if (data_byte_1 & 128)
+													continue;
+												json_midi_message.push_back(data_byte_1);
+												break;
+											}
+											default:
+												break;
+										}
+
+										// Where the Priority is set
+										switch (message_action) {
+											case action_note_off:
+												priority = 0x40 | status_byte & 0x0F;       // Normal priority 4 for Off
+												break;
+											case action_note_on:
+												priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On
+												break;
+											case action_control_change:
+												if (data_byte_1 == 1) {             // Modulation
+													priority = 0x60 | status_byte & 0x0F;       // Low priority 6
+												} else if (data_byte_1 == 0 || data_byte_1 == 32) {
+													// 0 -  Bank Select (MSB)
+													// 32 - Bank Select (LSB)
+													priority = 0x10;                            // High priority 1.0	(Equivalent to Program Change)
+												} else if (data_byte_1 == 123) {
+													// 123 - All notes off (0x7B)
+													// shall come after Notes On and Off
+													priority = 0x90 | status_byte & 0x0F;       // Low priority 9
+												} else {
+													priority = 0x20 | status_byte & 0x0F;       // High priority 2
+												}
+												break;
+											case action_pitch_bend:
+												priority = 0x70 | status_byte & 0x0F;           // Low priority 7
+												break;
+											case action_key_pressure:
+												priority = 0x80 | status_byte & 0x0F;           // Low priority 8
+												break;
+											case action_program_change:
+												priority = 0x11;                            // High priority 1.1
+												break;
+											case action_channel_pressure:
+												priority = 0x80 | status_byte & 0x0F;       // Low priority 8
+												break;
+											default:
+												continue;   // Not a valid message, no priority given, jumps to the next one
+										}
+
+										midiPins.push_back(
+											MidiPin(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority)
+										);
+										play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the loop
+										play_reporting.total_validated++;
+									}
+								}
+								catch (const nlohmann::json::exception& e) {
+									if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+									continue;
+								} catch (const std::exception& e) {
+									if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+									continue;
+								} catch (...) {
+									if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+									continue;
+								}
+							}
+
+						// Where the last device is set based on the json "device" input
+						} else if (jsonPlaylistItem.contains("devices")) {
+
+							// The devices JSON list key
+							nlohmann::json json_device_names = jsonPlaylistItem["devices"];
+
+							last_called_midi_device = nullptr; // No available device found at start
+							// It's a list of Devices that is given as Device
+							for (std::string device_name : json_device_names) {
+								
+								if (connected_devices_by_name.find(device_name) != connected_devices_by_name.end()) {
+									last_called_midi_device = connected_devices_by_name[device_name];
+									goto skip_to_next_item;
+								}
+						
+								if (unavailable_devices.find(device_name) != unavailable_devices.end()) {
+									continue;
+								}
+						
+								for (auto &available_device : available_midi_devices) {
+									if (available_device.getName().find(device_name) != std::string::npos) {
+										//
+										// Where the Device Port is connected/opened (Main reason for errors)
+										//
+										auto port_opening_start = std::chrono::high_resolution_clock::now();
+
+										bool device_available = available_device.openPort();
+
+										auto port_opening_finish = std::chrono::high_resolution_clock::now();
+										auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(port_opening_finish - port_opening_start);
+										play_reporting.ports_opening += port_processing_time.count();
+
+										if (device_available) {	// Where the connection happens
+											connected_devices_by_name[device_name] = &available_device; 
+											last_called_midi_device = &available_device;
+
+											goto skip_to_next_item; // For Message devices only the first one found is connected and NOT all of them
+
+										} else {
+											connected_devices_by_name[device_name] = nullptr; 
+										}
+									} else {
+										unavailable_devices.insert(device_name);
+									}
+								}
+							}
+						}
+					skip_to_next_item: ;    // Does nothing, just jumps to next item
+					}
+
+				} else {
+					if (verbose) std::cout << "JSON file is empty." << std::endl;
+				}
+			} else {
+				if (verbose) std::cout << "Clocking Length is 0." << std::endl;
+			}
+        } catch (const nlohmann::json::parse_error& e) {
+            if (verbose) std::cerr << "JSON parse error: " << e.what() << std::endl;
+        }
+		
+		skip_reading_items: ;	// Does nothing, just stops reading items
+        if (verbose) std::cout << std::endl;
+		return 0;
 	}
 
+
+	void processMidiPins() {
+
+		midiPins.sort();	// Makes sure pins are sorted first
+
+		// remove redundant pins
+		for (auto pin_it = midiPins.begin(); pin_it != midiPins.end(); ) {
+
+			// Auxiliary variables
+			MidiPin &pluck_pin = *pin_it;	// Just an handy conversion
+			MidiDevice &pluck_device = *pluck_pin.getDevice();
+			// Position beats and ticks
+			const uint32_t pin_actual_position_ticks = pluck_pin.getPositionTicks();
+
+			// Starts by removing any pin out of the clocking length
+			if (pin_actual_position_ticks > clocking.getLengthTicks()) {
+				pin_it = midiPins.erase(pin_it);
+				continue;
+			}
+
+			const auto midi_action = pluck_pin.getAction();
+
+			switch (midi_action) {
+				case action_note_off:
+				{
+					auto& dict_last_on = pluck_device.channelpitch_last_pins_note_on;
+					uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
+					
+					if (dict_last_on.find(channel_pitch) != dict_last_on.end()) { // Note On in the dict found
+
+						auto &last_note_on_pin = dict_last_on[channel_pitch];	// It's a MidiPin*&
+
+						last_note_on_pin->decreaseNotePressedTimes();
+						if (last_note_on_pin->getNotePressedTimes() != 0) {	// The Only configuration to release Note is 1
+							pin_it = midiPins.erase(pin_it);
+							++(play_reporting.total_redundant);  // Note Off as no Note On pair (STATS)
+							// By erasing a pin above, there is no need to increase the pin iterator
+							goto skip_to_next_pin;
+						}
+					}
+					++pin_it; // Only increments if no removal
+				}
+				break;
+				case action_note_on:
+				{
+					auto& dict_last_on = pluck_device.channelpitch_last_pins_note_on;
+					uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
+
+					if (dict_last_on.find(channel_pitch) != dict_last_on.end()) {	// Note On in the dict found
+
+						auto &last_note_on_pin = dict_last_on[channel_pitch];	// It's a MidiPin*&
+
+						if (last_note_on_pin->getNotePressedTimes() > 0) {
+
+							// Position beats and ticks
+							const uint32_t last_note_position_ticks = last_note_on_pin->getPositionTicks();
+
+							last_note_on_pin->increaseNotePressedTimes();	// Because the remaining EXTRA note off
+							if (pin_actual_position_ticks == last_note_position_ticks) {
+								
+								pin_it = midiPins.erase(pin_it);	// Can't trigger the same note twice at the same time
+								++(play_reporting.total_redundant);	// STATS
+								// By erasing a pin above, there is no need to increase the pin iterator
+
+							} else {	// It's still triggerable
+								
+								// New note off message
+								std::vector<unsigned char> midi_pin_message = {
+									static_cast<unsigned char>(pluck_pin.getChannel() | action_note_off),
+									pluck_pin.getDataByte(1),
+									0	// Note off has velocity 0 (Data Byte 2)
+								};
+								pin_it = midiPins.insert(pin_it,   // Makes a copy to the place given by pin_it
+									MidiPin(
+											pin_actual_position_ticks,
+											pluck_pin.getMidiDevice(),
+											midi_pin_message
+										)
+									);
+								play_reporting.total_generated++;
+								// THIS IS RIGHT, NEW PIN ADDED, IT'S INTENDED TO BE TWO CONSECUTIVE SKIPS !!
+								// Skips the previously inserted Note Off MidiPin
+								++pin_it;  // Move the iterator to the next element
+								// The usual increment given that it jumps the steps bellow
+								++pin_it; // Only increments if no removal
+							}
+							goto skip_to_next_pin;
+						}
+					}
+					// First timer Note On
+					// It's safe to use a direct reference given that the Note On midi_pin note parameters are never changed
+					dict_last_on[channel_pitch] = &pluck_pin;
+					++pin_it; // Only increments if no removal
+				}
+				break;
+				case action_key_pressure:
+				{
+					auto& dict_last = pluck_device.statusdatabyte_last_pin_controlchange;
+					uint16_t status_byte = pluck_pin.getStatusByte();
+					uint16_t data_byte = pluck_pin.getDataByte(1);
+					uint16_t status_data_byte =  status_byte << 8 | data_byte;
+
+					if (dict_last.find(status_data_byte) != dict_last.end()) {  // Key found
+						auto &last_pin_16 = dict_last[status_data_byte];
+
+						if (last_pin_16 == pluck_pin) {
+							pin_it = midiPins.erase(pin_it);
+							++(play_reporting.total_redundant);
+						} else {
+							last_pin_16.setDataByte(2, pluck_pin.getDataByte(2));
+							++pin_it; // Only increment if no removal
+						}
+					} else {
+						// Needs to use a pin dummy copy given that their midi parameters may be changed
+						dict_last.emplace(status_data_byte, MidiPin(pluck_pin));    // Just a dummy copy
+						++pin_it; // Only increment if no removal
+					}
+				}
+				break;
+				case action_pitch_bend:
+				{
+					unsigned char status_byte = pluck_pin.getStatusByte();
+					auto& dict_last = pluck_device.statusbyte_last_pins_pitchbend;
+
+					if (dict_last.find(status_byte) != dict_last.end()) {  // Key found
+						auto &last_pin_8 = dict_last[status_byte];
+
+						if (last_pin_8 == pluck_pin) {
+							pin_it = midiPins.erase(pin_it);
+							++(play_reporting.total_redundant);
+						} else {
+							last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
+							last_pin_8.setDataByte(2, pluck_pin.getDataByte(2));
+							++pin_it; // Only increment if no removal
+						}
+					} else {
+						// Needs to use a pin dummy copy given that their midi parameters may be changed
+						dict_last.emplace(status_byte, MidiPin(pluck_pin));    // Just a dummy copy
+						++pin_it; // Only increment if no removal
+					}
+				}
+				break;
+				case action_channel_pressure:
+				{
+					unsigned char dict_key = pluck_pin.getStatusByte();
+					auto& dict_last = pluck_device.statusbyte_last_pins_pitchbend;
+
+					if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
+						auto &last_pin_8 = dict_last[dict_key];
+
+						if (last_pin_8 == pluck_pin) {
+							pin_it = midiPins.erase(pin_it);
+							++(play_reporting.total_redundant);
+						} else {
+							last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
+							++pin_it; // Only increment if no removal
+						}
+					} else {
+						// Needs to use a pin dummy copy given that their midi parameters may be changed
+						dict_last.emplace(dict_key, MidiPin(pluck_pin));    // Just a dummy copy
+						++pin_it; // Only increment if no removal
+					}
+				}
+				break;
+
+				default:    // Includes Controle Change and Program Change 0xC0 (Never considered redundant!)
+					++pin_it; // Only increment if no removal
+				break;
+			}
+
+			skip_to_next_pin: ;	// Does nothing, just processes next pin
+		}
+
+		// Adds missing note off midi messages for unreleased notes
+		for (auto &device : available_midi_devices) {
+			
+			if (device.hasPortOpen()) {
+				
+				// MIDI NOTES SHALL NOT BE LEFT PRESSED !!
+				// Add the needed note off for all those still on at the end!
+				// Iterate over all keys and values
+				for (const auto& pair : device.channelpitch_last_pins_note_on) {
+					// uint16_t channel_pitch = pair.first;
+					auto& last_pin_note_on = pair.second;
+
+					if (last_pin_note_on->getNotePressedTimes() > 0) {
+						// Transform midi on in midi off
+						std::vector<unsigned char> midi_pin_note_off_message = {
+							static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte
+							last_pin_note_on->getDataByte(1),
+							0	// Note off has velocity 0 (Data Byte 2)
+						};
+						// Adds a new MidiPin as a copy to the list of pins to be processed
+						uint32_t clocking_length_ticks = clocking.getLengthTicks();
+						midiPins.push_back( MidiPin(clocking_length_ticks, &device, midi_pin_note_off_message) );
+						play_reporting.total_generated++;
+					}
+				}
+			}
+		}
+	}
+
+
+	void addClockingPins() {
+		size_t total_clock_messages = clocking.addClockMessagesToPlay(&midiPins);
+		if (total_clock_messages > 0) {
+			play_reporting.total_generated += total_clock_messages;
+			midiPins.sort();
+		}
+	}
+
+
+	void applyTime_ms() {
+		clocking.applyTime_ms(&midiPins);
+	}
+
+
+	void reportProcessing(bool verbose) {
+		if (verbose) {
+			auto data_processing_finish = std::chrono::high_resolution_clock::now();
+			auto data_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(data_processing_finish - data_processing_start);
+			play_reporting.json_processing = data_processing_time.count();
+			size_t real_processing_json_time = 0;
+			if (play_reporting.json_processing > play_reporting.ports_opening) {
+				real_processing_json_time = play_reporting.json_processing - play_reporting.ports_opening;
+			}
+
+			// Where the reporting is finally done
+			std::cout << "Data stats reporting:" << std::endl;
+			std::cout << "\tMidi Messages processing time (ms):       " << std::setw(10) << real_processing_json_time << std::endl;
+			std::cout << "\tMidi Ports opening time (ms):             " << std::setw(10) << play_reporting.ports_opening << std::endl;
+			std::cout << "\tSingle loop length (beats):               " << std::setw(10) << clocking.getLengthTicks() / TICKS_PER_BEAT << std::endl;
+			std::cout << "\tTotal generated Midi Messages (included): " << std::setw(10) << play_reporting.total_generated << std::endl;
+			std::cout << "\tTotal validated Midi Messages (accepted): " << std::setw(10) << play_reporting.total_validated << std::endl;
+			std::cout << "\tTotal incorrect Midi Messages (excluded): " << std::setw(10) << play_reporting.total_incorrect << std::endl;
+			std::cout << "\tTotal redundant Midi Messages (excluded): " << std::setw(10) << play_reporting.total_redundant << std::endl;
+			std::cout << "\tTotal resultant Midi Messages (included): " << std::setw(10) << midiPins.size() << std::endl;
+		}
+	}
+
+
+	void printPlayingTime(int loop, bool verbose) {
+		if (verbose) {
+			size_t duration_time_sec = std::round(clocking.getLengthTime_ms() * loop / 1000);
+			if (loop == 1) {
+				std::cout << "The playlist will now be played in 1 loop for "
+				<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
+			} else {
+				std::cout << "The playlist will now be played in " << loop << " loops for "
+				<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;
+			}
+		}
+	}
+
+
+	void loopPlaylist(int loop) {
+
+		const uint32_t lengthTicks = clocking.getLengthTicks();
+		const double lengthTime_ms = clocking.getLengthTime_ms();
+		const auto playing_start = std::chrono::high_resolution_clock::now();
+
+		for (int loop_i = 0; loop_i < loop; ++loop_i) {
+
+			const double loopTime_ms = lengthTime_ms * loop_i;
+			uint32_t position_ticks = 0;
+
+			// Loop through the list and remove elements
+			for (auto pin_it = midiPins.begin(); pin_it != midiPins.end(); ++pin_it) {
+
+				// Auxiliary variables
+				uint32_t pin_ticks = pin_it->getPositionTicks();
+
+				// Pin position time
+				long long next_pin_time_us = std::round((loopTime_ms + pin_it->getTime_ms() + play_reporting.total_drag) * 1000);
+				if (pin_ticks > position_ticks) {
+
+					auto playing_now = std::chrono::high_resolution_clock::now();
+					auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
+					long long elapsed_time_us = elapsed_time.count();
+					long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
+
+					if (sleep_time_us > 0) highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
+					position_ticks = pin_ticks;
+				}
+
+				auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
+				pin_it->pluckTooth();  // as soon as possible! <----- Midi Send
+
+				auto pluck_time_us = static_cast<double>(
+					std::chrono::duration_cast<std::chrono::microseconds>(pluck_time).count()
+				);
+				double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
+				pin_it->addDelayTime(delay_time_ms);
+
+				// Process drag if existent
+				if (delay_time_ms > DRAG_DURATION_MS) {
+					play_reporting.total_drag += delay_time_ms - DRAG_DURATION_MS;  // Drag isn't Delay
+				}
+			}
+
+			if (lengthTicks > position_ticks) {
+
+				// Finish position time
+				long long finish_time_us = std::round((loopTime_ms + lengthTime_ms + play_reporting.total_drag) * 1000);
+				
+				auto playing_now = std::chrono::high_resolution_clock::now();
+				auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
+				long long elapsed_time_us = elapsed_time.count();
+				long long sleep_time_us = finish_time_us > elapsed_time_us ? finish_time_us - elapsed_time_us : 0;
+
+				if (sleep_time_us > 0) highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
+			}
+		}
+	}
+
+
+	void reportPlaying(bool verbose) {
+
+		if (verbose) {
+
+			if (!midiPins.empty()) {	// Avoids division by 0 with `midiPins.size() == 0`
+
+				for (auto &midi_pin : midiPins) {
+					auto delay_time_ms = midi_pin.getDelayTime();
+					play_reporting.total_delay += delay_time_ms;
+					if (delay_time_ms > play_reporting.maximum_delay) {
+						play_reporting.maximum_delay = delay_time_ms;
+					}
+				}
+
+				play_reporting.minimum_delay = play_reporting.maximum_delay;
+				play_reporting.average_delay = play_reporting.total_delay / midiPins.size();
+
+				for (auto &midi_pin : midiPins) {
+					auto delay_time_ms = midi_pin.getDelayTime();
+					if (delay_time_ms < play_reporting.minimum_delay) {
+						play_reporting.minimum_delay = delay_time_ms;
+					}
+					play_reporting.sd_delay += std::pow(delay_time_ms - play_reporting.average_delay, 2);
+				}
+
+				play_reporting.sd_delay /= midiPins.size();
+				play_reporting.sd_delay = std::sqrt(play_reporting.sd_delay);
+			}
+
+			std::cout << "Devices disconnected: ";
+			// Exiting devices scope automatically disconnects them
+
+			// Where the reporting is finally done
+			std::cout << std::endl << "Midi stats reporting:" << std::endl;
+			// Set fixed floating-point notation and precision
+			std::cout << std::fixed << std::setprecision(3);
+			std::cout << "\tTotal drag (ms):      " << std::setw(34) << play_reporting.total_drag << " \\" << std::endl;
+			std::cout << "\tCumulative delay (ms):" << std::setw(34) << play_reporting.total_delay << " /" << std::endl;
+			std::cout << "\tMaximum delay (ms): " << std::setw(36) << play_reporting.maximum_delay << " \\" << std::endl;
+			std::cout << "\tMinimum delay (ms): " << std::setw(36) << play_reporting.minimum_delay << " /" << std::endl;
+			std::cout << "\tAverage delay (ms): " << std::setw(36) << play_reporting.average_delay << " \\" << std::endl;
+			std::cout << "\tStandard deviation of delays (ms):" << std::setw(36 - 14) << play_reporting.sd_delay << " /"  << std::endl;
+		}
+	}
 
 };
 
     
-
-// Declare the function in the header file
-void disableBackgroundThrottling();
-
-void setRealTimeScheduling();
-void highResolutionSleep(long long microseconds);
-int PlayList(const char* json_str, int loop = 1, bool verbose = false);
-
 
 #endif // MIDI_JSON_PLAYER_HPP

@@ -766,8 +766,8 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 		//
 		
 		// Position time
-		size_t duration_time_sec = std::round(clocking.getLengthTime_ms() * loop / 1000);
 		if (verbose) {
+			size_t duration_time_sec = std::round(clocking.getLengthTime_ms() * loop / 1000);
 			if (loop == 1) {
 				std::cout << "The playlist will now be played in 1 loop for "
 				<< duration_time_sec / 60 << " minutes and " << duration_time_sec % 60 << " seconds..." << std::endl;

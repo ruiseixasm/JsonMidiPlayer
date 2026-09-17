@@ -600,7 +600,28 @@ class PlayList {
     std::vector<MidiDevice> available_midi_devices;
     std::list<MidiPin> midiPins;
 
+    #ifdef DEBUGGING
+    std::chrono::high_resolution_clock::time_point debugging_start;
+    std::chrono::high_resolution_clock::time_point debugging_now;
+    std::chrono::high_resolution_clock::time_point debugging_last;
+    long long completion_time_us = 0;
+    #endif
+
 public:
+
+	PlayList() {
+		
+		disableBackgroundThrottling();
+		// Set real-time scheduling
+		setRealTimeScheduling();
+    
+		#ifdef DEBUGGING
+		debugging_start = std::chrono::high_resolution_clock::now();
+		debugging_now = debugging_start;
+		debugging_last = debugging_start;
+		#endif
+
+	}
 
 	int readAvailableDevices(bool verbose) {
 
@@ -956,6 +977,14 @@ public:
 
 	void processMidiPins() {
 
+		#ifdef DEBUGGING
+		debugging_now = std::chrono::high_resolution_clock::now();
+		completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+		completion_time_us = completion_time.count();
+		std::cout << "SORTING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+		debugging_last = std::chrono::high_resolution_clock::now();
+		#endif
+
 		midiPins.sort();	// Makes sure pins are sorted first
 
 		// remove redundant pins
@@ -1166,7 +1195,16 @@ public:
 
 
 	void applyTime_ms() {
+
 		clocking.applyTime_ms(&midiPins);
+
+		#ifdef DEBUGGING
+		debugging_now = std::chrono::high_resolution_clock::now();
+		completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+		completion_time_us = completion_time.count();
+		std::cout << "SORTING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+		debugging_last = std::chrono::high_resolution_clock::now();
+		#endif
 	}
 
 
@@ -1266,6 +1304,14 @@ public:
 				if (sleep_time_us > 0) highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
 			}
 		}
+		
+		#ifdef DEBUGGING
+		debugging_now = std::chrono::high_resolution_clock::now();
+		completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
+		completion_time_us = completion_time.count();
+		std::cout << "PLAYING FULLY PROCESSED IN: " << completion_time_us << " microseconds" << std::endl;
+		debugging_last = std::chrono::high_resolution_clock::now();
+		#endif
 	}
 
 

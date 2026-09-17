@@ -78,14 +78,6 @@ void setRealTimeScheduling() {
 }
 
 
-double get_time_ms(int minutes_numerator, int minutes_denominator) {
-
-    double milliseconds = minutes_numerator * 60000.0 / minutes_denominator;
-    // Round to three decimal places
-    return std::round(milliseconds * 1000.0) / 1000.0;
-}
-
-
 int PlayList(const char* json_str, int loop, bool verbose) {
     
 	if (loop < 0) {

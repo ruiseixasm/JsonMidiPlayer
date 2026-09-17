@@ -45,7 +45,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 // #define DEBUGGING true
 #define FILE_TYPE "Json Midi Player"
 #define FILE_URL  "https://github.com/ruiseixasm/JsonMidiPlayer"
-#define VERSION   "7.3.0"
+#define VERSION   "7.3.1"
 #define DRAG_DURATION_MS (1000.0/((120/60)*24))
 
 
@@ -483,7 +483,7 @@ public:
 
 		_tempos.sort();	// Guarantees the tempos are sorted by ticks first
 
-		// Makes sure there are a `Tempo` at the origin (ticks == 0)
+		// Makes sure there is a `Tempo` at the origin (ticks == 0)
 		auto first_tempo_it = _tempos.begin();
 		uint32_t first_position_ticks = first_tempo_it->getPositionTicks();
 		if (first_position_ticks > 0) {
@@ -517,15 +517,10 @@ public:
 		// Adds the cumulative Time
 		uint32_t previous_pin_position_ticks = 0;
 		double pin_time_ms = 0.0;	// The tick 0 one is by definition at 0.0
-		for (auto pin_it = midiPins_sorted->begin(); pin_it != midiPins_sorted->end(); ) {
+		for (auto pin_it = midiPins_sorted->begin(); pin_it != midiPins_sorted->end(); ++pin_it) {
 
 			// Pins above the length of the clocking are removed
 			uint32_t pin_ticks = pin_it->getPositionTicks();
-			// Makes sure no out of clocking length pins are processed
-			if (pin_ticks > _length_ticks) {
-				pin_it = midiPins_sorted->erase(pin_it);
-				continue;
-			}
 
 			// Updates the pin_time_ms if needed
 			if (pin_ticks > previous_pin_position_ticks) {
@@ -539,7 +534,6 @@ public:
 				previous_pin_position_ticks = pin_ticks;
 			}
 			pin_it->setTime_ms(pin_time_ms);
-			++pin_it;	// Next pin
 		}
 		// Sets the Clocking length time_ms
 		if (_length_ticks == previous_pin_position_ticks) {

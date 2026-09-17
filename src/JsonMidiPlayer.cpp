@@ -525,6 +525,13 @@ int PlayList(const char* json_str, int loop, bool verbose) {
 			MidiDevice &pluck_device = *pluck_pin.getDevice();
 			// Position beats and ticks
 			const uint32_t pin_actual_position_ticks = pluck_pin.getPositionTicks();
+
+			// Starts by removing any pin out of the clocking length
+			if (pin_actual_position_ticks > clocking.getLengthTicks()) {
+				pin_it = midiPins.erase(pin_it);
+				continue;
+			}
+
 			const auto midi_action = pluck_pin.getAction();
 
 			switch (midi_action) {

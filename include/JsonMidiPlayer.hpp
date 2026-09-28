@@ -147,14 +147,15 @@ public:
             priority(priority)
         { }
 
-    // Pin constructor from time_ms
+    // Pin constructor from time_ms without ticks set
     MidiPin(double time_ms, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
-            : time_ms(time_ms),
+            : mtc_pin(true),
+			time_ms(time_ms),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
-        { mtc_pin = true; }
+        { }
 
     // Pin copy constructor
     MidiPin(const MidiPin& other)
@@ -167,7 +168,7 @@ public:
           note_pressed_times(other.note_pressed_times)          // Copy the note_released
     { }
 	
-	bool isMtcPin() const {
+	bool isAnMtcPin() const {
 		return mtc_pin;
 	}
 
@@ -1438,7 +1439,7 @@ public:
 
 				// Pin position time
 				long long next_pin_time_us = std::round((loopTime_ms + pin_it->getTime_ms() + play_reporting.total_drag) * 1000);
-				if (pin_ticks > position_ticks || pin_it->isMtcPin()) {
+				if (pin_ticks != position_ticks) {	// MTC messages always at 0
 
 					auto playing_now = std::chrono::high_resolution_clock::now();
 					auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
@@ -1464,7 +1465,7 @@ public:
 				}
 			}
 
-			if (lengthTicks > position_ticks) {
+			if (lengthTicks != position_ticks) {
 
 				// Finish position time
 				long long finish_time_us = std::round((loopTime_ms + lengthTime_ms + play_reporting.total_drag) * 1000);

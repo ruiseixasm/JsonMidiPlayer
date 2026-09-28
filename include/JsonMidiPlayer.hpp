@@ -461,23 +461,49 @@ public:
 		_mtc_devices.push_back(midi_device);
 	}
 
+
 	size_t addClockMessagesToPlay(std::list<MidiPin> *midiPins) const {
 		size_t added_messages = 0;
 		// _length_ticks is a multiple of TICKS_PER_CLOCK, beats multiples
 		size_t total_clock_pins = _length_ticks / TICKS_PER_CLOCK;
 		
+		// Clocked Devices
 		for (const auto& device : _clocked_devices) {
-			// New Start clock message with High Priority 3.0 (Let's messages like Program Change go first)
-			midiPins->push_back( MidiPin(TICKS_PER_CLOCK * 0, device, { system_clock_start }, 0x30) );
+			// New Start clock message with High Priority 3.2 (Let's messages like Program Change go first)
+			midiPins->push_back( MidiPin(TICKS_PER_CLOCK * 0, device, { system_clock_start }, 0x32) );
 			for (size_t pin_i = 1; pin_i < total_clock_pins; pin_i++) {
-				// New clock message with High Priority 3.1 (Let's messages like Program Change go first)
-				midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * pin_i), device, { system_timing_clock }, 0x31) );
+				// New clock message with High Priority 3.3 (Let's messages like Program Change go first)
+				midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * pin_i), device, { system_timing_clock }, 0x33) );
 				added_messages++;
 			}
-			// New Stop clock message with Lowest priority 11.0
-			midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_clock_stop }, 0xB0) );
-			// New Stop clock message with Lowest priority 11.1
-			midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_song_pointer, 0, 0 }, 0xB1) );
+			// New Stop clock message with Lowest priority 11.2
+			midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_clock_stop }, 0xB2) );
+			// New Stop clock message with Lowest priority 11.3
+			midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, { system_song_pointer, 0, 0 }, 0xB3) );
+			added_messages += 3;	// for Start, Stop and Pointer messages
+		}
+		
+		// MTC Devices
+		for (const auto& device : _mtc_devices) {
+			// MMC - Play - New Start clock message with High Priority 3.0 (Let's messages like Program Change go first)
+			midiPins->push_back( MidiPin(TICKS_PER_CLOCK * 0, device,
+				{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x02, system_sysex_end }, 0x30
+			));
+
+			for (size_t pin_i = 1; pin_i < total_clock_pins; pin_i++) {
+
+				// MISSING THE MTC CLOCK MESSAGE HERE
+				
+				// added_messages++;
+			}
+			// MMC - Stop - New Stop clock message with Lowest priority 11.0
+			midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device,
+				{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end }, 0xB0
+			));
+			// MMC - Rewind - New Stop clock message with Lowest priority 11.1
+			midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device,
+				{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x05, system_sysex_end }, 0xB1
+			));
 			added_messages += 3;	// for Start, Stop and Pointer messages
 		}
 		return added_messages;
@@ -1474,6 +1500,18 @@ public:
     Stop Sequence                        FC
     Active Sensing                       FE
     System Reset                         FF
+
+
+	Action			MMC	SysEx
+	Stop				F0 7F 7F 06 01 F7
+	Play				F0 7F 7F 06 02 F7
+	Deferred Play	F0 7F 7F 06 03 F7
+	Fast Forward		F0 7F 7F 06 04 F7
+	Rewind			F0 7F 7F 06 05 F7
+	Record Strobe	F0 7F 7F 06 06 F7
+	Record Exit		F0 7F 7F 06 07 F7
+	Pause			F0 7F 7F 06 09 F7
+	Locate			F0 7F 7F 06 44 … F7
 
 
     SysEx Message                    Status Byte 

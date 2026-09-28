@@ -9,7 +9,9 @@
         "devices": [
             "MIDI"
         ],
-        "mtc_devices": [],
+        "mtc_devices": [
+            "MIDI"
+        ],
         "tempos": [
             {
                 "bpm_10": 1000,

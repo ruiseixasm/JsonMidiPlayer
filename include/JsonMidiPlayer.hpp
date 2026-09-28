@@ -479,6 +479,11 @@ public:
 	}
 
 
+	const std::vector<MidiDevice*>& getMTCDevices() const {
+		return _mtc_devices;
+	}
+
+
 	size_t addClockMessagesToPlay(std::list<MidiPin> *midiPins) const {
 		size_t added_messages = 0;
 		// _length_ticks is a multiple of TICKS_PER_CLOCK, beats multiples
@@ -506,13 +511,6 @@ public:
 			midiPins->push_back( MidiPin(TICKS_PER_CLOCK * 0, device,
 				{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x02, system_sysex_end }, 0x30
 			));
-
-			for (size_t pin_i = 1; pin_i < total_clock_pins; pin_i++) {
-
-				// MISSING THE MTC CLOCK MESSAGE HERE
-				
-				// added_messages++;
-			}
 			// MMC - Stop - New Stop clock message with Lowest priority 11.0
 			midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device,
 				{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end }, 0xB0
@@ -1329,6 +1327,70 @@ public:
 		std::cout << "\t\tSETTING TIME MS IN: " << completion_time_us << " microseconds" << std::endl;
 		debugging_last = std::chrono::high_resolution_clock::now();
 		#endif
+	}
+
+
+	void generateAllMtcMessages() {
+		size_t added_messages = 0;
+
+		const double MS_PER_QUARTER_FRAME = 1000.0 / 120.0;
+		const int FPS_TYPE_30 = 3;
+
+		const double totalDurationMs = clocking.getLengthTime_ms();
+		// const by reference (&)
+		const std::vector<MidiDevice*>& mtc_devices = clocking.getMTCDevices();
+
+		// MTC Devices
+		for (const auto& device : mtc_devices) {
+
+			// =========================================================================
+			// 1. SEND BIG MESSAGE ONLY ONCE (At tick zero, before the loop)
+			// =========================================================================
+			midiPins.push_back( MidiPin(0.0, device, 
+				{ 0xF0, 0x7F, 0x7F, 0x01, 0x01, 0x60, 0x00, 0x00, 0x00, 0xF7 }, 0x31
+			));
+			added_messages++;
+
+			// =========================================================================
+			// 2. AFTERWARDS, KEEPS SENDING ONLY THE SHORT MESSAGES (120 per second)
+			// =========================================================================
+			int totalQuarterFrames = static_cast<int>(std::floor(totalDurationMs / MS_PER_QUARTER_FRAME));
+
+			for (int qfCount = 0; qfCount <= totalQuarterFrames; ++qfCount) {
+				int index = qfCount % 8;
+				int totalFramesInTrack = qfCount / 4;
+
+				int frame  = totalFramesInTrack % 30;
+				int totalSeconds = totalFramesInTrack / 30;
+				int second = totalSeconds % 60;
+				int totalMinutes = totalSeconds / 60;
+				int minute = totalMinutes % 60;
+				int hour   = totalMinutes / 60;
+
+				uint8_t dataNibble = 0;
+				switch (index) {
+					case 0: dataNibble = frame & 0x0F; break;
+					case 1: dataNibble = (frame >> 4) & 0x0F; break;
+					case 2: dataNibble = second & 0x0F; break;
+					case 3: dataNibble = (second >> 4) & 0x0F; break;
+					case 4: dataNibble = minute & 0x0F; break;
+					case 5: dataNibble = (minute >> 4) & 0x0F; break;
+					case 6: dataNibble = hour & 0x0F; break;
+					case 7: dataNibble = ((hour >> 4) & 0x01) | ((FPS_TYPE_30 & 0x03) << 1); break;
+				}
+				uint8_t dataByte = (index << 4) | (dataNibble & 0x0F);
+
+				double triggerTimeMs = qfCount * MS_PER_QUARTER_FRAME;
+
+				// HERE: Only 2 bytes are sent with an interval of 8.33ms
+				midiPins.push_back(MidiPin(triggerTimeMs, device, { 0xF1, dataByte }, 0x31));
+				added_messages++;
+			}
+		}
+		if (added_messages > 0) {
+			play_reporting.total_generated += added_messages;
+			midiPins.sort();
+		}
 	}
 
 

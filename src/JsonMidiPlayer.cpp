@@ -97,6 +97,7 @@ int play(const char* json_str, int loops, bool verbose) {
 	player.prepareMidiPins();
 	player.addClockingPins();
 	player.applyTime_ms();
+	player.generateAllMtcMessages();
 	player.reportProcessing(verbose);
 	// Midi pins playing
 	player.printPlayingTime(loops, verbose);

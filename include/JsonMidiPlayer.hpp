@@ -1438,7 +1438,7 @@ public:
 
 				// Pin position time
 				long long next_pin_time_us = std::round((loopTime_ms + pin_it->getTime_ms() + play_reporting.total_drag) * 1000);
-				if (pin_ticks > position_ticks) {
+				if (pin_ticks > position_ticks || pin_it->isMtcPin()) {
 
 					auto playing_now = std::chrono::high_resolution_clock::now();
 					auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
@@ -1446,7 +1446,7 @@ public:
 					long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
 
 					if (sleep_time_us > 0) highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
-					position_ticks = pin_ticks;
+					position_ticks = pin_ticks;	// It it is a isMtcPin the resets it to 0 (MTC pins are all at tick 0)
 				}
 
 				auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;

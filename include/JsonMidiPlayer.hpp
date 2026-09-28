@@ -1310,6 +1310,7 @@ public:
 		#endif
 	}
 
+	
 	void generateAllMtcMessages(int fps = 30) {
 		size_t added_messages = 0;
 
@@ -1351,12 +1352,49 @@ public:
 				int index = qfCount % 8;
 				int totalFramesInTrack = qfCount / 4;
 
-				int frame  = totalFramesInTrack % fps_value;
-				int totalSeconds = totalFramesInTrack / fps_value;
-				int second = totalSeconds % 60;
-				int totalMinutes = totalSeconds / 60;
-				int minute = totalMinutes % 60;
-				int hour   = totalMinutes / 60;
+				// =========================================================================
+				// *** CHANGED: 29.97 DROP-FRAME TIME CODE CALCULATION ***
+				// =========================================================================
+				int frame;
+				int totalSeconds;
+				int second;
+				int totalMinutes;
+				int minute;
+				int hour;
+
+				if (fps == 29) {
+					// *** 29.97 DF: two frame numbers are skipped at the start of
+					// *** every minute except minutes 00, 10, 20, 30, 40 and 50.
+					int tenMinuteBlocks = totalFramesInTrack / 17982;
+					int remainingFrames = totalFramesInTrack % 17982;
+
+					int droppedFrames = tenMinuteBlocks * 18;
+
+					if (remainingFrames >= 1800) {
+						droppedFrames += 2 * ((remainingFrames - 1800) / 1798 + 1);
+					}
+
+					int timecodeFrames = totalFramesInTrack + droppedFrames;
+
+					frame = timecodeFrames % 30;
+					totalSeconds = timecodeFrames / 30;
+					second = totalSeconds % 60;
+					totalMinutes = totalSeconds / 60;
+					minute = totalMinutes % 60;
+					hour = totalMinutes / 60;
+				}
+				else {
+					// *** UNCHANGED: NORMAL NON-DROP-FRAME CALCULATION ***
+					frame  = totalFramesInTrack % fps_value;
+					totalSeconds = totalFramesInTrack / fps_value;
+					second = totalSeconds % 60;
+					totalMinutes = totalSeconds / 60;
+					minute = totalMinutes % 60;
+					hour   = totalMinutes / 60;
+				}
+				// =========================================================================
+				// *** END OF CHANGED SECTION ***
+				// =========================================================================
 
 				uint8_t dataNibble = 0;
 				switch (index) {
@@ -1390,6 +1428,7 @@ public:
 			});
 		}
 	}
+
 
 	void reportProcessing(bool verbose) {
 		if (verbose) {

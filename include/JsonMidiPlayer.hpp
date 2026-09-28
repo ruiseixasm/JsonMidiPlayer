@@ -728,7 +728,6 @@ public:
 		return 0;
 	}
 
-
 	int loadJsonContent(const char* json_str, bool verbose) {
 
         if (verbose) std::cout << "Devices connected:    ";
@@ -803,102 +802,84 @@ public:
 				std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
 				std::unordered_set<std::string> unavailable_devices;
 				
-				// Load the Clocked Devices
-				nlohmann::json jsonFileClocking_clocked_devices = jsonFileClocking.at("devices");
-				if (jsonFileClocking_clocked_devices.is_array() && !jsonFileClocking_clocked_devices.empty()) {
 
-					try {
+				auto load_clocking_devices = [&](const char* json_key, auto add_device) {
 
-						for (std::string jsonClockingDevice_name : jsonFileClocking_clocked_devices) {
+					nlohmann::json json_devices = jsonFileClocking.at(json_key);
 
-							if (unavailable_devices.find(jsonClockingDevice_name) != unavailable_devices.end()) {
-								continue;
-							}
-					
-							for (auto &available_device : available_midi_devices) {
-								if (available_device.getName().find(jsonClockingDevice_name) != std::string::npos) {
-									//
-									// Where the Device Port is connected/opened (Main reason for errors)
-									//
-									auto port_opening_start = std::chrono::high_resolution_clock::now();
-									bool device_available = available_device.openPort();
-									auto port_opening_finish = std::chrono::high_resolution_clock::now();
-									auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(port_opening_finish - port_opening_start);
-									play_reporting.ports_opening += port_processing_time.count();
+					if (json_devices.is_array() && !json_devices.empty()) {
 
-									if (device_available) {	// Where the connection happens
-										connected_devices_by_name[jsonClockingDevice_name] = &available_device;
+						try {
 
-										clocking.addClockedDevice(&available_device);
-										goto skip_to_next_clocked_device;
+							for (std::string json_device_name : json_devices) {
 
-									} else {
-										connected_devices_by_name[jsonClockingDevice_name] = nullptr; 
+								if (unavailable_devices.find(json_device_name) != unavailable_devices.end()) {
+									continue;
+								}
+
+								for (auto& available_device : available_midi_devices) {
+
+									if (available_device.getName().find(json_device_name) != std::string::npos) {
+
+										//
+										// Where the Device Port is connected/opened (Main reason for errors)
+										//
+										auto port_opening_start = std::chrono::high_resolution_clock::now();
+										bool device_available = available_device.openPort();
+										auto port_opening_finish = std::chrono::high_resolution_clock::now();
+										auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(
+											port_opening_finish - port_opening_start
+										);
+										play_reporting.ports_opening += port_processing_time.count();
+
+										if (device_available) {
+
+											connected_devices_by_name[json_device_name] = &available_device;
+
+											add_device(&available_device);
+											goto skip_to_next_device;
+
+										} else {
+											connected_devices_by_name[json_device_name] = nullptr;
+										}
 									}
 								}
+
+								unavailable_devices.insert(json_device_name);
+								skip_to_next_device: ;
 							}
-							unavailable_devices.insert(jsonClockingDevice_name);
-							skip_to_next_clocked_device: ;
+
+						} catch (const nlohmann::json::exception& e) {
+							if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+						} catch (const std::exception& e) {
+							if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+						} catch (...) {
+							if (verbose) std::cerr << "Unknown error occurred." << std::endl;
 						}
-					} catch (const nlohmann::json::exception& e) {
-						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
-						goto skip_reading_items;
-					} catch (const std::exception& e) {
-						if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-						goto skip_reading_items;
-					} catch (...) {
-						if (verbose) std::cerr << "Unknown error occurred." << std::endl;
-						goto skip_reading_items;
 					}
-				}
+				};
 
-				// Load the MTC Devices
-				nlohmann::json jsonFileClocking_mtc_devices = jsonFileClocking.at("mtc_devices");
-				if (jsonFileClocking_mtc_devices.is_array() && !jsonFileClocking_mtc_devices.empty()) {
-
-					try {
-						for (std::string jsonMtcDevice_name : jsonFileClocking_mtc_devices) {
-
-							if (unavailable_devices.find(jsonMtcDevice_name) != unavailable_devices.end()) {
-								continue;
-							}
-					
-							for (auto &available_device : available_midi_devices) {
-								if (available_device.getName().find(jsonMtcDevice_name) != std::string::npos) {
-									//
-									// Where the Device Port is connected/opened (Main reason for errors)
-									//
-									auto port_opening_start = std::chrono::high_resolution_clock::now();
-									bool device_available = available_device.openPort();
-									auto port_opening_finish = std::chrono::high_resolution_clock::now();
-									auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(port_opening_finish - port_opening_start);
-									play_reporting.ports_opening += port_processing_time.count();
-
-									if (device_available) {	// Where the connection happens
-										connected_devices_by_name[jsonMtcDevice_name] = &available_device;
-
-										clocking.addMTCDevice(&available_device);
-										goto skip_to_next_mtc_device;
-
-									} else {
-										connected_devices_by_name[jsonMtcDevice_name] = nullptr; 
-									}
-								}
-							}
-							unavailable_devices.insert(jsonMtcDevice_name);
-							skip_to_next_mtc_device: ;
-						}
-					} catch (const nlohmann::json::exception& e) {
-						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
-						goto skip_reading_items;
-					} catch (const std::exception& e) {
-						if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-						goto skip_reading_items;
-					} catch (...) {
-						if (verbose) std::cerr << "Unknown error occurred." << std::endl;
-						goto skip_reading_items;
+				load_clocking_devices(
+					"devices",
+					[&](MidiDevice* device) {
+						clocking.addClockedDevice(device);
 					}
-				}
+				);
+
+				load_clocking_devices(
+					"mmc_devices",
+					[&](MidiDevice* device) {
+						clocking.addMMCDevice(device);
+					}
+				);
+
+				load_clocking_devices(
+					"mtc_devices",
+					[&](MidiDevice* device) {
+						clocking.addMTCDevice(device);
+					}
+				);
+
 
 				// Check if jsonFilePlaylist is a non-empty array
 				if (jsonFilePlaylist.is_array() && !jsonFilePlaylist.empty()) {

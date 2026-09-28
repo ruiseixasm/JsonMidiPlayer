@@ -1310,12 +1310,22 @@ public:
 		#endif
 	}
 
-
-	void generateAllMtcMessages() {
+	void generateAllMtcMessages(int fps = 30) {
 		size_t added_messages = 0;
 
-		const double MS_PER_QUARTER_FRAME = 1000.0 / 120.0;
-		const int FPS_TYPE_30 = 3;
+		double ms_per_quarter_frame = 1000.0 / 120.0;
+		int fps_type = 3;
+		int fps_value = 30;
+
+		switch (fps) {
+			case 24:  fps_type = 0; fps_value = 24; ms_per_quarter_frame = 1000.0 / (24.0 * 4.0); break;
+			case 25:  fps_type = 1; fps_value = 25; ms_per_quarter_frame = 1000.0 / (25.0 * 4.0); break;
+			case 29:  fps_type = 2; fps_value = 30; ms_per_quarter_frame = 1000.0 / (29.97 * 4.0); break;
+			case 30:  
+			default:  fps_type = 3; fps_value = 30; ms_per_quarter_frame = 1000.0 / (30.0 * 4.0); break;
+		}
+
+		uint8_t fullFrameHourByte = 0x00 | (fps_type << 5);
 
 		const double totalDurationMs = clocking.getLengthTime_ms();
 		// const by reference (&)
@@ -1328,21 +1338,21 @@ public:
 			// 1. SEND BIG MESSAGE ONLY ONCE (At tick zero, before the loop)
 			// =========================================================================
 			midiPins.push_back( MidiPin(0.0, device, 
-				{ 0xF0, 0x7F, 0x7F, 0x01, 0x01, 0x60, 0x00, 0x00, 0x00, 0xF7 }, 0x31
+				{ 0xF0, 0x7F, 0x7F, 0x01, 0x01, fullFrameHourByte, 0x00, 0x00, 0x00, 0xF7 }, 0x31
 			));
 			added_messages++;
 
 			// =========================================================================
 			// 2. AFTERWARDS, KEEPS SENDING ONLY THE SHORT MESSAGES (120 per second)
 			// =========================================================================
-			int totalQuarterFrames = static_cast<int>(std::floor(totalDurationMs / MS_PER_QUARTER_FRAME));
+			int totalQuarterFrames = static_cast<int>(std::floor(totalDurationMs / ms_per_quarter_frame));
 
 			for (int qfCount = 0; qfCount <= totalQuarterFrames; ++qfCount) {
 				int index = qfCount % 8;
 				int totalFramesInTrack = qfCount / 4;
 
-				int frame  = totalFramesInTrack % 30;
-				int totalSeconds = totalFramesInTrack / 30;
+				int frame  = totalFramesInTrack % fps_value;
+				int totalSeconds = totalFramesInTrack / fps_value;
 				int second = totalSeconds % 60;
 				int totalMinutes = totalSeconds / 60;
 				int minute = totalMinutes % 60;
@@ -1357,11 +1367,11 @@ public:
 					case 4: dataNibble = minute & 0x0F; break;
 					case 5: dataNibble = (minute >> 4) & 0x0F; break;
 					case 6: dataNibble = hour & 0x0F; break;
-					case 7: dataNibble = ((hour >> 4) & 0x01) | ((FPS_TYPE_30 & 0x03) << 1); break;
+					case 7: dataNibble = ((hour >> 4) & 0x01) | ((fps_type & 0x03) << 1); break;
 				}
 				uint8_t dataByte = (index << 4) | (dataNibble & 0x0F);
 
-				double triggerTimeMs = qfCount * MS_PER_QUARTER_FRAME;
+				double triggerTimeMs = qfCount * ms_per_quarter_frame;
 
 				// HERE: Only 2 bytes are sent with an interval of 8.33ms
 				midiPins.push_back(MidiPin(triggerTimeMs, device, { 0xF1, dataByte }, 0x31));
@@ -1380,7 +1390,6 @@ public:
 			});
 		}
 	}
-
 
 	void reportProcessing(bool verbose) {
 		if (verbose) {

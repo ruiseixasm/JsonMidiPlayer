@@ -96,8 +96,9 @@ int play(const char* json_str, int loops, bool verbose) {
 	// Midi pins processing
 	player.prepareMidiPins();
 	player.addClockingPins();
+	player.addMmcPins();
 	player.applyTime_ms();
-	player.generateAllMtcMessages();
+	player.addMtcPins();	// MTC pins are purely time_ms pins, so, they must come after `time_ms` being applied to tick pins
 	player.reportProcessing(verbose);
 	// Midi pins playing
 	player.printPlayingTime(loops, verbose);

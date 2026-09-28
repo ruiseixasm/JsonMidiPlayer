@@ -531,9 +531,16 @@ public:
 				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, std::vector<uint8_t>{ system_song_pointer, 0, 0 }, 0xB3);
 			added_messages += 3;	// for Start, Stop and Pointer messages
 		}
+		return added_messages;
+	}
+
+	size_t addMmcMessagesToPlay(std::list<MidiPin> *midiPins) const {
+		size_t added_messages = 0;
+		// _length_ticks is a multiple of TICKS_PER_CLOCK, beats multiples
+		size_t total_clock_pins = _length_ticks / TICKS_PER_CLOCK;
 		
-		// MMC for MTC Devices
-		for (const auto& device : _mtc_devices) {
+		// MMC Devices
+		for (const auto& device : _mmc_devices) {
 			// MMC - Play - New Start clock message with High Priority 3.0 (Let's messages like Program Change go first)
 			midiPins->push_back( MidiPin(TICKS_PER_CLOCK * 0, device,
 				{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x02, system_sysex_end }, 0x30
@@ -1309,6 +1316,14 @@ public:
 		}
 	}
 
+	void addMmcPins() {
+		size_t total_mmc_messages = clocking.addMmcMessagesToPlay(&midiPins);
+		if (total_mmc_messages > 0) {
+			play_reporting.total_generated += total_mmc_messages;
+			midiPins.sort();
+		}
+	}
+
 
 	void applyTime_ms() {
 
@@ -1324,7 +1339,7 @@ public:
 	}
 
 	
-	void generateAllMtcMessages() {
+	void addMtcPins() {
 		size_t added_messages = 0;
 
 		double ms_per_quarter_frame = 1000.0 / 120.0;

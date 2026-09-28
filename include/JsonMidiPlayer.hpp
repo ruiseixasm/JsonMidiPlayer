@@ -802,8 +802,8 @@ public:
 				std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
 				std::unordered_set<std::string> unavailable_devices;
 				
-
-				auto load_clocking_devices = [&](const char* json_key, auto add_device) {
+				// [&] means: "This lambda may use variables from the surrounding function, and capture them by reference."
+				auto load_clocking_devices = [&](const char* json_key, auto add_device) -> bool {
 
 					nlohmann::json json_devices = jsonFileClocking.at(json_key);
 
@@ -851,34 +851,42 @@ public:
 
 						} catch (const nlohmann::json::exception& e) {
 							if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+							return false;
 						} catch (const std::exception& e) {
 							if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+							return false;
 						} catch (...) {
 							if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+							return false;
 						}
 					}
+					return true;
 				};
 
-				load_clocking_devices(
+				bool loaded_clocked_devices = load_clocking_devices(
 					"devices",
 					[&](MidiDevice* device) {
 						clocking.addClockedDevice(device);
 					}
 				);
 
-				load_clocking_devices(
+				bool loaded_mmc_devices = load_clocking_devices(
 					"mmc_devices",
 					[&](MidiDevice* device) {
 						clocking.addMMCDevice(device);
 					}
 				);
 
-				load_clocking_devices(
+				bool loaded_mtc_devices = load_clocking_devices(
 					"mtc_devices",
 					[&](MidiDevice* device) {
 						clocking.addMTCDevice(device);
 					}
 				);
+
+				if (!(loaded_clocked_devices && loaded_mmc_devices && loaded_mtc_devices)) {
+            		goto skip_reading_items;
+				}
 
 
 				// Check if jsonFilePlaylist is a non-empty array

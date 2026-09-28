@@ -6,9 +6,10 @@
             16,
             1
         ],
-        "devices": [
+        "clocked_devices": [
             "MIDI"
         ],
+        "mtc_devices": [],
         "tempos": [
             {
                 "bpm_10": 300,

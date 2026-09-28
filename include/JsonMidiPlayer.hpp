@@ -770,7 +770,12 @@ public:
 			uint32_t length_beats_den = lb.at(1).get<uint32_t>();
 			clocking.setLengthTicks(length_beats_num, length_beats_den);
 
+			// Load remaining Clocking data
 			if (clocking.getLengthTicks() > 0) {
+
+				// Set MTC_FPS
+				int mtc_fps = jsonFileClocking.at("mtc_fps");
+				clocking.setMtcFps(mtc_fps);
 
 				// Load the Tempos
 				nlohmann::json jsonFileClocking_tempos = jsonFileClocking.at("tempos");

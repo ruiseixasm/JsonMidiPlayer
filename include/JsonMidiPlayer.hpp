@@ -1324,14 +1324,15 @@ public:
 	}
 
 	
-	void generateAllMtcMessages(int fps = 30) {
+	void generateAllMtcMessages() {
 		size_t added_messages = 0;
 
 		double ms_per_quarter_frame = 1000.0 / 120.0;
 		int fps_type = 3;
 		int fps_value = 30;
 
-		switch (fps) {
+		int mtc_fps = clocking.getMtcFps();
+		switch (mtc_fps) {
 			case 24:  fps_type = 0; fps_value = 24; ms_per_quarter_frame = 1000.0 / (24.0 * 4.0); break;
 			case 25:  fps_type = 1; fps_value = 25; ms_per_quarter_frame = 1000.0 / (25.0 * 4.0); break;
 			case 29:  fps_type = 2; fps_value = 30; ms_per_quarter_frame = 1000.0 / (29.97 * 4.0); break;
@@ -1377,7 +1378,7 @@ public:
 				int minute;
 				int hour;
 
-				if (fps == 29) {
+				if (mtc_fps == 29) {
 					// *** 29.97 DF: two frame numbers are skipped at the start of
 					// *** every minute except minutes 00, 10, 20, 30, 40 and 50.
 					int tenMinuteBlocks = totalFramesInTrack / 17982;

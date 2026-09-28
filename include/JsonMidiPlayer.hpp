@@ -105,6 +105,7 @@ class MidiPin {
 
 private:
     double time_ms = 0.0;   // Set afterwards based on the _position_beat
+	bool time_set = false;
     const uint32_t _ticks = 0;
     const unsigned char priority;
     MidiDevice * const midi_device = nullptr;
@@ -159,6 +160,7 @@ public:
 
 	void setTime_ms(double time_milliseconds) {
 		time_ms = time_milliseconds;
+		time_set = true;
 	}
 
     double getTime_ms() const {
@@ -235,12 +237,9 @@ public:
 	// For the sorting
     bool operator< (const MidiPin& mp) const {
 		// For messages without tick set, like the MTC ones
-		if (time_ms != mp.time_ms) {
-			return time_ms < mp.time_ms;
-		}
-		if (_ticks != mp._ticks) {	// Max priority to MTC (implicit with `_ticks == 0`)
-			return _ticks < mp._ticks;
-		}
+		if (time_set) {
+			if (time_ms != mp.time_ms) { return time_ms < mp.time_ms; }
+		} else if (_ticks != mp._ticks) { return _ticks < mp._ticks; }
 		return priority < mp.priority;
 	}
 

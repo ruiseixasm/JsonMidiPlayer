@@ -85,6 +85,8 @@ const unsigned char system_system_reset     = 0xFF; // System Reset
 static constexpr uint32_t TICKS_PER_BEAT 	= 960;	// Internal PPQN
 static constexpr uint32_t CLOCKS_PER_BEAT 	= 24;   // MIDI spec
 static constexpr uint32_t TICKS_PER_CLOCK 	= TICKS_PER_BEAT / CLOCKS_PER_BEAT;	// = 40
+static constexpr uint32_t MTC_FPS 			= 30;	// ADJUST ACCORDINGLY TO REALITY
+static constexpr uint32_t MTC_QUARTER_FRAMES_PER_FRAME = 8;
 
 
 inline uint32_t getTicksFromBeats(uint32_t num, uint32_t den) {

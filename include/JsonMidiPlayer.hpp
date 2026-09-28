@@ -104,7 +104,6 @@ class MidiDevice;
 class MidiPin {
 
 private:
-	bool mtc_pin = false;
     double time_ms = 0.0;   // Set afterwards based on the _position_beat
     const uint32_t _ticks = 0;
     const unsigned char priority;
@@ -150,8 +149,7 @@ public:
     // Pin constructor from time_ms without ticks set
     MidiPin(double time_ms, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
-            : mtc_pin(true),
-			time_ms(time_ms),
+            : time_ms(time_ms),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
@@ -168,10 +166,6 @@ public:
           note_pressed_times(other.note_pressed_times)          // Copy the note_released
     { }
 	
-	bool isAnMtcPin() const {
-		return mtc_pin;
-	}
-
 	void setTime_ms(double time_milliseconds) {
 		time_ms = time_milliseconds;
 	}

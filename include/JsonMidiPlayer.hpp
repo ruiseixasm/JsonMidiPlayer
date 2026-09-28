@@ -104,8 +104,8 @@ class MidiDevice;
 class MidiPin {
 
 private:
+	bool mtc_pin = false;
     double time_ms = 0.0;   // Set afterwards based on the _position_beat
-	inline static bool time_set = false;
     const uint32_t _ticks = 0;
     const unsigned char priority;
     MidiDevice * const midi_device = nullptr;
@@ -154,7 +154,7 @@ public:
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
-        { }
+        { mtc_pin = true; }
 
     // Pin copy constructor
     MidiPin(const MidiPin& other)
@@ -166,6 +166,10 @@ public:
           delay_time_ms(other.delay_time_ms),         // Copy the delay_time_ms
           note_pressed_times(other.note_pressed_times)          // Copy the note_released
     { }
+	
+	bool isMtcPin() const {
+		return mtc_pin;
+	}
 
 	void setTime_ms(double time_milliseconds) {
 		time_ms = time_milliseconds;
@@ -174,10 +178,6 @@ public:
     double getTime_ms() const {
         return time_ms;
     }
-
-	static void setTimeSet() {
-		time_set = true;
-	}
 
     uint32_t getPositionTicks() const {
         return _ticks;
@@ -248,10 +248,7 @@ public:
 public:
 	// For the sorting
     bool operator< (const MidiPin& mp) const {
-		// For messages without tick set, like the MTC ones
-		if (time_set) {
-			if (time_ms != mp.time_ms) { return time_ms < mp.time_ms; }
-		} else if (_ticks != mp._ticks) { return _ticks < mp._ticks; }
+		if (_ticks != mp._ticks) { return _ticks < mp._ticks; }
 		return priority < mp.priority;
 	}
 
@@ -1370,9 +1367,16 @@ public:
 			}
 		}
 		if (added_messages > 0) {
-			MidiPin::setTimeSet();	// Sets it as set by time_ms
 			play_reporting.total_generated += added_messages;
 			midiPins.sort();
+			// MTC message have NO ticks
+			midiPins.sort([](const MidiPin& a, const MidiPin& b) {
+				// For messages without tick set, like the MTC ones
+				if (a.getTime_ms() != b.getTime_ms()) {
+					return a.getTime_ms() < b.getTime_ms();
+				}
+				return a.getPriority() < b.getPriority();
+			});
 		}
 	}
 

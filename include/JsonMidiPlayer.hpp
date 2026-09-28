@@ -500,6 +500,11 @@ public:
 		for (const auto& device : _clocked_devices) {
 			// New Start clock message with High Priority 3.2 (Let's messages like Program Change go first)
 			midiPins->push_back( MidiPin(TICKS_PER_CLOCK * 0, device, { system_clock_start }, 0x32) );
+			
+			// midiPins.emplace_back(0.0, device,
+			// 	std::vector<unsigned char>{ 0xF0, 0x7F, 0x7F, 0x01, 0x01, fullFrameHourByte, 0x00, 0x00, 0x00, 0xF7 }, 0x31
+			// );
+
 			for (size_t pin_i = 1; pin_i < total_clock_pins; pin_i++) {
 				// New clock message with High Priority 3.3 (Let's messages like Program Change go first)
 				midiPins->push_back( MidiPin((uint32_t)(TICKS_PER_CLOCK * pin_i), device, { system_timing_clock }, 0x33) );
@@ -1338,9 +1343,11 @@ public:
 			// =========================================================================
 			// 1. SEND BIG MESSAGE ONLY ONCE (At tick zero, before the loop)
 			// =========================================================================
-			midiPins.push_back( MidiPin(0.0, device, 
-				{ 0xF0, 0x7F, 0x7F, 0x01, 0x01, fullFrameHourByte, 0x00, 0x00, 0x00, 0xF7 }, 0x31
-			));
+
+			// Needs to be explicit concerning the `std::vector<unsigned char>`
+			midiPins.emplace_back(0.0, device,
+				std::vector<unsigned char>{ 0xF0, 0x7F, 0x7F, 0x01, 0x01, fullFrameHourByte, 0x00, 0x00, 0x00, 0xF7 }, 0x31
+			);
 			added_messages++;
 
 			// =========================================================================
@@ -1412,7 +1419,7 @@ public:
 				double triggerTimeMs = qfCount * ms_per_quarter_frame;
 
 				// HERE: Only 2 bytes are sent with an interval of 8.33ms
-				midiPins.push_back(MidiPin(triggerTimeMs, device, { 0xF1, dataByte }, 0x31));
+				midiPins.emplace_back(triggerTimeMs, device, std::vector<unsigned char>{0xF1, dataByte}, 0x31);
 				added_messages++;
 			}
 		}

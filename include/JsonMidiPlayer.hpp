@@ -986,9 +986,8 @@ public:
 												continue;   // Not a valid message, no priority given, jumps to the next one
 										}
 
-										midiPins.push_back(
-											MidiPin(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority)
-										);
+										// `emplace_back` is faster than `push_back` because avoids an extra copy
+										midiPins.emplace_back(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority);
 										play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the for loop
 										play_reporting.total_validated++;
 									}

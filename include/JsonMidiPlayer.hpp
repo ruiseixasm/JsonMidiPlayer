@@ -1363,8 +1363,7 @@ public:
 		}
 		if (added_messages > 0) {
 			play_reporting.total_generated += added_messages;
-			midiPins.sort();
-			// MTC message have NO ticks
+			// MTC message have NO ticks, must be sorted by time_ms
 			midiPins.sort([](const MidiPin& a, const MidiPin& b) {
 				// For messages without tick set, like the MTC ones
 				if (a.getTime_ms() != b.getTime_ms()) {

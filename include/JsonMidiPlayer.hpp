@@ -401,7 +401,9 @@ class Clocking {
     double _length_time_ms = 0.0;
 	std::list<Tempo> _tempos;
     std::vector<MidiDevice*> _clocked_devices;
+    std::vector<MidiDevice*> _mmc_devices;
     std::vector<MidiDevice*> _mtc_devices;
+	int _mtc_fps = 30;
 	mutable RampCursor _ramp_cursor;
 
 
@@ -478,6 +480,13 @@ public:
 		#endif
 	}
 
+	void addMMCDevice(MidiDevice* midi_device) {
+		_mmc_devices.push_back(midi_device);
+		#ifdef DEBUGGING
+        std::cout << "\n\t\tADDED MMC DEVICE" << std::endl;
+		#endif
+	}
+
 	void addMTCDevice(MidiDevice* midi_device) {
 		_mtc_devices.push_back(midi_device);
 		#ifdef DEBUGGING
@@ -485,9 +494,19 @@ public:
 		#endif
 	}
 
-
 	const std::vector<MidiDevice*>& getMTCDevices() const {
 		return _mtc_devices;
+	}
+
+	void setMtcFps(int mtc_fps = 30) {
+		_mtc_fps = mtc_fps;
+		#ifdef DEBUGGING
+        std::cout << "\n\t\tSET MTC FPS" << std::endl;
+		#endif
+	}
+
+	int getMtcFps() const {
+		return _mtc_fps;
 	}
 
 

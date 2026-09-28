@@ -764,7 +764,7 @@ public:
 				std::unordered_set<std::string> unavailable_devices;
 				
 				// Load the Clocked Devices
-				nlohmann::json jsonFileClocking_clocked_devices = jsonFileClocking.at("clocked_devices");
+				nlohmann::json jsonFileClocking_clocked_devices = jsonFileClocking.at("devices");
 				if (jsonFileClocking_clocked_devices.is_array() && !jsonFileClocking_clocked_devices.empty()) {
 
 					try {

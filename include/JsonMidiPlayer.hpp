@@ -237,7 +237,8 @@ public:
 		// For messages without tick set, like the MTC ones
 		if (time_ms != mp.time_ms) {
 			return time_ms < mp.time_ms;
-		} else if (_ticks != mp._ticks) {	// Max priority to MTC (implicit with `_ticks == 0`)
+		}
+		if (_ticks != mp._ticks) {	// Max priority to MTC (implicit with `_ticks == 0`)
 			return _ticks < mp._ticks;
 		}
 		return priority < mp.priority;

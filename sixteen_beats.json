@@ -6,7 +6,7 @@
             16,
             1
         ],
-        "clocked_devices": [
+        "devices": [
             "MIDI"
         ],
         "mtc_devices": [],

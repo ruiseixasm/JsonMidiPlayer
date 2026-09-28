@@ -7,9 +7,9 @@
             1
         ],
         "devices": [
-            "FLUID",
             "MIDI"
         ],
+        "mtc_devices": [],
         "tempos": [
             {
                 "bpm_10": 1000,

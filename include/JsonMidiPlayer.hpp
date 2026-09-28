@@ -234,7 +234,12 @@ public:
 public:
 	// For the sorting
     bool operator< (const MidiPin& mp) const {
-		if (_ticks != mp._ticks) { return _ticks < mp._ticks; }
+		// For messages without tick set, like the MTC ones
+		if (_ticks == 0 && time_ms != mp.time_ms) {
+			return time_ms < mp.time_ms;
+		} else if (_ticks != mp._ticks) {
+			return _ticks < mp._ticks;
+		}
 		return priority < mp.priority;
 	}
 

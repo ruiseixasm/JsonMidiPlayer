@@ -105,7 +105,7 @@ class MidiPin {
 
 private:
     double time_ms = 0.0;   // Set afterwards based on the _position_beat
-	bool time_set = false;
+	inline static bool time_set = false;
     const uint32_t _ticks = 0;
     const unsigned char priority;
     MidiDevice * const midi_device = nullptr;
@@ -151,7 +151,6 @@ public:
     MidiPin(double time_ms, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
             : time_ms(time_ms),
-			time_set(true),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
@@ -170,12 +169,15 @@ public:
 
 	void setTime_ms(double time_milliseconds) {
 		time_ms = time_milliseconds;
-		time_set = true;
 	}
 
     double getTime_ms() const {
         return time_ms;
     }
+
+	static void setTimeSet() {
+		time_set = true;
+	}
 
     uint32_t getPositionTicks() const {
         return _ticks;
@@ -1388,6 +1390,7 @@ public:
 			}
 		}
 		if (added_messages > 0) {
+			MidiPin::setTimeSet();	// Sets it as set by time_ms
 			play_reporting.total_generated += added_messages;
 			midiPins.sort();
 		}

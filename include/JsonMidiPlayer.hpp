@@ -1447,7 +1447,9 @@ public:
 					long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
 
 					if (sleep_time_us > 0) highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
-					position_ticks = pin_ticks;	// It it is a isMtcPin the resets it to 0 (MTC pins are all at tick 0)
+					if (pin_ticks > position_ticks) {	// Because a MTC pin is always at 0 tick
+						position_ticks = pin_ticks;
+					}
 				}
 
 				auto pluck_time = std::chrono::high_resolution_clock::now() - playing_start;
@@ -1465,7 +1467,7 @@ public:
 				}
 			}
 
-			if (lengthTicks != position_ticks) {
+			if (lengthTicks > position_ticks) {
 
 				// Finish position time
 				long long finish_time_us = std::round((loopTime_ms + lengthTime_ms + play_reporting.total_drag) * 1000);

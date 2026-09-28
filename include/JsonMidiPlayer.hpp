@@ -474,10 +474,16 @@ public:
 
 	void addClockedDevice(MidiDevice* midi_device) {
 		_clocked_devices.push_back(midi_device);
+		#ifdef DEBUGGING
+        std::cout << "\n\t\tADDED CLOCKED DEVICE" << std::endl;
+		#endif
 	}
 
 	void addMTCDevice(MidiDevice* midi_device) {
 		_mtc_devices.push_back(midi_device);
+		#ifdef DEBUGGING
+        std::cout << "\n\t\tADDED MTC DEVICE" << std::endl;
+		#endif
 	}
 
 
@@ -507,7 +513,7 @@ public:
 			added_messages += 3;	// for Start, Stop and Pointer messages
 		}
 		
-		// MTC Devices
+		// MMC for MTC Devices
 		for (const auto& device : _mtc_devices) {
 			// MMC - Play - New Start clock message with High Priority 3.0 (Let's messages like Program Change go first)
 			midiPins->push_back( MidiPin(TICKS_PER_CLOCK * 0, device,
@@ -783,16 +789,9 @@ public:
 				if (jsonFileClocking_clocked_devices.is_array() && !jsonFileClocking_clocked_devices.empty()) {
 
 					try {
-						// Keeps the last called device in the JsonMidiPlayer file
-						MidiDevice *last_called_midi_device = nullptr;
 
 						for (std::string jsonClockingDevice_name : jsonFileClocking_clocked_devices) {
 
-							if (connected_devices_by_name.find(jsonClockingDevice_name) != connected_devices_by_name.end()) {
-								last_called_midi_device = connected_devices_by_name[jsonClockingDevice_name];
-								goto skip_to_next_clocked_device;
-							}
-					
 							if (unavailable_devices.find(jsonClockingDevice_name) != unavailable_devices.end()) {
 								continue;
 							}
@@ -803,29 +802,24 @@ public:
 									// Where the Device Port is connected/opened (Main reason for errors)
 									//
 									auto port_opening_start = std::chrono::high_resolution_clock::now();
-
 									bool device_available = available_device.openPort();
-
 									auto port_opening_finish = std::chrono::high_resolution_clock::now();
 									auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(port_opening_finish - port_opening_start);
 									play_reporting.ports_opening += port_processing_time.count();
 
 									if (device_available) {	// Where the connection happens
-										connected_devices_by_name[jsonClockingDevice_name] = &available_device; 
-										last_called_midi_device = &available_device;
+										connected_devices_by_name[jsonClockingDevice_name] = &available_device;
 
 										clocking.addClockedDevice(&available_device);
-
-										goto skip_to_next_clocked_device; // For Message devices only the first one found is connected and NOT all of them
+										goto skip_to_next_clocked_device;
 
 									} else {
 										connected_devices_by_name[jsonClockingDevice_name] = nullptr; 
 									}
-								} else {
-									unavailable_devices.insert(jsonClockingDevice_name);
 								}
 							}
-							skip_to_next_clocked_device: ;	// Does nothing, just jumps to next device
+							unavailable_devices.insert(jsonClockingDevice_name);
+							skip_to_next_clocked_device: ;
 						}
 					} catch (const nlohmann::json::exception& e) {
 						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
@@ -844,49 +838,36 @@ public:
 				if (jsonFileClocking_mtc_devices.is_array() && !jsonFileClocking_mtc_devices.empty()) {
 
 					try {
-						// Keeps the last called device in the JsonMidiPlayer file
-						MidiDevice *last_called_midi_device = nullptr;
+						for (std::string jsonMtcDevice_name : jsonFileClocking_mtc_devices) {
 
-						for (std::string jsonClockingDevice_name : jsonFileClocking_mtc_devices) {
-
-							if (connected_devices_by_name.find(jsonClockingDevice_name) != connected_devices_by_name.end()) {
-								last_called_midi_device = connected_devices_by_name[jsonClockingDevice_name];
-								goto skip_to_next_mtc_device;
-							}
-					
-							if (unavailable_devices.find(jsonClockingDevice_name) != unavailable_devices.end()) {
+							if (unavailable_devices.find(jsonMtcDevice_name) != unavailable_devices.end()) {
 								continue;
 							}
 					
 							for (auto &available_device : available_midi_devices) {
-								if (available_device.getName().find(jsonClockingDevice_name) != std::string::npos) {
+								if (available_device.getName().find(jsonMtcDevice_name) != std::string::npos) {
 									//
 									// Where the Device Port is connected/opened (Main reason for errors)
 									//
 									auto port_opening_start = std::chrono::high_resolution_clock::now();
-
 									bool device_available = available_device.openPort();
-
 									auto port_opening_finish = std::chrono::high_resolution_clock::now();
 									auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(port_opening_finish - port_opening_start);
 									play_reporting.ports_opening += port_processing_time.count();
 
 									if (device_available) {	// Where the connection happens
-										connected_devices_by_name[jsonClockingDevice_name] = &available_device; 
-										last_called_midi_device = &available_device;
+										connected_devices_by_name[jsonMtcDevice_name] = &available_device;
 
 										clocking.addMTCDevice(&available_device);
-
-										goto skip_to_next_mtc_device; // For Message devices only the first one found is connected and NOT all of them
+										goto skip_to_next_mtc_device;
 
 									} else {
-										connected_devices_by_name[jsonClockingDevice_name] = nullptr; 
+										connected_devices_by_name[jsonMtcDevice_name] = nullptr; 
 									}
-								} else {
-									unavailable_devices.insert(jsonClockingDevice_name);
 								}
 							}
-							skip_to_next_mtc_device: ;	// Does nothing, just jumps to next device
+							unavailable_devices.insert(jsonMtcDevice_name);
+							skip_to_next_mtc_device: ;
 						}
 					} catch (const nlohmann::json::exception& e) {
 						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
@@ -1065,10 +1046,9 @@ public:
 										} else {
 											connected_devices_by_name[device_name] = nullptr; 
 										}
-									} else {
-										unavailable_devices.insert(device_name);
 									}
 								}
+								unavailable_devices.insert(device_name);
 							}
 						}
 					skip_to_next_item: ;    // Does nothing, just jumps to next item

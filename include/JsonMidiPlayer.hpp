@@ -104,6 +104,7 @@ class MidiDevice;
 class MidiPin {
 
 private:
+	bool mtc_pin = false;	// By default it isn't an MPC pin (without a tick)
     double time_ms = 0.0;   // Set afterwards based on the _position_beat
     const uint32_t _ticks = 0;
     const unsigned char priority;
@@ -149,7 +150,8 @@ public:
     // Pin constructor from time_ms without ticks set
     MidiPin(double time_ms, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
-            : time_ms(time_ms),
+            : mtc_pin(true),	// If set by `time_ms`, then it is an MPC pin
+			time_ms(time_ms),
             midi_device(midi_device),
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
@@ -157,7 +159,8 @@ public:
 
     // Pin copy constructor
     MidiPin(const MidiPin& other)
-        : time_ms(other.time_ms),                     // Copy the time_ms
+        : mtc_pin(other.mtc_pin),					  // Makes sure mtc_pin flag is preserved
+		  time_ms(other.time_ms),                     // Copy the time_ms
           _ticks(other._ticks),       				  // Copy the position ticks
           midi_device(other.midi_device),             // Copy the pointer to the MidiDevice
           midi_message(other.midi_message),           // Copy the midi_message vector
@@ -165,6 +168,10 @@ public:
           delay_time_ms(other.delay_time_ms),         // Copy the delay_time_ms
           note_pressed_times(other.note_pressed_times)          // Copy the note_released
     { }
+
+	bool isAnMtcPin() const {
+		return mtc_pin;
+	}
 	
 	void setTime_ms(double time_milliseconds) {
 		time_ms = time_milliseconds;
@@ -1432,7 +1439,7 @@ public:
 
 				// Pin position time
 				long long next_pin_time_us = std::round((loopTime_ms + pin_it->getTime_ms() + play_reporting.total_drag) * 1000);
-				if (pin_ticks != position_ticks) {	// MTC messages always at 0
+				if (pin_ticks > position_ticks || pin_it->isAnMtcPin()) {	// MTC messages always at 0
 
 					auto playing_now = std::chrono::high_resolution_clock::now();
 					auto elapsed_time = std::chrono::duration_cast<std::chrono::microseconds>(playing_now - playing_start);
@@ -1440,7 +1447,15 @@ public:
 					long long sleep_time_us = next_pin_time_us > elapsed_time_us ? next_pin_time_us - elapsed_time_us : 0;
 
 					if (sleep_time_us > 0) highResolutionSleep(sleep_time_us);  // Sleep for x microseconds
-					if (pin_ticks > position_ticks) {	// Because a MTC pin is always at 0 tick
+
+					#ifdef DEBUGGING
+					if (next_pin_time_us - elapsed_time_us < 0) {
+						std::cout << "\n\t\tNEGATIVE SLEEP TIME OF: " << next_pin_time_us - elapsed_time_us;
+						std::cout << "\t\tIS MTC: " << pin_it->isAnMtcPin() << std::endl;
+					}
+					#endif
+
+					if (!pin_it->isAnMtcPin()) {	// Because a MTC pin is always at 0 tick
 						position_ticks = pin_ticks;
 					}
 				}
@@ -1453,6 +1468,13 @@ public:
 				);
 				double delay_time_ms = (pluck_time_us - next_pin_time_us) / 1000;
 				pin_it->addDelayTime(delay_time_ms);
+
+				#ifdef DEBUGGING
+				if (delay_time_ms < 0) {
+					std::cout << "\t\tNEGATIVE DELAY OF: " << delay_time_ms;
+					std::cout << "\t\tIS MTC: " << pin_it->isAnMtcPin() << std::endl;
+				}
+				#endif
 
 				// Process drag if existent
 				if (delay_time_ms > DRAG_DURATION_MS) {

@@ -78,7 +78,7 @@ void setRealTimeScheduling() {
 }
 
 
-int PlayList(const char* json_str, int loops, bool verbose) {
+int play(const char* json_str, int loops, bool verbose) {
     
     if (verbose) std::cout << "JsonMidiPlayer version: " << VERSION << std::endl;
 

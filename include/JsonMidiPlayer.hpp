@@ -81,12 +81,10 @@ const unsigned char system_clock_stop       = 0xFC; // Stop
 const unsigned char system_active_sensing   = 0xFE; // Active Sensing
 const unsigned char system_system_reset     = 0xFF; // System Reset
 
-// Based on MMC as CC of MCU - Mackie Control Universal
-const unsigned char mmc_cc_play				= 94;	// Play
-const unsigned char mmc_cc_stop				= 93;	// Stop
-const unsigned char mmc_cc_rec				= 95;	// Record
-const unsigned char mmc_cc_rewind			= 91;	// Rewind
-const unsigned char mmc_cc_forward			= 92;	// Fast Forward
+// Based on MMC as CC of Arturia KeyStep
+const unsigned char mmc_cc_play				= 54;	// Play
+const unsigned char mmc_cc_stop				= 51;	// Stop
+const unsigned char mmc_cc_rec				= 50;	// Record
 
 
 static constexpr uint32_t TICKS_PER_BEAT 	= 960;	// Internal PPQN

@@ -81,12 +81,18 @@ const unsigned char system_clock_stop       = 0xFC; // Stop
 const unsigned char system_active_sensing   = 0xFE; // Active Sensing
 const unsigned char system_system_reset     = 0xFF; // System Reset
 
+// Based on MMC as CC of MCU - Mackie Control Universal
+const unsigned char mmc_cc_play				= 94;	// Play
+const unsigned char mmc_cc_stop				= 93;	// Stop
+const unsigned char mmc_cc_rec				= 95;	// Record
+const unsigned char mmc_cc_rewind			= 91;	// Rewind
+const unsigned char mmc_cc_forward			= 92;	// Fast Forward
+
 
 static constexpr uint32_t TICKS_PER_BEAT 	= 960;	// Internal PPQN
 static constexpr uint32_t CLOCKS_PER_BEAT 	= 24;   // MIDI spec
 static constexpr uint32_t TICKS_PER_CLOCK 	= TICKS_PER_BEAT / CLOCKS_PER_BEAT;	// = 40
-static constexpr uint32_t MTC_FPS 			= 30;	// ADJUST ACCORDINGLY TO REALITY
-static constexpr uint32_t MTC_QUARTER_FRAMES_PER_FRAME = 8;
+
 
 
 inline uint32_t getTicksFromBeats(uint32_t num, uint32_t den) {

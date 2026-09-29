@@ -85,6 +85,9 @@ const unsigned char system_system_reset     = 0xFF; // System Reset
 const unsigned char mmc_cc_play				= 54;	// Play
 const unsigned char mmc_cc_stop				= 51;	// Stop
 const unsigned char mmc_cc_rec				= 50;	// Record
+// The Arturia KeyStep 37 and KeyStep Pro
+const unsigned char mmc_cc_rewind			= 52;	// Rewind
+const unsigned char mmc_cc_fast_forward		= 53;	// Fast Forward
 
 
 static constexpr uint32_t TICKS_PER_BEAT 	= 960;	// Internal PPQN

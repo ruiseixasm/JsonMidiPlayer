@@ -399,11 +399,12 @@ class Clocking {
 	
     uint32_t _length_ticks = 0;
     double _length_time_ms = 0.0;
+	bool _mmc_as_cc = false;
+	int _mtc_fps = 30;
 	std::list<Tempo> _tempos;
     std::vector<MidiDevice*> _clocked_devices;
     std::vector<MidiDevice*> _mmc_devices;
     std::vector<MidiDevice*> _mtc_devices;
-	int _mtc_fps = 30;
 	mutable RampCursor _ramp_cursor;
 
 
@@ -467,6 +468,28 @@ public:
 		return _length_time_ms;
 	}
 
+	void setMMCasCC(bool mmc_as_cc = true) {
+		_mmc_as_cc = mmc_as_cc;
+		#ifdef DEBUGGING
+        std::cout << "\n\t\tSET MMC as CC: " << mmc_as_cc << std::endl;
+		#endif
+	}
+
+	bool isMMCasCC() const {
+		return _mmc_as_cc;
+	}
+
+	void setMtcFps(int mtc_fps = 30) {
+		_mtc_fps = mtc_fps;
+		#ifdef DEBUGGING
+        std::cout << "\n\t\tSET MTC FPS" << std::endl;
+		#endif
+	}
+
+	int getMtcFps() const {
+		return _mtc_fps;
+	}
+
 	void addTempo(int16_t bpm_10, uint32_t num, uint32_t den) {
 		if (bpm_10 > 0 && den > 0) {
 			_tempos.emplace_back(bpm_10, getTicksFromBeats(num, den));
@@ -496,17 +519,6 @@ public:
 
 	const std::vector<MidiDevice*>& getMTCDevices() const {
 		return _mtc_devices;
-	}
-
-	void setMtcFps(int mtc_fps = 30) {
-		_mtc_fps = mtc_fps;
-		#ifdef DEBUGGING
-        std::cout << "\n\t\tSET MTC FPS" << std::endl;
-		#endif
-	}
-
-	int getMtcFps() const {
-		return _mtc_fps;
 	}
 
 

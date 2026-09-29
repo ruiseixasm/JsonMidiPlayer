@@ -930,7 +930,7 @@ public:
 				};
 
 				bool loaded_clocked_devices = load_clocking_devices(
-					"devices",
+					"clocked_devices",
 					[&](MidiDevice* device) {
 						clocking.addClockedDevice(device);
 					}

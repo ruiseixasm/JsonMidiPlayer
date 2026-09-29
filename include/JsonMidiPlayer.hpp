@@ -1012,115 +1012,112 @@ public:
 						// Most of the time it's a midi_message being processed, so it makes sense to be the first to check
 						if (jsonPlaylistItem.contains("midi_message")) {
 
-							if (last_called_midi_device != nullptr) {
+							play_reporting.total_incorrect++;
 
-								play_reporting.total_incorrect++;
+							// Create an API with the default API
+							try
+							{
+								const auto& pb = jsonPlaylistItem.at("position_beats");
+								uint32_t position_beats_num = pb.at(0).get<uint32_t>();
+								uint32_t position_beats_den = pb.at(1).get<uint32_t>();
+								if (position_beats_num < 0 || position_beats_den <= 0) {
 
-								// Create an API with the default API
-								try
-								{
-									const auto& pb = jsonPlaylistItem.at("position_beats");
-									uint32_t position_beats_num = pb.at(0).get<uint32_t>();
-									uint32_t position_beats_den = pb.at(1).get<uint32_t>();
-									if (position_beats_num < 0 || position_beats_den <= 0) {
+									continue;
+									
+								} else {	// Where the Midi Messages are loaded
 
-										continue;
-										
-									} else {
+									unsigned char status_byte = jsonPlaylistItem["midi_message"]["status_byte"];
+									std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
+									
+									unsigned char message_action = status_byte & 0xF0;
 
-										unsigned char status_byte = jsonPlaylistItem["midi_message"]["status_byte"];
-										std::vector<unsigned char> json_midi_message = { status_byte }; // Starts the json_midi_message to a new Status Byte
-										
-										unsigned char message_action = status_byte & 0xF0;
-
-										// Where the Midi message is set
-										switch (message_action) {
-											case action_note_off:
-											case action_note_on:
-											case action_control_change:
-											case action_pitch_bend:
-											case action_key_pressure:
-											{
-												// This is already a try catch situation
-												data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte_1"];
-												data_byte_2 = jsonPlaylistItem["midi_message"]["data_byte_2"];
-												if (data_byte_1 & 128 | data_byte_2 & 128)
-													continue;
-												json_midi_message.push_back(data_byte_1);
-												json_midi_message.push_back(data_byte_2);
-												break;
-											}
-											case action_program_change:
-											case action_channel_pressure:
-											{
-												data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte"];
-												if (data_byte_1 & 128)
-													continue;
-												json_midi_message.push_back(data_byte_1);
-												break;
-											}
-											default:
-												break;
+									// Where the Midi message is set
+									switch (message_action) {
+										case action_note_off:
+										case action_note_on:
+										case action_control_change:
+										case action_pitch_bend:
+										case action_key_pressure:
+										{
+											// This is already a try catch situation
+											data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte_1"];
+											data_byte_2 = jsonPlaylistItem["midi_message"]["data_byte_2"];
+											if (data_byte_1 & 128 | data_byte_2 & 128)
+												continue;
+											json_midi_message.push_back(data_byte_1);
+											json_midi_message.push_back(data_byte_2);
+											break;
 										}
-
-										// Where the Priority is set
-										switch (message_action) {
-											case action_note_off:
-												priority = 0x40 | status_byte & 0x0F;       // Normal priority 4 for Off
-												break;
-											case action_note_on:
-												priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On
-												break;
-											case action_control_change:
-												if (data_byte_1 == 1) {             // Modulation
-													priority = 0x60 | status_byte & 0x0F;       // Low priority 6
-												} else if (data_byte_1 == 0 || data_byte_1 == 32) {
-													// 0 -  Bank Select (MSB)
-													// 32 - Bank Select (LSB)
-													priority = 0x10;                            // High priority 1.0	(Equivalent to Program Change)
-												} else if (data_byte_1 == 123) {
-													// 123 - All notes off (0x7B)
-													// shall come after Notes On and Off
-													priority = 0x90 | status_byte & 0x0F;       // Low priority 9
-												} else {
-													priority = 0x20 | status_byte & 0x0F;       // High priority 2
-												}
-												break;
-											case action_pitch_bend:
-												priority = 0x70 | status_byte & 0x0F;           // Low priority 7
-												break;
-											case action_key_pressure:
-												priority = 0x80 | status_byte & 0x0F;           // Low priority 8
-												break;
-											case action_program_change:
-												priority = 0x11;                            // High priority 1.1
-												break;
-											case action_channel_pressure:
-												priority = 0x80 | status_byte & 0x0F;       // Low priority 8
-												break;
-											default:
-												continue;   // Not a valid message, no priority given, jumps to the next one
+										case action_program_change:
+										case action_channel_pressure:
+										{
+											data_byte_1 = jsonPlaylistItem["midi_message"]["data_byte"];
+											if (data_byte_1 & 128)
+												continue;
+											json_midi_message.push_back(data_byte_1);
+											break;
 										}
-
-										// `emplace_back` is faster than `push_back` because avoids an extra copy
-										midiPins.emplace_back(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority);
-										play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the for loop
-										play_reporting.total_validated++;
+										default:
+											break;
 									}
-								}
-								catch (const nlohmann::json::exception& e) {
-									if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
-									continue;
-								} catch (const std::exception& e) {
-									if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-									continue;
-								} catch (...) {
-									if (verbose) std::cerr << "Unknown error occurred." << std::endl;
-									continue;
+
+									// Where the Priority is set
+									switch (message_action) {
+										case action_note_off:
+											priority = 0x40 | status_byte & 0x0F;       // Normal priority 4 for Off
+											break;
+										case action_note_on:
+											priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On
+											break;
+										case action_control_change:
+											if (data_byte_1 == 1) {             // Modulation
+												priority = 0x60 | status_byte & 0x0F;       // Low priority 6
+											} else if (data_byte_1 == 0 || data_byte_1 == 32) {
+												// 0 -  Bank Select (MSB)
+												// 32 - Bank Select (LSB)
+												priority = 0x10;                            // High priority 1.0	(Equivalent to Program Change)
+											} else if (data_byte_1 == 123) {
+												// 123 - All notes off (0x7B)
+												// shall come after Notes On and Off
+												priority = 0x90 | status_byte & 0x0F;       // Low priority 9
+											} else {
+												priority = 0x20 | status_byte & 0x0F;       // High priority 2
+											}
+											break;
+										case action_pitch_bend:
+											priority = 0x70 | status_byte & 0x0F;           // Low priority 7
+											break;
+										case action_key_pressure:
+											priority = 0x80 | status_byte & 0x0F;           // Low priority 8
+											break;
+										case action_program_change:
+											priority = 0x11;                            // High priority 1.1
+											break;
+										case action_channel_pressure:
+											priority = 0x80 | status_byte & 0x0F;       // Low priority 8
+											break;
+										default:
+											continue;   // Not a valid message, no priority given, jumps to the next one
+									}
+
+									// `emplace_back` is faster than `push_back` because avoids an extra copy
+									midiPins.emplace_back(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority);
+									play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the for loop
+									play_reporting.total_validated++;
 								}
 							}
+							catch (const nlohmann::json::exception& e) {
+								if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+								continue;
+							} catch (const std::exception& e) {
+								if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+								continue;
+							} catch (...) {
+								if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+								continue;
+							}
 
-						// Where the last device is set based on the json "device" input
+						// Where the last device is updated based on the json "device" input (repeated ones are skip)
 						} else if (jsonPlaylistItem.contains("devices")) {
 
 							// The devices JSON list key
@@ -1131,7 +1128,7 @@ public:
 							for (std::string device_name : json_device_names) {
 								
 								if (devices_by_name.find(device_name) != devices_by_name.end()) {
-									last_called_midi_device = devices_by_name[device_name];
+									last_called_midi_device = devices_by_name[device_name];	// Device already picked up (repeated ones are skip)
 									goto skip_to_next_item;
 								}
 						
@@ -1206,13 +1203,14 @@ public:
 
 			// Auxiliary variables
 			MidiPin &pluck_pin = *pin_it;	// Just an handy conversion
-			MidiDevice &pluck_device = *pluck_pin.getDevice();
+			MidiDevice* pluck_device = pluck_pin.getDevice();
 			// Position beats and ticks
 			const uint32_t pin_actual_position_ticks = pluck_pin.getPositionTicks();
 
 			// Starts by removing any pin out of the clocking length
-			if (pin_actual_position_ticks > clocking.getLengthTicks()) {
+			if (pluck_device == nullptr || pin_actual_position_ticks > clocking.getLengthTicks()) {
 				pin_it = midiPins.erase(pin_it);
+				++(play_reporting.total_redundant);
 				continue;
 			}
 
@@ -1221,7 +1219,7 @@ public:
 			switch (midi_action) {
 				case action_note_off:
 				{
-					auto& dict_last_on = pluck_device.channelpitch_last_pins_note_on;
+					auto& dict_last_on = pluck_device->channelpitch_last_pins_note_on;
 					uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
 					
 					if (dict_last_on.find(channel_pitch) != dict_last_on.end()) { // Note On in the dict found
@@ -1241,7 +1239,7 @@ public:
 				break;
 				case action_note_on:
 				{
-					auto& dict_last_on = pluck_device.channelpitch_last_pins_note_on;
+					auto& dict_last_on = pluck_device->channelpitch_last_pins_note_on;
 					uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
 
 					if (dict_last_on.find(channel_pitch) != dict_last_on.end()) {	// Note On in the dict found
@@ -1293,7 +1291,7 @@ public:
 				break;
 				case action_key_pressure:
 				{
-					auto& dict_last = pluck_device.statusdatabyte_last_pin_controlchange;
+					auto& dict_last = pluck_device->statusdatabyte_last_pin_controlchange;
 					uint16_t status_byte = pluck_pin.getStatusByte();
 					uint16_t data_byte = pluck_pin.getDataByte(1);
 					uint16_t status_data_byte =  status_byte << 8 | data_byte;
@@ -1318,7 +1316,7 @@ public:
 				case action_pitch_bend:
 				{
 					unsigned char status_byte = pluck_pin.getStatusByte();
-					auto& dict_last = pluck_device.statusbyte_last_pins_pitchbend;
+					auto& dict_last = pluck_device->statusbyte_last_pins_pitchbend;
 
 					if (dict_last.find(status_byte) != dict_last.end()) {  // Key found
 						auto &last_pin_8 = dict_last[status_byte];
@@ -1341,7 +1339,7 @@ public:
 				case action_channel_pressure:
 				{
 					unsigned char dict_key = pluck_pin.getStatusByte();
-					auto& dict_last = pluck_device.statusbyte_last_pins_pitchbend;
+					auto& dict_last = pluck_device->statusbyte_last_pins_pitchbend;
 
 					if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
 						auto &last_pin_8 = dict_last[dict_key];

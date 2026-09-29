@@ -833,6 +833,10 @@ public:
 			// Load remaining Clocking data
 			if (clocking.getLengthTicks() > 0) {
 
+				// Set MMC_as_CC
+				bool mmc_as_cc = jsonFileClocking.at("mmc_as_cc");
+				clocking.setMMCasCC(mmc_as_cc);
+
 				// Set MTC_FPS
 				int mtc_fps = jsonFileClocking.at("mtc_fps");
 				clocking.setMtcFps(mtc_fps);

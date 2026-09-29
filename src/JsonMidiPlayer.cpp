@@ -33,6 +33,12 @@ void setRealTimeScheduling() {
 
 int play(const char* json_str, int loops, int rec_transport, bool verbose) {
     
+	#ifdef DEBUGGING
+	std::cout << "\t\tLOOPS: 	" << loops << std::endl;
+	std::cout << "\t\tRECORD:   " << rec_transport << std::endl;
+	std::cout << "\t\tVERBOSE: 	" << verbose << std::endl;
+	#endif
+
     if (verbose) std::cout << "JsonMidiPlayer version: " << VERSION << std::endl;
 
 	if (loops < 0) {

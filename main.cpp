@@ -46,9 +46,9 @@ void printUsage(const char *programName) {
 
 int main(int argc, char *argv[]) {
 
-    int verbose = 0;
 	int loops = 1;
 	int record = 0;
+    int verbose = 0;
     int option_index = 0;
 
     struct option long_options[] = {

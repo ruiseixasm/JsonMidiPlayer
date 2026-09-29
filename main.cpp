@@ -38,6 +38,7 @@ void printUsage(const char *programName) {
               << "Options:\n"
               << "  -h, --help       Show this help message and exit\n"
               << "  -l, --loops      The amount of loops the playlist will be played with 1 loop as the default\n"
+              << "  -r, --record     Plays with the transport control in record mode\n"
               << "  -v, --verbose    Enable verbose mode\n"
               << "  -V, --version    Prints the current version number\n\n"
               << "More info here: https://github.com/ruiseixasm/JsonMidiPlayer\n\n";
@@ -47,18 +48,20 @@ int main(int argc, char *argv[]) {
 
     int verbose = 0;
 	int loops = 1;
+	int record = 0;
     int option_index = 0;
 
     struct option long_options[] = {
         {"help",    no_argument,       nullptr, 'h'},
     	{"loops",   required_argument, nullptr, 'l'},
+        {"record", 	no_argument,       nullptr, 'r'},
         {"verbose", no_argument,       nullptr, 'v'},
         {"version", no_argument,       nullptr, 'V'},
         {nullptr,   0,                 nullptr,  0 }
     };
 
     while (true) {
-        int c = getopt_long(argc, argv, "hl:vV", long_options, &option_index);
+        int c = getopt_long(argc, argv, "hl:rvV", long_options, &option_index);
         if (c == -1) break;
 
         switch (c) {
@@ -76,6 +79,9 @@ int main(int argc, char *argv[]) {
                 loops = static_cast<int>(n);
                 break;
             }
+            case 'r':
+                record = 1;
+                break;
             case 'v':
                 verbose = 1;
                 break;

@@ -6,11 +6,12 @@
             28,
             1
         ],
-        "devices": [],
-        "mmc_devices": [],
-        "mtc_devices": [
+        "devices": [
             "MIDI"
         ],
+        "mmc_devices": [],
+        "mmc_as_cc": false,
+        "mtc_devices": [],
         "mtc_fps": 30,
         "tempos": [
             {

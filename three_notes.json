@@ -7,7 +7,7 @@
             1
         ],
         "clocked_devices": [
-            "MIDI"
+            "Apple"
         ],
         "transport_devices": [],
         "mmc_devices": [],
@@ -40,11 +40,6 @@
     "playlist": [
         {
             "devices": [
-                "VMPK",
-                "FLUID",
-                "MIDI",
-                "Microsoft",
-                "IAC Bus",
                 "Apple"
             ]
         },

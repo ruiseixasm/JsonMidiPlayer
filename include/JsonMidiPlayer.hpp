@@ -914,8 +914,7 @@ public:
 				}
 
 				// Dictionary where the key is a JSON list
-				std::unordered_map<std::string, MidiDevice*> connected_devices_by_name;
-				std::unordered_set<std::string> unavailable_devices;
+				std::unordered_map<std::string, MidiDevice*> devices_by_name;
 				
 				// [&] means: "This lambda may use variables from the surrounding function, and capture them by reference."
 				auto load_clocking_devices = [&](const char* json_key, auto add_device) -> bool {
@@ -928,40 +927,27 @@ public:
 
 							for (std::string json_device_name : json_devices) {
 
-								if (unavailable_devices.find(json_device_name) != unavailable_devices.end()) {
-									continue;
-								}
-
 								for (auto& available_device : available_midi_devices) {
 
 									if (available_device.getName().find(json_device_name) != std::string::npos) {
+
+										devices_by_name[json_device_name] = &available_device;
 
 										//
 										// Where the Device Port is connected/opened (Main reason for errors)
 										//
 										auto port_opening_start = std::chrono::high_resolution_clock::now();
-										bool device_available = available_device.openPort();
+										bool connected_device = available_device.openPort();
 										auto port_opening_finish = std::chrono::high_resolution_clock::now();
 										auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(
 											port_opening_finish - port_opening_start
 										);
 										play_reporting.ports_opening += port_processing_time.count();
 
-										if (device_available) {
-
-											connected_devices_by_name[json_device_name] = &available_device;
-
-											add_device(&available_device);
-											goto skip_to_next_device;
-
-										} else {
-											connected_devices_by_name[json_device_name] = nullptr;
-										}
+										add_device(&available_device);
+										break;	// Clocking connects ALL named devices BUT matches ONLY one per name
 									}
 								}
-
-								unavailable_devices.insert(json_device_name);
-								skip_to_next_device: ;
 							}
 
 						} catch (const nlohmann::json::exception& e) {
@@ -1144,13 +1130,9 @@ public:
 							// It's a list of Devices that is given as Device
 							for (std::string device_name : json_device_names) {
 								
-								if (connected_devices_by_name.find(device_name) != connected_devices_by_name.end()) {
-									last_called_midi_device = connected_devices_by_name[device_name];
+								if (devices_by_name.find(device_name) != devices_by_name.end()) {
+									last_called_midi_device = devices_by_name[device_name];
 									goto skip_to_next_item;
-								}
-						
-								if (unavailable_devices.find(device_name) != unavailable_devices.end()) {
-									continue;
 								}
 						
 								for (auto &available_device : available_midi_devices) {
@@ -1167,17 +1149,16 @@ public:
 										play_reporting.ports_opening += port_processing_time.count();
 
 										if (device_available) {	// Where the connection happens
-											connected_devices_by_name[device_name] = &available_device; 
+											devices_by_name[device_name] = &available_device; 
 											last_called_midi_device = &available_device;
 
 											goto skip_to_next_item; // For Message devices only the first one found is connected and NOT all of them
 
 										} else {
-											connected_devices_by_name[device_name] = nullptr; 
+											devices_by_name[device_name] = nullptr; 
 										}
 									}
 								}
-								unavailable_devices.insert(device_name);
 							}
 						}
 					skip_to_next_item: ;    // Does nothing, just jumps to next item

@@ -129,6 +129,7 @@ public:
         note_pressed_times(1)           // Default to 1
     { }
 
+
     // Pin constructor from position_beats (num, den)
     MidiPin(uint32_t num, uint32_t den, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
@@ -137,6 +138,7 @@ public:
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
         { }
+
 
     // Pin constructor from ticks
     MidiPin(uint32_t ticks, MidiDevice* midi_device,
@@ -147,6 +149,7 @@ public:
             priority(priority)
         { }
 
+
     // Pin constructor from time_ms without ticks set
     MidiPin(double time_ms, MidiDevice* midi_device,
         const std::vector<unsigned char>& json_midi_message, const unsigned char priority = 0xFF)
@@ -156,6 +159,7 @@ public:
             midi_message(json_midi_message),    // Directly initialize midi_message
             priority(priority)
         { }
+
 
     // Pin copy constructor
     MidiPin(const MidiPin& other)
@@ -169,10 +173,12 @@ public:
           note_pressed_times(other.note_pressed_times)          // Copy the note_released
     { }
 
+
 	bool isAnMtcPin() const {
 		return mtc_pin;
 	}
 	
+
 	void setTime_ms(double time_milliseconds) {
 		time_ms = time_milliseconds;
 	}
@@ -181,15 +187,19 @@ public:
         return time_ms;
     }
 
+
     uint32_t getPositionTicks() const {
         return _ticks;
     }
+
 
     MidiDevice *getMidiDevice() const {
         return midi_device;
     }
 
+
     void pluckTooth();
+
 
     void addDelayTime(double delay_time_ms) {
         this->delay_time_ms += delay_time_ms;
@@ -199,9 +209,11 @@ public:
         return this->delay_time_ms;
     }
 
+
     std::vector<unsigned char> getMessage() const {
         return this->midi_message; // Returns a copy
     }
+
 
     void setStatusByte(unsigned char status_byte) {
         this->midi_message[0] = status_byte;
@@ -211,6 +223,7 @@ public:
         return this->midi_message[0];
     }
 
+
     void setDataByte(int nth_byte, unsigned char data_byte) {
         this->midi_message[nth_byte] = data_byte;
     }
@@ -219,29 +232,36 @@ public:
         return this->midi_message[nth_byte];
     }
 
+
     unsigned char getChannel() const {
         return this->midi_message[0] & 0x0F;
     }
+
 
     unsigned char getAction() const {
         return this->midi_message[0] & 0xF0;
     }
 
+
     unsigned char getPriority() const {
         return this->priority;
     }
+
 
     MidiDevice * const getDevice() const {
         return this->midi_device;
     }
 
+
 	size_t getNotePressedTimes() const {
 		return this->note_pressed_times;
 	}
 
+
 	void increaseNotePressedTimes() {
 		this->note_pressed_times++;
 	}
+
 
 	void decreaseNotePressedTimes() {
 		this->note_pressed_times--;
@@ -253,6 +273,7 @@ public:
 		if (_ticks != mp._ticks) { return _ticks < mp._ticks; }
 		return priority < mp.priority;
 	}
+
 
     // Intended for Automation messages only
     bool operator == (const MidiPin &midi_pin) {
@@ -270,6 +291,7 @@ public:
         return false;
     }
 };
+
 
 
 class MidiDevice {
@@ -303,6 +325,7 @@ class MidiDevice {
         MidiDevice(const MidiDevice &) = delete;
         MidiDevice &operator=(const MidiDevice &) = delete;
     
+
         // Move assignment operator
         MidiDevice &operator=(MidiDevice &&other) noexcept {
             if (this != &other) {
@@ -315,6 +338,7 @@ class MidiDevice {
             return *this;
         }
     
+
         bool openPort();
         void closePort();
         bool hasPortOpen() const;
@@ -341,9 +365,11 @@ public:
         return _bpm_10;
     }
 
+
     uint32_t getPositionTicks() const {
         return _ticks;
     }
+
 
 	void setTime_ms(double time_milliseconds) {
 		time_ms = time_milliseconds;
@@ -353,8 +379,10 @@ public:
         return time_ms;
     }
 
+
     bool operator< (const Tempo& t) const { return _ticks <  t._ticks; }
 };
+
 
 
 // Remembers where the last accumulation stopped, so the next call
@@ -460,13 +488,16 @@ public:
 		}
 	}
 
+
 	uint32_t getLengthTicks() const {
 		return _length_ticks;
 	}
 
+
 	double getLengthTime_ms() const {
 		return _length_time_ms;
 	}
+
 
 	void setMMCasCC(bool mmc_as_cc = true) {
 		_mmc_as_cc = mmc_as_cc;
@@ -479,6 +510,7 @@ public:
 		return _mmc_as_cc;
 	}
 
+
 	void setMtcFps(int mtc_fps = 30) {
 		_mtc_fps = mtc_fps;
 		#ifdef DEBUGGING
@@ -490,11 +522,13 @@ public:
 		return _mtc_fps;
 	}
 
+
 	void addTempo(int16_t bpm_10, uint32_t num, uint32_t den) {
 		if (bpm_10 > 0 && den > 0) {
 			_tempos.emplace_back(bpm_10, getTicksFromBeats(num, den));
 		}
 	}
+
 
 	void addClockedDevice(MidiDevice* midi_device) {
 		_clocked_devices.push_back(midi_device);
@@ -503,6 +537,7 @@ public:
 		#endif
 	}
 
+
 	void addMMCDevice(MidiDevice* midi_device) {
 		_mmc_devices.push_back(midi_device);
 		#ifdef DEBUGGING
@@ -510,12 +545,14 @@ public:
 		#endif
 	}
 
+
 	void addMTCDevice(MidiDevice* midi_device) {
 		_mtc_devices.push_back(midi_device);
 		#ifdef DEBUGGING
         std::cout << "\n\t\tADDED MTC DEVICE" << std::endl;
 		#endif
 	}
+
 
 	const std::vector<MidiDevice*>& getMTCDevices() const {
 		return _mtc_devices;
@@ -545,6 +582,7 @@ public:
 		}
 		return added_messages;
 	}
+
 
 	size_t addMmcMessagesToPlay(std::list<MidiPin> *midiPins) const {
 		size_t added_messages = 0;
@@ -681,6 +719,7 @@ struct PlayReporting {
 };
 
 
+
 class Player {
 
 	std::chrono::high_resolution_clock::time_point data_processing_start;
@@ -711,6 +750,7 @@ public:
 		#endif
 
 	}
+
 
 	int readAvailableDevices(bool verbose) {
 
@@ -746,6 +786,7 @@ public:
 
 		return 0;
 	}
+
 
 	int loadJsonContent(const char* json_str, bool verbose) {
 
@@ -1328,6 +1369,7 @@ public:
 		}
 	}
 
+
 	void addMmcPins() {
 		size_t total_mmc_messages = clocking.addMmcMessagesToPlay(&midiPins);
 		if (total_mmc_messages > 0) {
@@ -1678,10 +1720,10 @@ public:
 
 
 	Action			MMC	SysEx
-	Stop				F0 7F 7F 06 01 F7
-	Play				F0 7F 7F 06 02 F7
+	Stop			F0 7F 7F 06 01 F7
+	Play			F0 7F 7F 06 02 F7
 	Deferred Play	F0 7F 7F 06 03 F7
-	Fast Forward		F0 7F 7F 06 04 F7
+	Fast Forward	F0 7F 7F 06 04 F7
 	Rewind			F0 7F 7F 06 05 F7
 	Record Strobe	F0 7F 7F 06 06 F7
 	Record Exit		F0 7F 7F 06 07 F7

@@ -603,7 +603,7 @@ public:
 	}
 
 
-	size_t addClockAndTransportMessagesToPlay(std::list<MidiPin> *midiPins) const {
+	size_t addClockAndTransportMessagesToPlay(std::list<MidiPin> *midiPins, bool rec_transport = false) const {
 		size_t added_messages = 0;
 		// _length_ticks is a multiple of TICKS_PER_CLOCK, beats multiples
 		const size_t total_clock_pins = _length_ticks / TICKS_PER_CLOCK;
@@ -1400,8 +1400,8 @@ public:
 	}
 
 
-	void addClockingTransportPins() {
-		size_t total_clock_messages = clocking.addClockAndTransportMessagesToPlay(&midiPins);
+	void addClockingTransportPins(bool rec_transport = false) {
+		size_t total_clock_messages = clocking.addClockAndTransportMessagesToPlay(&midiPins, rec_transport);
 		if (total_clock_messages > 0) {
 			play_reporting.total_generated += total_clock_messages;
 			midiPins.sort();

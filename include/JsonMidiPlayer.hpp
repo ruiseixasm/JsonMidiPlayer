@@ -102,7 +102,64 @@ inline uint32_t getTicksFromBeats(uint32_t num, uint32_t den) {
 }
 
 
-class MidiDevice;
+
+class MidiPin;
+
+
+
+class MidiDevice {
+    private:
+        RtMidiOut midiOut;
+        const std::string name;
+        const unsigned int port;
+        const bool verbose;
+        bool opened_port = false;
+        bool unavailable_device = false;
+    
+    public:
+    
+        // Keeps MidiPin pointers by Channel_Pitch (uint16_t) (similar to byte_16)
+        std::unordered_map<uint16_t, MidiPin*>		channelpitch_last_pins_note_on;			// For Note On tracking
+        
+        // Keeps MidiPin dummy copies, thus NOT pointers of MidiPin
+        std::unordered_map<unsigned char, MidiPin>  statusbyte_last_pins_pitchbend;    		// For Pitch Bend and Aftertouch
+        std::unordered_map<uint16_t, MidiPin>       statusdatabyte_last_pin_controlchange;	// For Control Change and Key Pressure
+    
+    public:
+        MidiDevice(std::string device_name, unsigned int device_port, bool verbose = false)
+                    : name(device_name), port(device_port), verbose(verbose) { }
+    
+        // Move constructor
+        MidiDevice(MidiDevice &&other) noexcept : midiOut(std::move(other.midiOut)),
+                name(std::move(other.name)), port(other.port), verbose(other.verbose),
+                opened_port(other.opened_port) { }
+    
+        // Delete the copy constructor and copy assignment operator
+        MidiDevice(const MidiDevice &) = delete;
+        MidiDevice &operator=(const MidiDevice &) = delete;
+    
+
+        // Move assignment operator
+        MidiDevice &operator=(MidiDevice &&other) noexcept {
+            if (this != &other) {
+                // Since name and port are const, they cannot be assigned.
+                opened_port = other.opened_port;
+                // midiOut can't be assigned using the = assignment operator because has none.
+                // midiOut = std::move(other.midiOut);
+            }
+            std::cout << "Move assigned: " << name << std::endl;
+            return *this;
+        }
+    
+
+        bool openPort();
+        void closePort();
+        bool hasPortOpen() const;
+        const std::string& getName() const;
+        unsigned int getDevicePort() const;
+        void sendMessage(const std::vector<unsigned char> *midi_message);
+    };
+
 
 
 class MidiPin {
@@ -296,61 +353,6 @@ public:
     }
 };
 
-
-
-class MidiDevice {
-    private:
-        RtMidiOut midiOut;
-        const std::string name;
-        const unsigned int port;
-        const bool verbose;
-        bool opened_port = false;
-        bool unavailable_device = false;
-    
-    public:
-    
-        // Keeps MidiPin pointers by Channel_Pitch (uint16_t) (similar to byte_16)
-        std::unordered_map<uint16_t, MidiPin*>		channelpitch_last_pins_note_on;			// For Note On tracking
-        
-        // Keeps MidiPin dummy copies, thus NOT pointers of MidiPin
-        std::unordered_map<unsigned char, MidiPin>  statusbyte_last_pins_pitchbend;    		// For Pitch Bend and Aftertouch
-        std::unordered_map<uint16_t, MidiPin>       statusdatabyte_last_pin_controlchange;	// For Control Change and Key Pressure
-    
-    public:
-        MidiDevice(std::string device_name, unsigned int device_port, bool verbose = false)
-                    : name(device_name), port(device_port), verbose(verbose) { }
-    
-        // Move constructor
-        MidiDevice(MidiDevice &&other) noexcept : midiOut(std::move(other.midiOut)),
-                name(std::move(other.name)), port(other.port), verbose(other.verbose),
-                opened_port(other.opened_port) { }
-    
-        // Delete the copy constructor and copy assignment operator
-        MidiDevice(const MidiDevice &) = delete;
-        MidiDevice &operator=(const MidiDevice &) = delete;
-    
-
-        // Move assignment operator
-        MidiDevice &operator=(MidiDevice &&other) noexcept {
-            if (this != &other) {
-                // Since name and port are const, they cannot be assigned.
-                opened_port = other.opened_port;
-                // midiOut can't be assigned using the = assignment operator because has none.
-                // midiOut = std::move(other.midiOut);
-            }
-            std::cout << "Move assigned: " << name << std::endl;
-            return *this;
-        }
-    
-
-        bool openPort();
-        void closePort();
-        bool hasPortOpen() const;
-        const std::string& getName() const;
-        unsigned int getDevicePort() const;
-        void sendMessage(const std::vector<unsigned char> *midi_message);
-    };
-    
 
 	
 class Tempo {
@@ -966,7 +968,7 @@ public:
 				);
 
 				if (!(loaded_clocked_devices && loaded_transport_devices && loaded_mmc_devices && loaded_mtc_devices)) {
-            		goto skip_reading_items;
+            		goto skip_reading_items;	// If no errors occur
 				}
 
 

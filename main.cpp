@@ -124,5 +124,5 @@ int main(int argc, char *argv[]) {
     // Replace last "," with a "]"
     json_files_list.back() = ']';
 
-    return play(json_files_list.c_str(), loops, verbose);
+    return play(json_files_list.c_str(), loops, record, verbose);
 }

@@ -31,7 +31,7 @@ void setRealTimeScheduling() {
 }
 
 
-int play(const char* json_str, int loops, bool verbose) {
+int play(const char* json_str, int loops, int rec_transport, bool verbose) {
     
     if (verbose) std::cout << "JsonMidiPlayer version: " << VERSION << std::endl;
 
@@ -48,7 +48,7 @@ int play(const char* json_str, int loops, bool verbose) {
 	if (load_error) return load_error;
 	// Midi pins processing
 	player.prepareMidiPins();
-	player.addClockingTransportPins();	// Includes MIDI Machine Control or Transport CC control messages
+	player.addClockingTransportPins(rec_transport);	// Includes MIDI Machine Control or Transport CC control messages
 	player.applyTime_ms();
 	player.addMtcPins();	// MTC pins are purely time_ms pins, so, they must come after `time_ms` being applied to tick pins
 	player.reportProcessing(verbose);

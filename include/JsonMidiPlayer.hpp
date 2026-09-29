@@ -152,12 +152,48 @@ class MidiDevice {
         }
     
 
-        bool openPort();
-        void closePort();
-        bool hasPortOpen() const;
-        const std::string& getName() const;
-        unsigned int getDevicePort() const;
-        void sendMessage(const std::vector<unsigned char> *midi_message);
+        bool openPort() {
+			if (!opened_port && !unavailable_device) {
+				try {
+					midiOut.openPort(port);
+					opened_port = true;
+					if (verbose) std::cout << "   " << name;
+				} catch (RtMidiError &error) {
+					unavailable_device = true;
+					error.printMessage();
+				}
+			}
+			return opened_port;
+		}
+
+
+        void closePort() {
+			if (opened_port) {
+				midiOut.closePort();
+				opened_port = false;
+				if (verbose) std::cout << "   " << name;
+			}
+		}
+
+
+        bool hasPortOpen() const {
+			return opened_port;
+		}
+
+
+        const std::string& getName() const {
+			return name;
+		}
+
+
+        unsigned int getDevicePort() const {
+			return port;
+		}
+
+
+        void sendMessage(const std::vector<unsigned char> *midi_message) {
+			midiOut.sendMessage(midi_message);
+		}
     };
 
 
@@ -259,7 +295,10 @@ public:
     }
 
 
-    void pluckTooth();
+    void pluckTooth() {
+		if (midi_device != nullptr)
+			midi_device->sendMessage(&midi_message);
+	}
 
 
     void addDelayTime(double delay_time_ms) {

@@ -530,6 +530,14 @@ public:
 	}
 
 
+	void addTransportDevice(MidiDevice* midi_device) {
+		_transport_devices.push_back(midi_device);
+		#ifdef DEBUGGING
+        std::cout << "\n\t\tADDED TRANSPORT DEVICE" << std::endl;
+		#endif
+	}
+
+
 	void addMMCDevice(MidiDevice* midi_device) {
 		_mmc_devices.push_back(midi_device);
 		#ifdef DEBUGGING
@@ -936,6 +944,13 @@ public:
 					}
 				);
 
+				bool loaded_transport_devices = load_clocking_devices(
+					"transport_devices",
+					[&](MidiDevice* device) {
+						clocking.addTransportDevice(device);
+					}
+				);
+
 				bool loaded_mmc_devices = load_clocking_devices(
 					"mmc_devices",
 					[&](MidiDevice* device) {
@@ -950,7 +965,7 @@ public:
 					}
 				);
 
-				if (!(loaded_clocked_devices && loaded_mmc_devices && loaded_mtc_devices)) {
+				if (!(loaded_clocked_devices && loaded_transport_devices && loaded_mmc_devices && loaded_mtc_devices)) {
             		goto skip_reading_items;
 				}
 

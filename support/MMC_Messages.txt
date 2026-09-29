@@ -1,0 +1,20 @@
+ TIMESTAMP IN PORT STATUS DATA1 DATA2 CHAN NOTE EVENT               
+     18077  2  --    240 Buffer:     6 Bytes    System Exclusive      
+  SYSX: 240 127 127 6 2 247
+     18087  2  --    250   ---   ---   --  ---  Start                 
+     18087  2  --    248   ---   ---   --  ---  Timing Clock          
+     18097  2  --    248   ---   ---   --  ---  Timing Clock          
+     18117  2  --    248   ---   ---   --  ---  Timing Clock          
+     18137  2  --    248   ---   ---   --  ---  Timing Clock          
+     18152  2  --    248   ---   ---   --  ---  Timing Clock          
+     18172  2  --    248   ---   ---   --  ---  Timing Clock          
+     18192  2  --    248   ---   ---   --  ---  Timing Clock          
+     18213  2  --    248   ---   ---   --  ---  Timing Clock          
+     18232  2  --    248   ---   ---   --  ---  Timing Clock          
+     18253  2  --    248   ---   ---   --  ---  Timing Clock          
+     18272  2  --    248   ---   ---   --  ---  Timing Clock          
+     18293  2  --    248   ---   ---   --  ---  Timing Clock          
+     18312  2  --    248   ---   ---   --  ---  Timing Clock          
+     18327  2  --    240 Buffer:     6 Bytes    System Exclusive      
+  SYSX: 240 127 127 6 1 247
+     18337  2  --    252   ---   ---   --  ---  Stop                  

@@ -109,19 +109,18 @@ inline unsigned char messagePriority(unsigned char message_action, unsigned char
 	// Where the Priority is set
 	switch (message_action) {
 		case action_note_off: 			return 0x40;     	// Normal priority 4 for Off
-		case action_note_on: 			return 0x50;       	// Normal priority 5 for On
+		case action_note_on: 			return 0x60;       	// Normal priority 6 for On
 		case action_control_change:
 			switch (data_byte_1) {
-				case 1:					return 0x60;		// Low priority 6 (Modulation)
 				case 0:	// 0 -  Bank Select (MSB) / 32 - Bank Select (LSB)
 				case 32:				return 0x10;		// High priority 1.0 (Equivalent to Program Change)
 				case 123:				return 0x90;		// Low priority 9 (123 - All notes off (0x7B))
-				default:				return 0x20;		// High priority 2 (common CC messages)
+				default:				return 0x50;		// Average priority 5 (common CC messages) (between note on and off)
 			}
-		case action_pitch_bend: 		return 0x70;        // Low priority 7
-		case action_key_pressure: 		return 0x80;        // Low priority 8
-		case action_program_change: 	return 0x11;        // High priority 1.1
+		case action_pitch_bend: 		return 0x50;        // Average priority 5
+		case action_key_pressure: 		return 0x80;        // Low priority 8 (After Key Pressing, Note On)
 		case action_channel_pressure:	return 0x80;       	// Low priority 8
+		case action_program_change: 	return 0x11;        // High priority 1.1
 
 		case system_clock_start:		return 0x32;		// Start clock message with High Priority 3.2
 		case system_timing_clock:		return 0x33;		// Clock message with High Priority 3.3

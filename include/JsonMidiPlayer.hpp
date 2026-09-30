@@ -203,7 +203,7 @@ class MidiDevice {
 			channelpitch_last_pins_note_on[channel_pitch] = pluck_pin;
 		}
 
-		MidiPin* getLastNoteOnPin(uint16_t channel_pitch) {
+		MidiPin* getLastNoteOnPin(uint16_t channel_pitch) const {
 			auto it = channelpitch_last_pins_note_on.find(channel_pitch);
 			
 			if (it != channelpitch_last_pins_note_on.end()) {
@@ -225,7 +225,7 @@ class MidiDevice {
 			statusbyte_last_pins[status_byte] = pluck_pin;
 		}
 
-		MidiPin* getLastStatusbytePin(unsigned char status_byte) {
+		MidiPin* getLastStatusbytePin(unsigned char status_byte) const {
 			auto it = statusbyte_last_pins.find(status_byte);
 			
 			if (it != statusbyte_last_pins.end()) {
@@ -239,7 +239,7 @@ class MidiDevice {
 			statusdatabyte_last_pins[status_data_byte] = pluck_pin;
 		}
 
-		MidiPin* getLastStatusDatabytePin(uint16_t status_data_byte) {
+		MidiPin* getLastStatusDatabytePin(uint16_t status_data_byte) const {
 			auto it = statusdatabyte_last_pins.find(status_data_byte);
 			
 			if (it != statusdatabyte_last_pins.end()) {

@@ -193,13 +193,16 @@ class MidiDevice {
 
         // Keeps MidiPin pointers by Channel_Pitch (uint16_t) (similar to byte_16)
         std::unordered_map<uint16_t, MidiPin*>		channelpitch_last_pins_note_on;			// For Note On tracking
-        
+        // Keeps MidiPin dummy copies, thus NOT pointers of MidiPin
+        std::unordered_map<unsigned char, MidiPin*> statusbyte_last_pins;    		// For Pitch Bend and Aftertouch
+        std::unordered_map<uint16_t, MidiPin*>      statusdatabyte_last_pins;		// For Control Change and Key Pressure
+    
 
 	public:
 
         // Keeps MidiPin dummy copies, thus NOT pointers of MidiPin
-        std::unordered_map<unsigned char, MidiPin>  statusbyte_last_pins;    	// For Pitch Bend and Aftertouch
-        std::unordered_map<uint16_t, MidiPin>       statusdatabyte_last_pin;	// For Control Change and Key Pressure
+        std::unordered_map<unsigned char, MidiPin>  statusbyte_last_pins_pitchbend;    		// For Pitch Bend and Aftertouch
+        std::unordered_map<uint16_t, MidiPin>       statusdatabyte_last_pin_controlchange;	// For Control Change and Key Pressure
     
 		void setLastNoteOnPin(uint16_t channel_pitch, MidiPin* pluck_pin) {
 			channelpitch_last_pins_note_on[channel_pitch] = pluck_pin;
@@ -223,7 +226,32 @@ class MidiDevice {
 		}
 
 
+		void setLastStatusbyteOnPin(unsigned char status_byte, MidiPin* pluck_pin) {
+			statusbyte_last_pins[status_byte] = pluck_pin;
+		}
 
+		MidiPin* getLastStatusbytePin(unsigned char status_byte) {
+			auto it = statusbyte_last_pins.find(status_byte);
+			
+			if (it != statusbyte_last_pins.end()) {
+				return it->second; // Last Note On
+			}
+			return nullptr; // Not found
+		}
+
+
+		void setLastStatusDatabyteOnPin(uint16_t status_data_byte, MidiPin* pluck_pin) {
+			statusdatabyte_last_pins[status_data_byte] = pluck_pin;
+		}
+
+		MidiPin* getLastStatusDatabytePin(uint16_t status_data_byte) {
+			auto it = statusdatabyte_last_pins.find(status_data_byte);
+			
+			if (it != statusdatabyte_last_pins.end()) {
+				return it->second; // Last Note On
+			}
+			return nullptr; // Not found
+		}
     };
 
 
@@ -1308,7 +1336,7 @@ public:
 				break;
 				case action_key_pressure:
 				{
-					auto& dict_last = pluck_device->statusdatabyte_last_pin;
+					auto& dict_last = pluck_device->statusdatabyte_last_pin_controlchange;
 					uint16_t status_byte = pluck_pin.getStatusByte();
 					uint16_t data_byte = pluck_pin.getDataByte(1);
 					uint16_t status_data_byte =  status_byte << 8 | data_byte;
@@ -1333,7 +1361,7 @@ public:
 				case action_pitch_bend:
 				{
 					unsigned char status_byte = pluck_pin.getStatusByte();
-					auto& dict_last = pluck_device->statusbyte_last_pins;
+					auto& dict_last = pluck_device->statusbyte_last_pins_pitchbend;
 
 					if (dict_last.find(status_byte) != dict_last.end()) {  // Key found
 						auto &last_pin_8 = dict_last[status_byte];
@@ -1356,7 +1384,7 @@ public:
 				case action_channel_pressure:
 				{
 					unsigned char dict_key = pluck_pin.getStatusByte();
-					auto& dict_last = pluck_device->statusbyte_last_pins;
+					auto& dict_last = pluck_device->statusbyte_last_pins_pitchbend;
 
 					if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
 						auto &last_pin_8 = dict_last[dict_key];

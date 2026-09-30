@@ -1340,20 +1340,19 @@ public:
 					uint16_t status_byte = pluck_pin.getStatusByte();
 					uint16_t data_byte = pluck_pin.getDataByte(1);
 					uint16_t status_data_byte =  status_byte << 8 | data_byte;
+					auto last_status_data_byte_pin = pluck_device->getLastStatusDatabytePin(status_data_byte);
 
-					if (dict_last.find(status_data_byte) != dict_last.end()) {  // Key found
-						auto &last_pin_16 = dict_last[status_data_byte];
+					if (last_status_data_byte_pin != nullptr) {  // Key found
 
-						if (last_pin_16 == pluck_pin) {
+						if (*last_status_data_byte_pin == pluck_pin) {
 							pin_it = midiPins.erase(pin_it);
 							++(play_reporting.total_redundant);
 						} else {
-							last_pin_16.setDataByte(2, pluck_pin.getDataByte(2));
+							pluck_device->setLastStatusDatabyteOnPin(status_data_byte, &pluck_pin);
 							++pin_it; // Only increment if no removal
 						}
 					} else {
-						// Needs to use a pin dummy copy given that their midi parameters may be changed
-						dict_last.emplace(status_data_byte, MidiPin(pluck_pin));    // Just a dummy copy
+						pluck_device->setLastStatusDatabyteOnPin(status_data_byte, &pluck_pin);
 						++pin_it; // Only increment if no removal
 					}
 				}
@@ -1380,22 +1379,21 @@ public:
 				break;
 				case action_channel_pressure:
 				{
-					unsigned char dict_key = pluck_pin.getStatusByte();
+					unsigned char status_byte = pluck_pin.getStatusByte();
+					auto last_status_byte_pin = pluck_device->getLastStatusbytePin(status_byte);
 					auto& dict_last = pluck_device->statusbyte_last_pins_pitchbend;
 
-					if (dict_last.find(dict_key) != dict_last.end()) {  // Key found
-						auto &last_pin_8 = dict_last[dict_key];
+					if (last_status_byte_pin != nullptr) {  // Key found
 
-						if (last_pin_8 == pluck_pin) {
+						if (*last_status_byte_pin == pluck_pin) {
 							pin_it = midiPins.erase(pin_it);
 							++(play_reporting.total_redundant);
 						} else {
-							last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
+							pluck_device->setLastStatusbyteOnPin(status_byte, &pluck_pin);
 							++pin_it; // Only increment if no removal
 						}
 					} else {
-						// Needs to use a pin dummy copy given that their midi parameters may be changed
-						dict_last.emplace(dict_key, MidiPin(pluck_pin));    // Just a dummy copy
+						pluck_device->setLastStatusbyteOnPin(status_byte, &pluck_pin);
 						++pin_it; // Only increment if no removal
 					}
 				}

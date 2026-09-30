@@ -128,7 +128,7 @@ inline unsigned char messagePriority(unsigned char message_action, unsigned char
 		case system_clock_stop:			return 0xB2;		// Stop clock message with Lowest priority 11.2
 		case system_song_pointer:		return 0xB3;		// Song position message with Lowest priority 11.3
 
-		// Not a valid message, lowest priority given (never happens, avoid undefined behaviour in C++)
+		// Any other message action, lowest priority given
 		default: 						return 0xFF;
 	}
 }

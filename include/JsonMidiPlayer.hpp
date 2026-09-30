@@ -104,7 +104,7 @@ inline uint32_t getTicksFromBeats(uint32_t num, uint32_t den) {
 }
 
 
-inline unsigned char messagePriority(unsigned char message_action, unsigned char data_byte_1) {
+inline unsigned char messagePriority(unsigned char message_action, unsigned char data_byte_1 = 0) {
 
 	// Where the Priority is set
 	switch (message_action) {
@@ -1280,7 +1280,7 @@ public:
 								pluck_pin.getDataByte(1),	// Note pitch
 								0	// Note off has velocity 0 (Data Byte 2)
 							};
-							unsigned char priority = messagePriority(action_note_off, 0);	// `data_byte_1` only relevant for CC messages, thus, `0`
+							unsigned char priority = messagePriority(action_note_off);	// `data_byte_1` only relevant for CC messages, thus, `0`
 							// `insert` - The container is extended by inserting new elements before the element at the specified position.
 							pin_it = midiPins.insert(pin_it,   // Makes a copy to the place given by pin_it
 								MidiPin(
@@ -1394,7 +1394,7 @@ public:
 				};
 				// Adds a new MidiPin as a copy to the list of pins to be processed
 				uint32_t clocking_length_ticks = clocking.getLengthTicks();
-				unsigned char priority = messagePriority(action_note_off, 0);	// `data_byte_1` only relevant for CC messages, thus, `0`
+				unsigned char priority = messagePriority(action_note_off);	// `data_byte_1` only relevant for CC messages, thus, `0`
 				midiPins.push_back( MidiPin(clocking_length_ticks, &device, midi_pin_note_off_message, priority) );
 				play_reporting.total_generated++;
 			}

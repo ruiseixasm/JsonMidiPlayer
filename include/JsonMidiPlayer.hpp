@@ -1361,22 +1361,19 @@ public:
 				case action_pitch_bend:
 				{
 					unsigned char status_byte = pluck_pin.getStatusByte();
-					auto& dict_last = pluck_device->statusbyte_last_pins_pitchbend;
+					auto last_status_byte_pin = pluck_device->getLastStatusbytePin(status_byte);
 
-					if (dict_last.find(status_byte) != dict_last.end()) {  // Key found
-						auto &last_pin_8 = dict_last[status_byte];
+					if (last_status_byte_pin != nullptr) {  // Key found
 
-						if (last_pin_8 == pluck_pin) {
+						if (*last_status_byte_pin == pluck_pin) {
 							pin_it = midiPins.erase(pin_it);
 							++(play_reporting.total_redundant);
 						} else {
-							last_pin_8.setDataByte(1, pluck_pin.getDataByte(1));
-							last_pin_8.setDataByte(2, pluck_pin.getDataByte(2));
+							pluck_device->setLastStatusbyteOnPin(status_byte, &pluck_pin);
 							++pin_it; // Only increment if no removal
 						}
 					} else {
-						// Needs to use a pin dummy copy given that their midi parameters may be changed
-						dict_last.emplace(status_byte, MidiPin(pluck_pin));    // Just a dummy copy
+						pluck_device->setLastStatusbyteOnPin(status_byte, &pluck_pin);
 						++pin_it; // Only increment if no removal
 					}
 				}

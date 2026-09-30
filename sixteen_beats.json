@@ -9,12 +9,9 @@
         "clocked_devices": [
             "MIDI"
         ],
-        "transport_devices": [
-            "MIDI"
-        ],
+        "transport_devices": [],
         "mmc_devices": [],
         "mtc_devices": [],
-        "mtc_fps": 30,
         "tempos": [
             {
                 "bpm_10": 300,

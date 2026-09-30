@@ -904,14 +904,11 @@ public:
 							);
 						}
 					} catch (const nlohmann::json::exception& e) {
-						if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
-						goto skip_reading_items;
+						if (verbose) std::cerr << "Loading Tempos, JSON error: " << e.what() << std::endl;
 					} catch (const std::exception& e) {
-						if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-						goto skip_reading_items;
+						if (verbose) std::cerr << "Loading Tempos, Error: " << e.what() << std::endl;
 					} catch (...) {
-						if (verbose) std::cerr << "Unknown error occurred." << std::endl;
-						goto skip_reading_items;
+						if (verbose) std::cerr << "Loading Tempos, Unknown error occurred." << std::endl;
 					}
 				}
 
@@ -919,7 +916,7 @@ public:
 				std::unordered_map<std::string, MidiDevice*> devices_by_name;
 				
 				// [&] means: "This lambda may use variables from the surrounding function, and capture them by reference."
-				auto load_clocking_devices = [&](const char* json_key, auto add_device) -> bool {
+				auto load_clocking_devices = [&](const char* json_key, auto add_device) {
 
 					nlohmann::json json_devices = jsonFileClocking.at(json_key);
 
@@ -953,50 +950,42 @@ public:
 							}
 
 						} catch (const nlohmann::json::exception& e) {
-							if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
-							return false;
+							if (verbose) std::cerr << "Loading: '" << json_key << "', JSON error: " << e.what() << std::endl;
 						} catch (const std::exception& e) {
-							if (verbose) std::cerr << "Error: " << e.what() << std::endl;
-							return false;
+							if (verbose) std::cerr << "Loading: '" << json_key << "', Error: " << e.what() << std::endl;
 						} catch (...) {
-							if (verbose) std::cerr << "Unknown error occurred." << std::endl;
-							return false;
+							if (verbose) std::cerr << "Loading: '" << json_key << "', Unknown error occurred." << std::endl;
 						}
 					}
-					return true;
 				};
 
-				bool loaded_clocked_devices = load_clocking_devices(
+				load_clocking_devices(
 					"clocked_devices",
 					[&](MidiDevice* device) {
 						clocking.addClockedDevice(device);
 					}
 				);
 
-				bool loaded_transport_devices = load_clocking_devices(
+				load_clocking_devices(
 					"transport_devices",
 					[&](MidiDevice* device) {
 						clocking.addTransportDevice(device);
 					}
 				);
 
-				bool loaded_mmc_devices = load_clocking_devices(
+				load_clocking_devices(
 					"mmc_devices",
 					[&](MidiDevice* device) {
 						clocking.addMMCDevice(device);
 					}
 				);
 
-				bool loaded_mtc_devices = load_clocking_devices(
+				load_clocking_devices(
 					"mtc_devices",
 					[&](MidiDevice* device) {
 						clocking.addMTCDevice(device);
 					}
 				);
-
-				if (!(loaded_clocked_devices && loaded_transport_devices && loaded_mmc_devices && loaded_mtc_devices)) {
-            		goto skip_reading_items;	// If no errors occur
-				}
 
 
 				// Check if jsonFilePlaylist is a non-empty array
@@ -1109,13 +1098,13 @@ public:
 								}
 							}
 							catch (const nlohmann::json::exception& e) {
-								if (verbose) std::cerr << "JSON error: " << e.what() << std::endl;
+								if (verbose) std::cerr << "Loading Midi Message JSON error: " << e.what() << std::endl;
 								continue;
 							} catch (const std::exception& e) {
-								if (verbose) std::cerr << "Error: " << e.what() << std::endl;
+								if (verbose) std::cerr << "Loading Midi Message Error: " << e.what() << std::endl;
 								continue;
 							} catch (...) {
-								if (verbose) std::cerr << "Unknown error occurred." << std::endl;
+								if (verbose) std::cerr << "Loading Midi Message Unknown error occurred." << std::endl;
 								continue;
 							}
 

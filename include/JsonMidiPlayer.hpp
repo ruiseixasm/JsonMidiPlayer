@@ -175,11 +175,6 @@ class MidiDevice {
 		}
 
 
-        unsigned int getDevicePort() const {
-			return port;
-		}
-
-
         void sendMessage(const std::vector<unsigned char> *midi_message) {
 			if (opened_port) {
 				midiOut.sendMessage(midi_message);

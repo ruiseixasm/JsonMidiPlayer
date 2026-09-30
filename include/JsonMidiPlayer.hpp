@@ -120,15 +120,6 @@ class MidiDevice {
         bool unavailable_device = false;
     
     public:
-    
-        // Keeps MidiPin pointers by Channel_Pitch (uint16_t) (similar to byte_16)
-        std::unordered_map<uint16_t, MidiPin*>		channelpitch_last_pins_note_on;			// For Note On tracking
-        
-        // Keeps MidiPin dummy copies, thus NOT pointers of MidiPin
-        std::unordered_map<unsigned char, MidiPin>  statusbyte_last_pins_pitchbend;    		// For Pitch Bend and Aftertouch
-        std::unordered_map<uint16_t, MidiPin>       statusdatabyte_last_pin_controlchange;	// For Control Change and Key Pressure
-    
-    public:
         MidiDevice(std::string device_name, unsigned int device_port, bool verbose = false)
                     : name(device_name), port(device_port), verbose(verbose) { }
     
@@ -197,6 +188,38 @@ class MidiDevice {
         void sendMessage(const std::vector<unsigned char> *midi_message) {
 			midiOut.sendMessage(midi_message);
 		}
+
+	private:
+
+        // Keeps MidiPin pointers by Channel_Pitch (uint16_t) (similar to byte_16)
+        std::unordered_map<uint16_t, MidiPin*>		channelpitch_last_pins_note_on;			// For Note On tracking
+        
+
+	public:
+
+        // Keeps MidiPin dummy copies, thus NOT pointers of MidiPin
+        std::unordered_map<unsigned char, MidiPin>  statusbyte_last_pins_pitchbend;    		// For Pitch Bend and Aftertouch
+        std::unordered_map<uint16_t, MidiPin>       statusdatabyte_last_pin_controlchange;	// For Control Change and Key Pressure
+    
+		void setLastNoteOnPin(uint16_t channel_pitch, MidiPin* pluck_pin) {
+			channelpitch_last_pins_note_on[channel_pitch] = pluck_pin;
+		}
+
+		MidiPin* getLastNoteOnPin(uint16_t channel_pitch) {
+			auto it = channelpitch_last_pins_note_on.find(channel_pitch);
+			
+			if (it != channelpitch_last_pins_note_on.end()) {
+				return it->second; // Last Note On
+			}
+			return nullptr; // Not found
+		}
+
+		const std::unordered_map<uint16_t, MidiPin*>& getLastPinsNoteOn() const {
+			return channelpitch_last_pins_note_on;
+		}
+
+
+
     };
 
 
@@ -1210,14 +1233,13 @@ public:
 			switch (midi_action) {
 				case action_note_off:
 				{
-					auto& dict_last_on = pluck_device->channelpitch_last_pins_note_on;
 					uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
+					auto last_note_on_pin = pluck_device->getLastNoteOnPin(channel_pitch);
 					
-					if (dict_last_on.find(channel_pitch) != dict_last_on.end()) { // Note On in the dict found
+					if (last_note_on_pin != nullptr) { // Note On in the dict found
 
-						auto &last_note_on_pin = dict_last_on[channel_pitch];	// It's a MidiPin*&
-
-						last_note_on_pin->decreaseNotePressedTimes();
+						last_note_on_pin->decreaseNotePressedTimes();	// Decreases the pressed level, NORMALLY to 0
+						// If the present note_off didn't result in a level 0, then, the note is still active, don't send note_off
 						if (last_note_on_pin->getNotePressedTimes() != 0) {	// The Only configuration to release Note is 1
 							pin_it = midiPins.erase(pin_it);
 							++(play_reporting.total_redundant);  // Note Off as no Note On pair (STATS)
@@ -1230,12 +1252,10 @@ public:
 				break;
 				case action_note_on:
 				{
-					auto& dict_last_on = pluck_device->channelpitch_last_pins_note_on;
 					uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
+					auto last_note_on_pin = pluck_device->getLastNoteOnPin(channel_pitch);
 
-					if (dict_last_on.find(channel_pitch) != dict_last_on.end()) {	// Note On in the dict found
-
-						auto &last_note_on_pin = dict_last_on[channel_pitch];	// It's a MidiPin*&
+					if (last_note_on_pin != nullptr) { // Note On in the dict found
 
 						if (last_note_on_pin->getNotePressedTimes() > 0) {
 
@@ -1276,7 +1296,7 @@ public:
 					}
 					// First timer Note On
 					// It's safe to use a direct reference given that the Note On midi_pin note parameters are never changed
-					dict_last_on[channel_pitch] = &pluck_pin;
+					pluck_device->setLastNoteOnPin(channel_pitch, &pluck_pin);
 					++pin_it; // Only increments if no removal
 				}
 				break;
@@ -1366,7 +1386,7 @@ public:
 				// MIDI NOTES SHALL NOT BE LEFT PRESSED !!
 				// Add the needed note off for all those still on at the end!
 				// Iterate over all keys and values
-				for (const auto& pair : device.channelpitch_last_pins_note_on) {
+				for (const auto& pair : device.getLastPinsNoteOn()) {
 					// uint16_t channel_pitch = pair.first;
 					auto& last_pin_note_on = pair.second;
 

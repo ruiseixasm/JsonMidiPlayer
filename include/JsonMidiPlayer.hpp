@@ -122,8 +122,14 @@ inline unsigned char messagePriority(unsigned char message_action, unsigned char
 		case action_key_pressure: 		return 0x80;        // Low priority 8
 		case action_program_change: 	return 0x11;        // High priority 1.1
 		case action_channel_pressure:	return 0x80;       	// Low priority 8
+
+		case system_clock_start:		return 0x32;		// Start clock message with High Priority 3.2
+		case system_timing_clock:		return 0x33;		// Clock message with High Priority 3.3
+		case system_clock_stop:			return 0xB2;		// Stop clock message with Lowest priority 11.2
+		case system_song_pointer:		return 0xB3;		// Song position message with Lowest priority 11.3
+
 		// Not a valid message, lowest priority given (never happens, avoid undefined behaviour in C++)
-		default: 						return 0x90;
+		default: 						return 0xFF;
 	}
 }
 
@@ -660,20 +666,28 @@ public:
 		// _length_ticks is a multiple of TICKS_PER_CLOCK, beats multiples
 		const size_t total_clock_pins = _length_ticks / TICKS_PER_CLOCK;
 		
+		const unsigned char clock_start_priority 	= messagePriority(system_clock_start);
+		const unsigned char clock_timing_priority 	= messagePriority(system_timing_clock);
+		const unsigned char clock_stop_priority 	= messagePriority(system_clock_stop);
+		const unsigned char song_pointer_priority 	= messagePriority(system_song_pointer);
 		// Clocked Devices
 		for (const auto& device : _clocked_devices) {
 			// New Start clock message with High Priority 3.2 (Let's messages like Program Change go first)
-			midiPins->emplace_back(TICKS_PER_CLOCK * 0, device, std::vector<uint8_t>{ system_clock_start }, 0x32);
+			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * 0), device,
+				std::vector<uint8_t>{ system_clock_start }, clock_start_priority);
 
 			for (size_t pin_i = 1; pin_i < total_clock_pins; pin_i++) {
 				// New clock message with High Priority 3.3 (Let's messages like Program Change go first)
-				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * pin_i), device, std::vector<uint8_t>{ system_timing_clock }, 0x33);
+				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * pin_i), device,
+					std::vector<uint8_t>{ system_timing_clock }, clock_timing_priority);
 				added_messages++;
 			}
 			// New Stop clock message with Lowest priority 11.2
-			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, std::vector<uint8_t>{ system_clock_stop }, 0xB2);
+			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device,
+				std::vector<uint8_t>{ system_clock_stop }, clock_stop_priority);
 			// New Stop clock message with Lowest priority 11.3
-			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, std::vector<uint8_t>{ system_song_pointer, 0, 0 }, 0xB3);
+			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device,
+				std::vector<uint8_t>{ system_song_pointer, 0, 0 }, song_pointer_priority);
 			added_messages += 3;	// for Start, Stop and Pointer messages
 		}
 
@@ -689,19 +703,19 @@ public:
 		for (const auto& device : _transport_devices) {
 			if (rec_transport) {
 				// MMC - Rec - New Start MMC message with High Priority 3.0 (Let's messages like Program Change go first)
-				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * 0), device, cc_rec_button_down, 0x30);
-				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * 0), device, cc_rec_button_up, 0x30);
+				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * 0), device, cc_rec_button_down, clock_start_priority - 1);
+				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * 0), device, cc_rec_button_up, clock_start_priority - 1);
 			} else {
 				// MMC - Play - New Start MMC message with High Priority 3.0 (Let's messages like Program Change go first)
-				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * 0), device, cc_play_button_down, 0x30);
-				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * 0), device, cc_play_button_up, 0x30);
+				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * 0), device, cc_play_button_down, clock_start_priority - 1);
+				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * 0), device, cc_play_button_up, clock_start_priority - 1);
 			}
 			// MMC - Stop - New Stop MMC message with Lowest priority 11.4
-			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, cc_stop_button_down, 0xB4);
-			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, cc_stop_button_up, 0xB4);
+			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, cc_stop_button_down);
+			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, cc_stop_button_up);
 			// MMC - Rewind - New Reposition MMC message with Lowest priority 11.5
-			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, cc_rewind_button_down, 0xB5);
-			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, cc_rewind_button_up, 0xB5);
+			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, cc_rewind_button_down);
+			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device, cc_rewind_button_up);
 			added_messages += 3 * 2;
 		}
 		
@@ -710,18 +724,20 @@ public:
 			if (rec_transport) {
 				// MMC - Rec - New Start MMC message with High Priority 3.0 (Let's messages like Program Change go first)
 				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * 0), device,
-					std::vector<uint8_t>{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x06, system_sysex_end }, 0x30);
+					std::vector<uint8_t>{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x06, system_sysex_end },
+					clock_start_priority - 1);
 			} else {
 				// MMC - Play - New Start MMC message with High Priority 3.0 (Let's messages like Program Change go first)
 				midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * 0), device,
-					std::vector<uint8_t>{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x02, system_sysex_end }, 0x30);
+					std::vector<uint8_t>{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x02, system_sysex_end },
+					clock_start_priority - 1);
 			}
 			// MMC - Stop - New Stop MMC message with Lowest priority 11.4
 			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device,
-				std::vector<uint8_t>{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end }, 0xB4);
+				std::vector<uint8_t>{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x01, system_sysex_end });
 			// MMC - Rewind - New Reposition MMC message with Lowest priority 11.5
 			midiPins->emplace_back((uint32_t)(TICKS_PER_CLOCK * total_clock_pins), device,
-				std::vector<uint8_t>{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x05, system_sysex_end }, 0xB5);
+				std::vector<uint8_t>{ system_sysex_start, 0x7F, 0x7F, 0x06, 0x05, system_sysex_end });
 			added_messages += 3;
 		}
 
@@ -1446,6 +1462,9 @@ public:
 		// const by reference (&)
 		const std::vector<MidiDevice*>& mtc_devices = clocking.getMTCDevices();
 
+		const unsigned char clock_start_priority 	= messagePriority(system_clock_start);
+		const unsigned char clock_timing_priority 	= messagePriority(system_timing_clock);
+
 		// MTC Devices
 		for (const auto& device : mtc_devices) {
 
@@ -1455,7 +1474,8 @@ public:
 
 			// Needs to be explicit concerning the `std::vector<uint8_t>`
 			midiPins.emplace_back(0.0, device,
-				std::vector<uint8_t>{ 0xF0, 0x7F, 0x7F, 0x01, 0x01, fullFrameHourByte, 0x00, 0x00, 0x00, 0xF7 }, 0x31
+				std::vector<uint8_t>{ 0xF0, 0x7F, 0x7F, 0x01, 0x01, fullFrameHourByte, 0x00, 0x00, 0x00, 0xF7 },
+				clock_start_priority
 			);
 			added_messages++;
 
@@ -1528,7 +1548,7 @@ public:
 				double triggerTimeMs = qfCount * ms_per_quarter_frame;
 
 				// HERE: Only 2 bytes are sent with an interval of 8.33ms
-				midiPins.emplace_back(triggerTimeMs, device, std::vector<uint8_t>{0xF1, dataByte}, 0x31);
+				midiPins.emplace_back(triggerTimeMs, device, std::vector<uint8_t>{0xF1, dataByte}, clock_timing_priority);
 				added_messages++;
 			}
 		}

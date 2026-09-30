@@ -214,6 +214,10 @@ class MidiDevice {
 			return nullptr; // Not found
 		}
 
+		void removeLastNoteOnPin(uint16_t channel_pitch) {
+			channelpitch_last_pins_note_on.erase(channel_pitch);
+		}
+
 		const std::unordered_map<uint16_t, MidiPin*>& getLastPinsNoteOn() const {
 			return channelpitch_last_pins_note_on;
 		}
@@ -1245,6 +1249,8 @@ public:
 							++(play_reporting.total_redundant);  // Note Off as no Note On pair (STATS)
 							// By erasing a pin above, there is no need to increase the pin iterator
 							goto skip_to_next_pin;
+						} else {	// Note completely released, no need to keep it
+							pluck_device->removeLastNoteOnPin(channel_pitch);
 						}
 					}
 					++pin_it; // Only increments if no removal
@@ -1385,23 +1391,21 @@ public:
 				
 				// MIDI NOTES SHALL NOT BE LEFT PRESSED !!
 				// Add the needed note off for all those still on at the end!
-				// Iterate over all keys and values
+				// Iterate over all the remaining pressed keys (NOT REMOVED FROM THE MAP)
 				for (const auto& pair : device.getLastPinsNoteOn()) {
 					// uint16_t channel_pitch = pair.first;
 					auto& last_pin_note_on = pair.second;
-
-					if (last_pin_note_on->getNotePressedTimes() > 0) {
-						// Transform midi on in midi off
-						std::vector<unsigned char> midi_pin_note_off_message = {
-							static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte
-							last_pin_note_on->getDataByte(1),
-							0	// Note off has velocity 0 (Data Byte 2)
-						};
-						// Adds a new MidiPin as a copy to the list of pins to be processed
-						uint32_t clocking_length_ticks = clocking.getLengthTicks();
-						midiPins.push_back( MidiPin(clocking_length_ticks, &device, midi_pin_note_off_message) );
-						play_reporting.total_generated++;
-					}
+					
+					// Transform midi on in midi off
+					std::vector<unsigned char> midi_pin_note_off_message = {
+						static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte
+						last_pin_note_on->getDataByte(1),
+						0	// Note off has velocity 0 (Data Byte 2)
+					};
+					// Adds a new MidiPin as a copy to the list of pins to be processed
+					uint32_t clocking_length_ticks = clocking.getLengthTicks();
+					midiPins.push_back( MidiPin(clocking_length_ticks, &device, midi_pin_note_off_message) );
+					play_reporting.total_generated++;
 				}
 			}
 		}

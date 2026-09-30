@@ -886,6 +886,30 @@ public:
 	}
 
 
+	static unsigned char messagePriority(unsigned char message_action, unsigned char data_byte_1) {
+
+		// Where the Priority is set
+		switch (message_action) {
+			case action_note_off: 			return 0x40;     	// Normal priority 4 for Off
+			case action_note_on: 			return 0x50;       	// Normal priority 5 for On
+			case action_control_change:
+				switch (data_byte_1) {
+					case 1:					return 0x60;		// Low priority 6 (Modulation)
+					case 0:	// 0 -  Bank Select (MSB) / 32 - Bank Select (LSB)
+					case 32:				return 0x10;		// High priority 1.0 (Equivalent to Program Change)
+					case 123:				return 0x90;		// Low priority 9 (123 - All notes off (0x7B))
+					default:				return 0x20;		// High priority 2 (common CC messages)
+				}
+			case action_pitch_bend: 		return 0x70;        // Low priority 7
+			case action_key_pressure: 		return 0x80;        // Low priority 8
+			case action_program_change: 	return 0x11;        // High priority 1.1
+			case action_channel_pressure:	return 0x80;       	// Low priority 8
+			// Not a valid message, lowest priority given (never happens, avoid undefined behaviour in C++)
+			default: 						return 0x90;
+		}
+	}
+
+
 	int loadJsonContent(const char* json_str, bool verbose) {
 
         if (verbose) std::cout << "Devices connected:    ";
@@ -1038,7 +1062,6 @@ public:
 					// Just the declarations, no need to set them
 					unsigned char data_byte_1;
 					unsigned char data_byte_2;
-					unsigned char priority;
 
 					for (auto jsonPlaylistItem : jsonFilePlaylist)
 					{
@@ -1093,46 +1116,8 @@ public:
 										default:
 											break;
 									}
-
-									// Where the Priority is set
-									switch (message_action) {
-										case action_note_off:
-											priority = 0x40 | status_byte & 0x0F;       // Normal priority 4 for Off
-											break;
-										case action_note_on:
-											priority = 0x50 | status_byte & 0x0F;       // Normal priority 5 for On
-											break;
-										case action_control_change:
-											if (data_byte_1 == 1) {             // Modulation
-												priority = 0x60 | status_byte & 0x0F;       // Low priority 6
-											} else if (data_byte_1 == 0 || data_byte_1 == 32) {
-												// 0 -  Bank Select (MSB)
-												// 32 - Bank Select (LSB)
-												priority = 0x10;                            // High priority 1.0	(Equivalent to Program Change)
-											} else if (data_byte_1 == 123) {
-												// 123 - All notes off (0x7B)
-												// shall come after Notes On and Off
-												priority = 0x90 | status_byte & 0x0F;       // Low priority 9
-											} else {
-												priority = 0x20 | status_byte & 0x0F;       // High priority 2
-											}
-											break;
-										case action_pitch_bend:
-											priority = 0x70 | status_byte & 0x0F;           // Low priority 7
-											break;
-										case action_key_pressure:
-											priority = 0x80 | status_byte & 0x0F;           // Low priority 8
-											break;
-										case action_program_change:
-											priority = 0x11;                            // High priority 1.1
-											break;
-										case action_channel_pressure:
-											priority = 0x80 | status_byte & 0x0F;       // Low priority 8
-											break;
-										default:
-											continue;   // Not a valid message, no priority given, jumps to the next one
-									}
-
+									
+									unsigned char priority = Player::messagePriority(message_action, data_byte_1);
 									// `emplace_back` is faster than `push_back` because avoids an extra copy
 									midiPins.emplace_back(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority);
 									play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the for loop
@@ -1296,13 +1281,14 @@ public:
 								pluck_pin.getDataByte(1),	// Note pitch
 								0	// Note off has velocity 0 (Data Byte 2)
 							};
+							unsigned char priority = Player::messagePriority(action_note_off, 0);	// `data_byte_1` only relevant for CC messages, thus, `0`
 							// `insert` - The container is extended by inserting new elements before the element at the specified position.
 							pin_it = midiPins.insert(pin_it,   // Makes a copy to the place given by pin_it
 								MidiPin(
 										pin_actual_position_ticks,
 										pluck_pin.getMidiDevice(),
 										midi_pin_note_off,
-										0x40	// Note off priority
+										priority	// Note off priority
 									)
 								);
 							play_reporting.total_generated++;
@@ -1409,7 +1395,8 @@ public:
 				};
 				// Adds a new MidiPin as a copy to the list of pins to be processed
 				uint32_t clocking_length_ticks = clocking.getLengthTicks();
-				midiPins.push_back( MidiPin(clocking_length_ticks, &device, midi_pin_note_off_message) );
+				unsigned char priority = Player::messagePriority(action_note_off, 0);	// `data_byte_1` only relevant for CC messages, thus, `0`
+				midiPins.push_back( MidiPin(clocking_length_ticks, &device, midi_pin_note_off_message, priority) );
 				play_reporting.total_generated++;
 			}
 		}

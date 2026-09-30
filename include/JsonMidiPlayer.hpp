@@ -1276,44 +1276,43 @@ public:
 					uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
 					auto last_note_on_pin = pluck_device->getLastNoteOnPin(channel_pitch);
 
-					if (last_note_on_pin != nullptr) { // Note On in the dict found
+					if (last_note_on_pin != nullptr) { // Note On in the dict found, if found then pressed times > 0!
 
-						if (last_note_on_pin->getNotePressedTimes() > 0) {
+						// Position beats and ticks
+						const uint32_t last_note_position_ticks = last_note_on_pin->getPositionTicks();
 
-							// Position beats and ticks
-							const uint32_t last_note_position_ticks = last_note_on_pin->getPositionTicks();
+						last_note_on_pin->increaseNotePressedTimes();	// Adds an extra pressing level, to be picked by the next note off
+						if (pin_actual_position_ticks == last_note_position_ticks) {
+							
+							pin_it = midiPins.erase(pin_it);	// Can't trigger the same note twice at the same time
+							++(play_reporting.total_redundant);	// STATS
+							// By erasing a pin above, there is no need to increase the pin iterator
 
-							last_note_on_pin->increaseNotePressedTimes();	// Because the remaining EXTRA note off
-							if (pin_actual_position_ticks == last_note_position_ticks) {
-								
-								pin_it = midiPins.erase(pin_it);	// Can't trigger the same note twice at the same time
-								++(play_reporting.total_redundant);	// STATS
-								// By erasing a pin above, there is no need to increase the pin iterator
-
-							} else {	// It's still triggerable
-								
-								// New note off message
-								std::vector<unsigned char> midi_pin_message = {
-									static_cast<unsigned char>(pluck_pin.getChannel() | action_note_off),
-									pluck_pin.getDataByte(1),
-									0	// Note off has velocity 0 (Data Byte 2)
-								};
-								pin_it = midiPins.insert(pin_it,   // Makes a copy to the place given by pin_it
-									MidiPin(
-											pin_actual_position_ticks,
-											pluck_pin.getMidiDevice(),
-											midi_pin_message
-										)
-									);
-								play_reporting.total_generated++;
-								// THIS IS RIGHT, NEW PIN ADDED, IT'S INTENDED TO BE TWO CONSECUTIVE SKIPS !!
-								// Skips the previously inserted Note Off MidiPin
-								++pin_it;  // Move the iterator to the next element
-								// The usual increment given that it jumps the steps bellow
-								++pin_it; // Only increments if no removal
-							}
-							goto skip_to_next_pin;
+						} else {	// It's still triggerable
+							
+							// New note off message
+							std::vector<unsigned char> midi_pin_note_off = {
+								static_cast<unsigned char>(action_note_off | pluck_pin.getChannel()),
+								pluck_pin.getDataByte(1),	// Note pitch
+								0	// Note off has velocity 0 (Data Byte 2)
+							};
+							// `insert` - The container is extended by inserting new elements before the element at the specified position.
+							pin_it = midiPins.insert(pin_it,   // Makes a copy to the place given by pin_it
+								MidiPin(
+										pin_actual_position_ticks,
+										pluck_pin.getMidiDevice(),
+										midi_pin_note_off,
+										0x40	// Note off priority
+									)
+								);
+							play_reporting.total_generated++;
+							// THIS IS RIGHT, NEW PIN ADDED, IT'S INTENDED TO BE TWO CONSECUTIVE SKIPS !!
+							// Skips the previously inserted Note Off MidiPin
+							++pin_it;  // Move the iterator to the next element
+							// The usual increment given that it jumps the steps bellow
+							++pin_it; // Only increments if no removal
 						}
+						goto skip_to_next_pin;
 					}
 					// First timer Note On
 					// It's safe to use a direct reference given that the Note On midi_pin note parameters are never changed

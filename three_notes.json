@@ -9,7 +9,9 @@
         "clocked_devices": [
             "MIDI"
         ],
-        "transport_devices": [],
+        "transport_devices": [
+            "MIDI"
+        ],
         "mmc_devices": [],
         "mtc_devices": [],
         "tempos": [

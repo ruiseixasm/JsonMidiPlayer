@@ -197,13 +197,8 @@ class MidiDevice {
         std::unordered_map<unsigned char, MidiPin*> statusbyte_last_pins;    		// For Pitch Bend and Aftertouch
         std::unordered_map<uint16_t, MidiPin*>      statusdatabyte_last_pins;		// For Control Change and Key Pressure
     
-
 	public:
 
-        // Keeps MidiPin dummy copies, thus NOT pointers of MidiPin
-        std::unordered_map<unsigned char, MidiPin>  statusbyte_last_pins_pitchbend;    		// For Pitch Bend and Aftertouch
-        std::unordered_map<uint16_t, MidiPin>       statusdatabyte_last_pin_controlchange;	// For Control Change and Key Pressure
-    
 		void setLastNoteOnPin(uint16_t channel_pitch, MidiPin* pluck_pin) {
 			channelpitch_last_pins_note_on[channel_pitch] = pluck_pin;
 		}
@@ -1336,7 +1331,6 @@ public:
 				break;
 				case action_key_pressure:
 				{
-					auto& dict_last = pluck_device->statusdatabyte_last_pin_controlchange;
 					uint16_t status_byte = pluck_pin.getStatusByte();
 					uint16_t data_byte = pluck_pin.getDataByte(1);
 					uint16_t status_data_byte =  status_byte << 8 | data_byte;
@@ -1381,7 +1375,6 @@ public:
 				{
 					unsigned char status_byte = pluck_pin.getStatusByte();
 					auto last_status_byte_pin = pluck_device->getLastStatusbytePin(status_byte);
-					auto& dict_last = pluck_device->statusbyte_last_pins_pitchbend;
 
 					if (last_status_byte_pin != nullptr) {  // Key found
 

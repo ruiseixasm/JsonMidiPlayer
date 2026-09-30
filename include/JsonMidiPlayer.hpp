@@ -54,7 +54,7 @@ void disableBackgroundThrottling();
 void setRealTimeScheduling();
 void highResolutionSleep(long long microseconds);
 
-int play(const char* json_str, int loops = 1, int rec_transport = 0, bool verbose = false);
+int play(const char* json_str, int loops = 1, int rec_transport = 0, int mtc_fps = 30, bool verbose = false);
 
 
 // Taken from: https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html

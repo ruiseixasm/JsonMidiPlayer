@@ -31,7 +31,7 @@ void setRealTimeScheduling() {
 }
 
 
-int play(const char* json_str, int loops, int rec_transport, bool verbose) {
+int play(const char* json_str, int loops, int rec_transport, int mtc_fps, bool verbose) {
     
 	#ifdef DEBUGGING
 	std::cout << "\t\tLOOPS: 	" << loops << std::endl;

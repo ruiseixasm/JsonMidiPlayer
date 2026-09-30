@@ -1403,26 +1403,23 @@ public:
 		// Adds missing note off midi messages for unreleased notes
 		for (auto &device : available_midi_devices) {
 			
-			if (device.hasPortOpen()) {
+			// MIDI NOTES SHALL NOT BE LEFT PRESSED !!
+			// Add the needed note off for all those still on at the end!
+			// Iterate over all the remaining pressed keys (NOT REMOVED FROM THE MAP)
+			for (const auto& pair : device.getLastPinsNoteOn()) {
+				// uint16_t channel_pitch = pair.first;
+				auto& last_pin_note_on = pair.second;
 				
-				// MIDI NOTES SHALL NOT BE LEFT PRESSED !!
-				// Add the needed note off for all those still on at the end!
-				// Iterate over all the remaining pressed keys (NOT REMOVED FROM THE MAP)
-				for (const auto& pair : device.getLastPinsNoteOn()) {
-					// uint16_t channel_pitch = pair.first;
-					auto& last_pin_note_on = pair.second;
-					
-					// Transform midi on in midi off
-					std::vector<unsigned char> midi_pin_note_off_message = {
-						static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte
-						last_pin_note_on->getDataByte(1),
-						0	// Note off has velocity 0 (Data Byte 2)
-					};
-					// Adds a new MidiPin as a copy to the list of pins to be processed
-					uint32_t clocking_length_ticks = clocking.getLengthTicks();
-					midiPins.push_back( MidiPin(clocking_length_ticks, &device, midi_pin_note_off_message) );
-					play_reporting.total_generated++;
-				}
+				// Transform midi on in midi off
+				std::vector<unsigned char> midi_pin_note_off_message = {
+					static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte
+					last_pin_note_on->getDataByte(1),
+					0	// Note off has velocity 0 (Data Byte 2)
+				};
+				// Adds a new MidiPin as a copy to the list of pins to be processed
+				uint32_t clocking_length_ticks = clocking.getLengthTicks();
+				midiPins.push_back( MidiPin(clocking_length_ticks, &device, midi_pin_note_off_message) );
+				play_reporting.total_generated++;
 			}
 		}
 	}

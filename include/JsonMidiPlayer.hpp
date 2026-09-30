@@ -475,7 +475,6 @@ class Clocking {
 	
     uint32_t _length_ticks = 0;
     double _length_time_ms = 0.0;
-	int _mtc_fps = 30;
 	std::list<Tempo> _tempos;
     std::vector<MidiDevice*> _clocked_devices;
     std::vector<MidiDevice*> _transport_devices;
@@ -544,18 +543,6 @@ public:
 
 	double getLengthTime_ms() const {
 		return _length_time_ms;
-	}
-
-
-	void setMtcFps(int mtc_fps = 30) {
-		_mtc_fps = mtc_fps;
-		#ifdef DEBUGGING
-        std::cout << "\n\t\tSET MTC FPS" << std::endl;
-		#endif
-	}
-
-	int getMtcFps() const {
-		return _mtc_fps;
 	}
 
 
@@ -901,10 +888,6 @@ public:
 
 			// Load remaining Clocking data
 			if (clocking.getLengthTicks() > 0) {
-
-				// Set MTC_FPS
-				int mtc_fps = jsonFileClocking.at("mtc_fps");
-				clocking.setMtcFps(mtc_fps);
 
 				// Load the Tempos
 				nlohmann::json jsonFileClocking_tempos = jsonFileClocking.at("tempos");
@@ -1439,14 +1422,13 @@ public:
 	}
 
 	
-	void addMtcPins() {
+	void addMtcPins(int mtc_fps = 30) {
 		size_t added_messages = 0;
 
 		double ms_per_quarter_frame = 1000.0 / 120.0;
 		int fps_type = 3;
 		int fps_value = 30;
 
-		int mtc_fps = clocking.getMtcFps();
 		switch (mtc_fps) {
 			case 24:  fps_type = 0; fps_value = 24; ms_per_quarter_frame = 1000.0 / (24.0 * 4.0); break;
 			case 25:  fps_type = 1; fps_value = 25; ms_per_quarter_frame = 1000.0 / (25.0 * 4.0); break;

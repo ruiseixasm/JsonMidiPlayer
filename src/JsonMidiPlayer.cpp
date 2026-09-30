@@ -56,7 +56,7 @@ int play(const char* json_str, int loops, int rec_transport, int mtc_fps, bool v
 	player.prepareMidiPins();
 	player.addClockingTransportPins(rec_transport);	// Includes MIDI Machine Control or Transport CC control messages
 	player.applyTime_ms();
-	player.addMtcPins();	// MTC pins are purely time_ms pins, so, they must come after `time_ms` being applied to tick pins
+	player.addMtcPins(mtc_fps);	// MTC pins are purely time_ms pins, so, they must come after `time_ms` being applied to tick pins
 	player.reportProcessing(verbose);
 	// Midi pins playing
 	player.printPlayingTime(loops, verbose);

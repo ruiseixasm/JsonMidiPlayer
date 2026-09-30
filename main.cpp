@@ -39,7 +39,7 @@ void printUsage(const char *programName) {
               << "  -h, --help       Show this help message and exit\n"
               << "  -l, --loops      The amount of loops the playlist will be played with 1 loop as the default\n"
               << "  -r, --record     Plays with the transport control in record mode\n"
-              << "  -f, --fps        Sets the frames per second of the Midi Time Code (MTC) messages\n"
+              << "  -f, --fps        Sets the frames per second of the Midi Time Code (MTC) messages (default is 30)\n"
               << "  -v, --verbose    Enable verbose mode\n"
               << "  -V, --version    Prints the current version number\n\n"
               << "More info here: https://github.com/ruiseixasm/JsonMidiPlayer\n\n";

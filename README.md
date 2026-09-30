@@ -89,7 +89,7 @@ Options:
   -h, --help       Show this help message and exit
   -l, --loops      The amount of loops the playlist will be played with 1 loop as the default
   -r, --record     Plays with the transport control in record mode
-  -f, --fps        Sets the frames per second of the Midi Time Code (MTC) messages
+  -f, --fps        Sets the frames per second of the Midi Time Code (MTC) messages (default is 30)
   -v, --verbose    Enable verbose mode
   -V, --version    Prints the current version number
 

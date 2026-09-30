@@ -170,11 +170,6 @@ class MidiDevice {
 		}
 
 
-        bool hasPortOpen() const {
-			return opened_port;
-		}
-
-
         const std::string& getName() const {
 			return name;
 		}
@@ -186,7 +181,9 @@ class MidiDevice {
 
 
         void sendMessage(const std::vector<unsigned char> *midi_message) {
-			midiOut.sendMessage(midi_message);
+			if (opened_port) {
+				midiOut.sendMessage(midi_message);
+			}
 		}
 
 	private:

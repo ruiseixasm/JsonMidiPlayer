@@ -1257,20 +1257,16 @@ public:
 
 			// Starts by removing any pin out of the clocking length
 			if (pluck_device == nullptr || pin_actual_position_ticks > clocking.getLengthTicks()) {
-				switch (midi_action) {
-					case action_note_off:
-						if (!pluck_pin.noteRemoved()) {
-							pluck_pin.setPositionTicks(
-								clocking.getLengthTicks()
-							);
-							break;
-						}
-					case action_note_on:
-						pluck_pin.removeNote();
-					default:
-						pin_it = midiPins.erase(pin_it);
-						++(play_reporting.total_redundant);
-						continue;	// Applies to the `for` loop (`switch` has no `continue`)
+				if (midi_action == action_note_off && !pluck_pin.noteRemoved()) {
+					pluck_pin.setPositionTicks(
+						clocking.getLengthTicks()
+					);
+					break;
+				} else {
+					pluck_pin.removeNote();
+					pin_it = midiPins.erase(pin_it);
+					++(play_reporting.total_redundant);
+					continue;	// Applies to the `for` loop (`switch` has no `continue`)
 				}
 			}
 
@@ -1312,11 +1308,15 @@ public:
 								// By erasing a pin above, there is no need to increase the pin iterator
 								continue;
 
-							} else {	// It's still triggerable, but bring forward the previous note note off
+							} else {	
 								// Overlapping note, previous Note On Note Off need to be updated (No need for removal)
 								MidiPin* last_note_note_off_pin = last_note_on_pin->getNoteOffPin();
 								if (last_note_note_off_pin != nullptr) {	// Safe code
-									last_note_note_off_pin->setPositionTicks(pin_actual_position_ticks);
+									// Only if overlapping is the Note Off position updated
+									if (last_note_note_off_pin->getPositionTicks() > pin_actual_position_ticks) {
+										// It's still triggerable, but bring forward the previous note note off
+										last_note_note_off_pin->setPositionTicks(pin_actual_position_ticks);
+									}
 								}
 							}
 						}

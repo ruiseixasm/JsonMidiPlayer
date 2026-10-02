@@ -1251,9 +1251,6 @@ public:
 			// Auxiliary variables
 			MidiPin &pluck_pin = *pin_it;	// Just an handy conversion
 			MidiDevice* pluck_device = pluck_pin.getDevice();
-			// Position beats and ticks
-			const uint32_t pin_actual_position_ticks = pluck_pin.getPositionTicks();
-			const auto midi_action = pluck_pin.getAction();
 
 			// Starts by removing any pin WITHOUT a Pluck Device (Safe Code)
 			if (pluck_device == nullptr) {
@@ -1263,13 +1260,16 @@ public:
 				continue;	// Applies to the `for` loop (`switch` has no `continue`)
 			}
 
+			// Position beats and ticks
+			const uint32_t pin_actual_position_ticks = pluck_pin.getPositionTicks();
+			const auto midi_action = pluck_pin.getAction();
+
 			// Also removes any pin out of the clocking length
 			if (pin_actual_position_ticks > clocking.getLengthTicks()) {
 				if (midi_action == action_note_off) {
 					pluck_pin.setPositionTicks(
 						clocking.getLengthTicks()
 					);
-					break;
 				} else {
 					pluck_pin.removeNote();
 					pin_it = midiPins.erase(pin_it);

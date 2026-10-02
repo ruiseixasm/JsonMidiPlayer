@@ -1171,6 +1171,7 @@ public:
 									if (message_action == action_note_on) {
 										last_note_on = &(midiPins.back());
 									} else if (message_action == action_note_off && last_note_on != nullptr) {
+										// Note Off always comes next to Note On in the playlist (in sequence)
 										last_note_on->setNoteOffPin(midiPins.back());
 									}
 

@@ -456,18 +456,18 @@ public:
 	}
 
 
-	void setAsRemoved() {
+	void setNoteAsRemoved() {
 		removed_note = true;
 		if (note_off_pin != nullptr) {
-			note_off_pin->setAsRemoved();
+			note_off_pin->setNoteAsRemoved();
 		}
 	}
 
-	bool wasRemoved() const {
+	bool wasNoteRemoved() const {
 		return removed_note;
 	}
 
-	
+
 public:
 	// For the sorting
     bool operator< (const MidiPin& mp) const {

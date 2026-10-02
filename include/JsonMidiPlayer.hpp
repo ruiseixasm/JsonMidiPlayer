@@ -276,7 +276,7 @@ class MidiPin {
 private:
 	bool mtc_pin = false;	// By default it isn't an MPC pin (without a tick)
     double time_ms = 0.0;   // Set afterwards based on the _position_beat
-    const uint32_t _ticks = 0;
+    uint32_t _ticks = 0;
     const unsigned char priority;
     MidiDevice * const midi_device = nullptr;
     std::vector<unsigned char> midi_message;  // Replaces midi_message[3]
@@ -361,6 +361,10 @@ public:
         return time_ms;
     }
 
+
+    void setPositionTicks(uint32_t ticks) {
+        _ticks = ticks;
+    }
 
     uint32_t getPositionTicks() const {
         return _ticks;
@@ -456,10 +460,10 @@ public:
 	}
 
 
-	void setNoteAsRemoved() {
+	void setNoteRemoved() {
 		removed_note = true;
 		if (note_off_pin != nullptr) {
-			note_off_pin->setNoteAsRemoved();
+			note_off_pin->setNoteRemoved();
 		}
 	}
 
@@ -1274,15 +1278,25 @@ public:
 			MidiDevice* pluck_device = pluck_pin.getDevice();
 			// Position beats and ticks
 			const uint32_t pin_actual_position_ticks = pluck_pin.getPositionTicks();
+			const auto midi_action = pluck_pin.getAction();
 
 			// Starts by removing any pin out of the clocking length
 			if (pluck_device == nullptr || pin_actual_position_ticks > clocking.getLengthTicks()) {
-				pin_it = midiPins.erase(pin_it);
-				++(play_reporting.total_redundant);
-				continue;
+				switch (midi_action) {
+					case action_note_off:
+						pluck_pin.setPositionTicks(
+							clocking.getLengthTicks()
+						);
+					break;
+					case action_note_on:
+						pluck_pin.setNoteRemoved();
+					break;
+					default:
+						pin_it = midiPins.erase(pin_it);
+						++(play_reporting.total_redundant);
+						continue;
+				}
 			}
-
-			const auto midi_action = pluck_pin.getAction();
 
 			switch (midi_action) {
 				case action_note_off:

@@ -1454,11 +1454,7 @@ public:
 
 
 	void addClockingTransportPins(bool rec_transport = false) {
-		size_t total_clock_messages = clocking.addClockAndTransportMessagesToPlay(&midiPins, rec_transport);
-		if (total_clock_messages > 0) {
-			play_reporting.total_generated += total_clock_messages;
-			midiPins.sort();
-		}
+		play_reporting.total_generated += clocking.addClockAndTransportMessagesToPlay(&midiPins, rec_transport);
 	}
 
 
@@ -1597,6 +1593,8 @@ public:
 				}
 				return a.getPriority() < b.getPriority();
 			});
+		} else {
+			midiPins.sort();	// Does the final sorting
 		}
 	}
 

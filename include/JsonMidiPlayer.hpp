@@ -460,10 +460,10 @@ public:
 	}
 
 
-	void setNoteRemoved() {
+	void removeNote() {
 		removed_note = true;
 		if (note_off_pin != nullptr) {
-			note_off_pin->setNoteRemoved();
+			note_off_pin->removeNote();
 		}
 	}
 
@@ -1291,7 +1291,7 @@ public:
 							break;
 						}
 					case action_note_on:
-						pluck_pin.setNoteRemoved();
+						pluck_pin.removeNote();
 					default:
 						pin_it = midiPins.erase(pin_it);
 						++(play_reporting.total_redundant);

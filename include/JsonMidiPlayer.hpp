@@ -1255,8 +1255,16 @@ public:
 			const uint32_t pin_actual_position_ticks = pluck_pin.getPositionTicks();
 			const auto midi_action = pluck_pin.getAction();
 
-			// Starts by removing any pin out of the clocking length
-			if (pluck_device == nullptr || pin_actual_position_ticks > clocking.getLengthTicks()) {
+			// Starts by removing any pin WITHOUT a Pluck Device (Safe Code)
+			if (pluck_device == nullptr) {
+				pluck_pin.removeNote();
+				pin_it = midiPins.erase(pin_it);
+				++(play_reporting.total_redundant);
+				continue;	// Applies to the `for` loop (`switch` has no `continue`)
+			}
+
+			// Also removes any pin out of the clocking length
+			if (pin_actual_position_ticks > clocking.getLengthTicks()) {
 				if (midi_action == action_note_off) {
 					pluck_pin.setPositionTicks(
 						clocking.getLengthTicks()

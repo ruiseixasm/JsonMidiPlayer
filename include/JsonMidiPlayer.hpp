@@ -467,7 +467,7 @@ public:
 		}
 	}
 
-	bool wasNoteRemoved() const {
+	bool noteRemoved() const {
 		return removed_note;
 	}
 
@@ -1284,7 +1284,7 @@ public:
 			if (pluck_device == nullptr || pin_actual_position_ticks > clocking.getLengthTicks()) {
 				switch (midi_action) {
 					case action_note_off:
-						if (!pluck_pin.wasNoteRemoved()) {
+						if (!pluck_pin.noteRemoved()) {
 							pluck_pin.setPositionTicks(
 								clocking.getLengthTicks()
 							);

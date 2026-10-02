@@ -286,6 +286,7 @@ private:
 	// needed to recognize and already released Note !!
     size_t note_pressed_times = 1;   // BY DEFAULT THE NOTE ON IS 1 TIME PRESSED
 	MidiPin* note_off_pin = nullptr;
+	bool removed_note = false;
 
 public:
     // Pin DEFAULT constructor, no arguments,
@@ -342,7 +343,8 @@ public:
           priority(other.priority),                   // Copy the priority
           delay_time_ms(other.delay_time_ms),         // Copy the delay_time_ms
           note_pressed_times(other.note_pressed_times),          // Copy the note_released
-          note_off_pin(other.note_off_pin)            // Copy the note off pin too
+          note_off_pin(other.note_off_pin),           // Copy the note off pin too
+          removed_note(other.removed_note)            // Tags the note pin as removed
     { }
 
 

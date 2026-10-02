@@ -1460,6 +1460,7 @@ public:
 
 	void applyTime_ms() {
 
+		midiPins.sort();	// Makes sure the pins are sorted first
 		clocking.applyTime_ms(&midiPins);
 
 		#ifdef DEBUGGING
@@ -1593,8 +1594,6 @@ public:
 				}
 				return a.getPriority() < b.getPriority();
 			});
-		} else {
-			midiPins.sort();	// Does the final sorting
 		}
 	}
 

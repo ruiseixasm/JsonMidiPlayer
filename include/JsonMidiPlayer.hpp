@@ -285,6 +285,7 @@ private:
 
 	// needed to recognize and already released Note !!
     size_t note_pressed_times = 1;   // BY DEFAULT THE NOTE ON IS 1 TIME PRESSED
+	MidiPin* note_off_pin = nullptr;
 
 public:
     // Pin DEFAULT constructor, no arguments,
@@ -340,7 +341,8 @@ public:
           midi_message(other.midi_message),           // Copy the midi_message vector
           priority(other.priority),                   // Copy the priority
           delay_time_ms(other.delay_time_ms),         // Copy the delay_time_ms
-          note_pressed_times(other.note_pressed_times)          // Copy the note_released
+          note_pressed_times(other.note_pressed_times),          // Copy the note_released
+          note_off_pin(other.note_off_pin)            // Copy the note off pin too
     { }
 
 
@@ -439,6 +441,18 @@ public:
 	void decreaseNotePressedTimes() {
 		this->note_pressed_times--;
 	}
+
+	
+	void setNoteOffPin(MidiPin& note_off_pin) {
+		if (this->note_off_pin == nullptr) {
+			this->note_off_pin = &note_off_pin;
+		}
+	}
+
+	const MidiPin& getNoteOffPin() const {
+		return *note_off_pin;
+	}
+
 
 public:
 	// For the sorting
@@ -1072,7 +1086,9 @@ public:
 				if (jsonFilePlaylist.is_array() && !jsonFilePlaylist.empty()) {
 
 					// Keeps the last called device in the JsonMidiPlayer file
-					MidiDevice *last_called_midi_device = nullptr;
+					MidiDevice* last_called_midi_device = nullptr;
+					// Keeps track of the last Midi Note On pin
+					MidiPin* last_note_on = nullptr;
 					// Just the declarations, no need to set them
 					unsigned char data_byte_1;
 					unsigned char data_byte_2;
@@ -1134,6 +1150,12 @@ public:
 									unsigned char priority = messagePriority(message_action, data_byte_1);
 									// `emplace_back` is faster than `push_back` because avoids an extra copy
 									midiPins.emplace_back(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority);
+									if (message_action == action_note_on) {
+										last_note_on = &(midiPins.back());
+									} else if (message_action == action_note_off && last_note_on != nullptr) {
+										last_note_on->setNoteOffPin(midiPins.back());
+									}
+
 									play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the for loop
 									play_reporting.total_validated++;
 								}

@@ -1284,17 +1284,18 @@ public:
 			if (pluck_device == nullptr || pin_actual_position_ticks > clocking.getLengthTicks()) {
 				switch (midi_action) {
 					case action_note_off:
-						pluck_pin.setPositionTicks(
-							clocking.getLengthTicks()
-						);
-					break;
+						if (!pluck_pin.wasNoteRemoved()) {
+							pluck_pin.setPositionTicks(
+								clocking.getLengthTicks()
+							);
+							break;
+						}
 					case action_note_on:
 						pluck_pin.setNoteRemoved();
-					break;
 					default:
 						pin_it = midiPins.erase(pin_it);
 						++(play_reporting.total_redundant);
-						continue;
+						continue;	// Applies to the `for` loop (`switch` has no `continue`)
 				}
 			}
 
@@ -1305,6 +1306,8 @@ public:
 					auto last_note_on_pin = pluck_device->getLastNoteOnPin(channel_pitch);
 					
 					if (last_note_on_pin != nullptr) { // Note On in the dict found
+
+
 
 						last_note_on_pin->decreaseNotePressedTimes();	// Decreases the pressed level, NORMALLY to 0
 						// If the present note_off didn't result in a level 0, then, the note is still active, don't send note_off

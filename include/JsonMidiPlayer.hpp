@@ -232,14 +232,6 @@ class MidiDevice {
 			return nullptr; // Not found
 		}
 
-		void removeLastNoteOnPin(uint16_t channel_pitch) {
-			channelpitch_last_pins_note_on.erase(channel_pitch);
-		}
-
-		const std::unordered_map<uint16_t, MidiPin*>& getLastPinsNoteOn() const {
-			return channelpitch_last_pins_note_on;
-		}
-
 
 		void setLastStatusbyteOnPin(unsigned char status_byte, MidiPin* pluck_pin) {
 			statusbyte_last_pins[status_byte] = pluck_pin;
@@ -283,8 +275,7 @@ private:
     // Auxiliary variable for the final loops playing!!
     double delay_time_ms = 0.0;
 
-	// needed to recognize and already released Note !!
-    size_t note_pressed_times = 1;   // BY DEFAULT THE NOTE ON IS 1 TIME PRESSED
+	// Links to the respective Note Off and note status as removed or not
 	MidiPin* note_off_pin = nullptr;
 	bool removed_note = false;
 
@@ -297,8 +288,7 @@ public:
         priority(0),                    // Default to 0
         midi_device(nullptr),           // Default to nullptr
         midi_message(),                 // Default to an empty vector
-        delay_time_ms(0.0),             // Default to 0.0
-        note_pressed_times(1)           // Default to 1
+        delay_time_ms(0.0)             // Default to 0.0
     { }
 
 
@@ -342,7 +332,6 @@ public:
           midi_message(other.midi_message),           // Copy the midi_message vector
           priority(other.priority),                   // Copy the priority
           delay_time_ms(other.delay_time_ms),         // Copy the delay_time_ms
-          note_pressed_times(other.note_pressed_times),          // Copy the note_released
           note_off_pin(other.note_off_pin),           // Copy the note off pin too
           removed_note(other.removed_note)            // Tags the note pin as removed
     { }
@@ -433,21 +422,6 @@ public:
         return this->midi_device;
     }
 
-
-	size_t getNotePressedTimes() const {
-		return this->note_pressed_times;
-	}
-
-
-	void increaseNotePressedTimes() {
-		this->note_pressed_times++;
-	}
-
-
-	void decreaseNotePressedTimes() {
-		this->note_pressed_times--;
-	}
-
 	
 	void setNoteOffPin(MidiPin& note_off_pin) {
 		if (this->note_off_pin == nullptr) {
@@ -455,8 +429,8 @@ public:
 		}
 	}
 
-	const MidiPin& getNoteOffPin() const {
-		return *note_off_pin;
+	MidiPin* getNoteOffPin() {
+		return note_off_pin;
 	}
 
 
@@ -1303,75 +1277,54 @@ public:
 			switch (midi_action) {
 				case action_note_off:
 				{
-					uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
-					auto last_note_on_pin = pluck_device->getLastNoteOnPin(channel_pitch);
-					
-					if (last_note_on_pin != nullptr) { // Note On in the dict found
-
-
-
-						last_note_on_pin->decreaseNotePressedTimes();	// Decreases the pressed level, NORMALLY to 0
-						// If the present note_off didn't result in a level 0, then, the note is still active, don't send note_off
-						if (last_note_on_pin->getNotePressedTimes() != 0) {	// The Only configuration to release Note is 1
-							pin_it = midiPins.erase(pin_it);
-							++(play_reporting.total_redundant);  // Note Off as no Note On pair (STATS)
-							// By erasing a pin above, there is no need to increase the pin iterator
-							goto skip_to_next_pin;
-						} else {	// Note completely released, no need to keep it
-							pluck_device->removeLastNoteOnPin(channel_pitch);
-						}
+					if (pluck_pin.noteRemoved()) {
+						pin_it = midiPins.erase(pin_it);
+						++(play_reporting.total_redundant);  // Note Off as no Note On pair (STATS)
+						// By erasing a pin above, there is no need to increase the pin iterator
+						continue;
 					}
 					++pin_it; // Only increments if no removal
 				}
 				break;
 				case action_note_on:
 				{
-					uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
-					auto last_note_on_pin = pluck_device->getLastNoteOnPin(channel_pitch);
+					MidiPin* pluck_note_off_pin = pluck_pin.getNoteOffPin();
+					if (pluck_note_off_pin == nullptr) {	// Unclosed notes shouldn't be played at all
+						
+						pin_it = midiPins.erase(pin_it);	// Can't trigger the same note twice at the same time
+						++(play_reporting.total_redundant);	// STATS
+						// By erasing a pin above, there is no need to increase the pin iterator
+						continue;
+					} else {
 
-					if (last_note_on_pin != nullptr) { // Note On in the dict found, if found then pressed times > 0!
+						uint16_t channel_pitch = pluck_pin.getChannel() << 8 | pluck_pin.getDataByte();
+						auto last_note_on_pin = pluck_device->getLastNoteOnPin(channel_pitch);
 
-						// Position beats and ticks
-						const uint32_t last_note_position_ticks = last_note_on_pin->getPositionTicks();
+						if (last_note_on_pin != nullptr) { // Note On in the dict found, if found then pressed times > 0!
 
-						last_note_on_pin->increaseNotePressedTimes();	// Adds an extra pressing level, to be picked by the next note off
-						if (pin_actual_position_ticks == last_note_position_ticks) {
-							
-							pin_it = midiPins.erase(pin_it);	// Can't trigger the same note twice at the same time
-							++(play_reporting.total_redundant);	// STATS
-							// By erasing a pin above, there is no need to increase the pin iterator
+							// Position beats and ticks
+							const uint32_t last_note_position_ticks = last_note_on_pin->getPositionTicks();
 
-						} else {	// It's still triggerable
-							
-							// New note off message
-							std::vector<unsigned char> midi_pin_note_off = {
-								static_cast<unsigned char>(action_note_off | pluck_pin.getChannel()),
-								pluck_pin.getDataByte(1),	// Note pitch
-								0	// Note off has velocity 0 (Data Byte 2)
-							};
-							unsigned char priority = messagePriority(action_note_off);	// `data_byte_1` only relevant for CC messages, thus, `0`
-							// `insert` - The container is extended by inserting new elements before the element at the specified position.
-							pin_it = midiPins.insert(pin_it,   // Makes a copy to the place given by pin_it
-								MidiPin(
-										pin_actual_position_ticks,
-										pluck_pin.getMidiDevice(),
-										midi_pin_note_off,
-										priority	// Note off priority
-									)
-								);
-							play_reporting.total_generated++;
-							// THIS IS RIGHT, NEW PIN ADDED, IT'S INTENDED TO BE TWO CONSECUTIVE SKIPS !!
-							// Skips the previously inserted Note Off MidiPin
-							++pin_it;  // Move the iterator to the next element
-							// The usual increment given that it jumps the steps bellow
-							++pin_it; // Only increments if no removal
+							if (pin_actual_position_ticks == last_note_position_ticks) {
+								pluck_pin.removeNote();	// Sets as removed the respective Note Off too
+								pin_it = midiPins.erase(pin_it);	// Can't trigger the same note twice at the same time
+								++(play_reporting.total_redundant);	// STATS
+								// By erasing a pin above, there is no need to increase the pin iterator
+								continue;
+
+							} else {	// It's still triggerable, but bring forward the previous note note off
+								// Overlapping note, previous Note On Note Off need to be updated (No need for removal)
+								MidiPin* last_note_note_off_pin = last_note_on_pin->getNoteOffPin();
+								if (last_note_note_off_pin != nullptr) {	// Safe code
+									last_note_note_off_pin->setPositionTicks(pin_actual_position_ticks);
+								}
+							}
 						}
-						goto skip_to_next_pin;
+						// First timer Note On
+						// It's safe to use a direct reference given that the Note On midi_pin note parameters are never changed
+						pluck_device->setLastNoteOnPin(channel_pitch, &pluck_pin);
+						++pin_it; // Only increments if no removal
 					}
-					// First timer Note On
-					// It's safe to use a direct reference given that the Note On midi_pin note parameters are never changed
-					pluck_device->setLastNoteOnPin(channel_pitch, &pluck_pin);
-					++pin_it; // Only increments if no removal
 				}
 				break;
 				case action_key_pressure:
@@ -1443,30 +1396,6 @@ public:
 			}
 
 			skip_to_next_pin: ;	// Does nothing, just processes next pin
-		}
-
-		// Adds missing note off midi messages for unreleased notes
-		for (auto &device : available_midi_devices) {
-			
-			// MIDI NOTES SHALL NOT BE LEFT PRESSED !!
-			// Add the needed note off for all those still on at the end!
-			// Iterate over all the remaining pressed keys (NOT REMOVED FROM THE MAP)
-			for (const auto& pair : device.getLastPinsNoteOn()) {
-				// uint16_t channel_pitch = pair.first;
-				auto& last_pin_note_on = pair.second;
-				
-				// Transform midi on in midi off
-				std::vector<unsigned char> midi_pin_note_off_message = {
-					static_cast<unsigned char>(last_pin_note_on->getChannel() | action_note_off),    // note_off_status_byte
-					last_pin_note_on->getDataByte(1),
-					0	// Note off has velocity 0 (Data Byte 2)
-				};
-				// Adds a new MidiPin as a copy to the list of pins to be processed
-				uint32_t clocking_length_ticks = clocking.getLengthTicks();
-				unsigned char priority = messagePriority(action_note_off);	// `data_byte_1` only relevant for CC messages, thus, `0`
-				midiPins.push_back( MidiPin(clocking_length_ticks, &device, midi_pin_note_off_message, priority) );
-				play_reporting.total_generated++;
-			}
 		}
 	}
 

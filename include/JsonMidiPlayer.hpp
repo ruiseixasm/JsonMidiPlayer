@@ -1257,7 +1257,7 @@ public:
 
 			// Starts by removing any pin out of the clocking length
 			if (pluck_device == nullptr || pin_actual_position_ticks > clocking.getLengthTicks()) {
-				if (midi_action == action_note_off && !pluck_pin.noteRemoved()) {
+				if (midi_action == action_note_off) {
 					pluck_pin.setPositionTicks(
 						clocking.getLengthTicks()
 					);

@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
                 errno = 0;
                 long n = std::strtol(optarg, &end, 10);
                 if (errno != 0 || end == optarg || *end != '\0' || n < 0) {
-                    std::cerr << "Invalid amount of loops: " << optarg << std::endl;
+                    std::cerr << "(!) Invalid amount of loops: " << optarg << std::endl;
                     return 200;
                 }
                 loops = static_cast<int>(n);
@@ -90,7 +90,7 @@ int main(int argc, char *argv[]) {
                 errno = 0;
                 long n = std::strtol(optarg, &end, 10);
                 if (errno != 0 || end == optarg || *end != '\0' || n < 0) {
-                    std::cerr << "Invalid amount of fps: " << optarg << std::endl;
+                    std::cerr << "(!) Invalid amount of fps: " << optarg << std::endl;
                     return 201;
                 }
                 mtc_fps = static_cast<int>(n);
@@ -103,7 +103,7 @@ int main(int argc, char *argv[]) {
                 std::cout << "JsonMidiPlayer " << VERSION << std::endl;
                 return 0;   // Exit after printing the version
             case '?':
-				std::cerr << "Unknown option" << std::endl;
+				std::cerr << "(!) Unknown option" << std::endl;
 				return 202;
             default:
                 abort();
@@ -111,7 +111,7 @@ int main(int argc, char *argv[]) {
     }
 
     if (optind + 1 > argc) {    // optind points to the first non-option argument (at least 1 file)
-        std::cerr << "Error: Missing input file(s)\n";
+        std::cerr << "(!) Missing input file(s)\n";
         printUsage(argv[0]);
         return 203;
     }
@@ -124,7 +124,7 @@ int main(int argc, char *argv[]) {
         const char* filename = argv[filename_position];
         std::ifstream json_file(filename);
         if (!json_file.is_open()) {
-            std::cerr << "Could not open the file: " << filename << std::endl;
+            std::cerr << "(!) Could not open the file: " << filename << std::endl;
             continue;
         }
         read_files++;
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
         json_file.close();
     }
     if (read_files == 0) {
-        std::cerr << "No files read" << std::endl;
+        std::cerr << "(!) No files read" << std::endl;
         return 204;
 	}
     

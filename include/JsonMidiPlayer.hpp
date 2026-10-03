@@ -169,7 +169,7 @@ class MidiDevice {
 					if (verbose) std::cout << "\t" << name << std::endl;
 				} catch (RtMidiError &error) {
 					unavailable_device = true;
-					std::cerr << "Device '" << name << "' is unavailable" << std::endl;
+					std::cerr << "\t(!) Device '" << name << "' is unavailable" << std::endl;
 				}
 			}
 		}

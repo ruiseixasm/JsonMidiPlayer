@@ -896,7 +896,7 @@ public:
             if (verbose) std::cout << "Available output Midi devices:\n";
             for (unsigned int i = 0; i < nPorts; i++) {
                 std::string portName = midiOut.getPortName(i);
-                if (verbose) std::cout << "\tMidi device #" << i << ": " << portName << std::endl;
+                if (verbose) std::cout << "\t" << portName << std::endl;
                 available_midi_devices.push_back(MidiDevice(portName, i, verbose));   // The object is copied
             }
             if (available_midi_devices.empty()) {

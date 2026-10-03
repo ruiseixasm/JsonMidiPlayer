@@ -184,6 +184,11 @@ class MidiDevice {
 		}
 
 
+		bool isConnected() const {
+			return opened_port;
+		}
+
+
 		bool isAvailable() const {
 			return !unavailable_device;
 		}
@@ -1217,15 +1222,16 @@ public:
 			return 1;
         }
 
-		int total_devices_connected = 0;
+		bool no_devices_connected = true;
 		for (auto& single_midi_device : existing_midi_devices) {
-			if (single_midi_device.isAvailable()) {
-				total_devices_connected++;
+			if (single_midi_device.isConnected()) {
+				no_devices_connected = false;
+				break;
 			}
 		}
 
-		if (total_devices_connected == 0) {
-			std::cerr << "(!) No devices available" << std::endl;
+		if (no_devices_connected) {
+			std::cerr << "(!) No devices connected" << std::endl;
 			return 1;
 		}
 		

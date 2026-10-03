@@ -424,7 +424,7 @@ public:
 	void removeNote() {
 		removed_note = true;
 		if (note_off_pin != nullptr) {
-			note_off_pin->removeNote();
+			note_off_pin->removed_note = true;
 		}
 	}
 
@@ -1244,7 +1244,6 @@ public:
 
 			// Starts by removing any pin WITHOUT a Pluck Device (Safe Code)
 			if (pluck_device == nullptr) {
-				pluck_pin.removeNote();
 				pin_it = midiPins.erase(pin_it);
 				++(play_reporting.total_redundant);
 				continue;	// Applies to the `for` loop (`switch` has no `continue`)

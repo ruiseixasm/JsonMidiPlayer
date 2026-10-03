@@ -1300,9 +1300,8 @@ public:
 
 							if (pin_actual_position_ticks == last_note_position_ticks) {
 								// Transports the new overlapping finish to the previously pressed Note
-								MidiPin* pluck_pin_note_off = pluck_pin.getNoteOffPin();
 								MidiPin* last_note_pin_note_off = last_note_on_pin->getNoteOffPin();
-								if (pluck_pin_note_off != nullptr && last_note_pin_note_off != nullptr) {
+								if (last_note_pin_note_off != nullptr) {
 									last_note_pin_note_off->setPositionTicks(
 										pluck_note_off_pin->getPositionTicks()
 									);

@@ -410,9 +410,9 @@ public:
     }
 
 	
-	void setNoteOffPin(MidiPin& note_off_pin) {
+	void setNoteOffPin(MidiPin* note_off_pin) {
 		if (this->note_off_pin == nullptr) {
-			this->note_off_pin = &note_off_pin;
+			this->note_off_pin = note_off_pin;
 		}
 	}
 
@@ -1136,7 +1136,7 @@ public:
 										last_note_on = &(midiPins.back());
 									} else if (message_action == action_note_off && last_note_on != nullptr) {
 										// Note Off always comes next to Note On in the playlist (in sequence)
-										last_note_on->setNoteOffPin(midiPins.back());
+										last_note_on->setNoteOffPin( &(midiPins.back()) );
 									}
 
 									play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the for loop

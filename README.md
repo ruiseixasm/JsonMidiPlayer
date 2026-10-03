@@ -103,31 +103,33 @@ Drag is the amount of time the entire playing got out of sync while Delay is jus
 ## Example of reported Drag and Delay
 Despite some delay, that didn't mean any drag in the example bellow.
 ```
-rui@littleboy:~/GitHub/JsonMidiPlayer$ ./build/JsonMidiPlayer.out -v sixteen_beats.json 
-JsonMidiPlayer version: 7.3.1
-Available output Midi devices:
-        Midi device #0: Midi Through:Midi Through Port-0 14:0
-        Midi device #1: MIDI In:in 128:0
-Devices connected:       MIDI In:in 128:0
+PS C:\Users\rui\Documents\GitHub\JsonMidiPlayer> .\build\Release\JsonMidiPlayer.exe -v .\three_notes.json      
+JsonMidiPlayer version: 8.2.0
+Existing output Midi devices:
+        Microsoft GS Wavetable Synth 0
+        LoopBe Internal MIDI 1
+Devices connected:
+        LoopBe Internal MIDI 1
 Data stats reporting:
         Midi Messages processing time (ms):                0
         Midi Ports opening time (ms):                      0
-        Single loop length (beats):                       16
+        Single loop length (beats):                       28
         Total validated Midi Messages (accepted):         32
         Total incorrect Midi Messages (excluded):          0
         Total redundant Midi Messages (excluded):          0
-        Total generated Midi Messages (included):        386
-        Total resultant Midi Messages (included):        418
-The playlist will now be played in 1 loop for 0 minutes and 18 seconds...
-Devices disconnected:    MIDI In:in 128:0
+        Total generated Midi Messages (included):        680
+        Total resultant Midi Messages (included):        712
+The playlist will now be played in 1 loop for 0 minutes and 13 seconds...
+Devices disconnected:
+        LoopBe Internal MIDI 1
 Midi stats reporting:
         Total drag (ms):                                   0.000 \
-        Cumulative delay (ms):                            61.212 /
-        Maximum delay (ms):                                0.261 \
+        Cumulative delay (ms):                            10.655 /
+        Maximum delay (ms):                                0.502 \
         Minimum delay (ms):                                0.000 /
-        Average delay (ms):                                0.146 \
-        Standard deviation of delays (ms):                 0.036 /
-rui@littleboy:~/GitHub/JsonMidiPlayer$
+        Average delay (ms):                                0.015 \
+        Standard deviation of delays (ms):                 0.060 /
+PS C:\Users\rui\Documents\GitHub\JsonMidiPlayer> 
 ```
 
 # Troubleshooting

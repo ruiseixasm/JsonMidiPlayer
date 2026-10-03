@@ -115,6 +115,7 @@
         "statusdatabyte",
         "sysex",
         "triggerable",
+        "Wavetable",
         "winmm"
     ]
 }

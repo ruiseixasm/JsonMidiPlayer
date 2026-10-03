@@ -43,8 +43,8 @@ int play(const char* json_str, int loops, int rec_transport, int mtc_fps, bool v
     if (verbose) std::cout << "JsonMidiPlayer version: " << VERSION << std::endl;
 
 	if (loops < 0) {
-		if (verbose) std::cout << "\tNegative loops are NOT acceptable.\n";
-		return 1;
+		std::cerr << "\tNegative loops are NOT acceptable\n";
+		return 100;
 	}
 
 	Player player;

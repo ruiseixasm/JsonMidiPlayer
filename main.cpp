@@ -70,14 +70,14 @@ int main(int argc, char *argv[]) {
         switch (c) {
             case 'h':
                 printUsage(argv[0]);
-                return 2;   // avoids the execution of any file
+                return 0;   // avoids the execution of any file
             case 'l': {
                 char* end = nullptr;
                 errno = 0;
                 long n = std::strtol(optarg, &end, 10);
                 if (errno != 0 || end == optarg || *end != '\0' || n < 0) {
                     std::cerr << "Invalid amount of loops: " << optarg << std::endl;
-                    return 1;
+                    return 200;
                 }
                 loops = static_cast<int>(n);
                 break;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
                 long n = std::strtol(optarg, &end, 10);
                 if (errno != 0 || end == optarg || *end != '\0' || n < 0) {
                     std::cerr << "Invalid amount of fps: " << optarg << std::endl;
-                    return 1;
+                    return 201;
                 }
                 mtc_fps = static_cast<int>(n);
                 break;
@@ -103,8 +103,8 @@ int main(int argc, char *argv[]) {
                 std::cout << "JsonMidiPlayer " << VERSION << std::endl;
                 return 0;   // Exit after printing the version
             case '?':
-                // getopt_long already printed an error message.
-                return 1;
+				std::cerr << "Unknown option" << std::endl;
+				return 202;
             default:
                 abort();
         }
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
     if (optind + 1 > argc) {    // optind points to the first non-option argument (at least 1 file)
         std::cerr << "Error: Missing input file(s)\n";
         printUsage(argv[0]);
-        return 1;
+        return 203;
     }
 
     int read_files = 0;
@@ -131,8 +131,10 @@ int main(int argc, char *argv[]) {
         json_files_buffer << json_file.rdbuf() << ",";
         json_file.close();
     }
-    if (read_files == 0)
-        return 1;
+    if (read_files == 0) {
+        std::cerr << "No files read" << std::endl;
+        return 204;
+	}
     
     std::string json_files_list = json_files_buffer.str();
     // Replace last "," with a "]"

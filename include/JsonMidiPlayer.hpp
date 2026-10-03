@@ -1702,17 +1702,14 @@ public:
 				play_reporting.sd_delay = std::sqrt(play_reporting.sd_delay);
 			}
 
-			std::cout << "Devices disconnected: ";
-			// Exiting devices scope automatically disconnects them
-
+			std::cout << "Devices disconnected:" << std::endl;
 			// Disconnect midi devices
-			
-						for (auto &available_device : available_midi_devices) {
-							available_device.closePort();
-						}
+			for (auto &available_device : available_midi_devices) {
+				available_device.closePort();
+			}
 
 			// Where the reporting is finally done
-			std::cout << std::endl << "Midi stats reporting:" << std::endl;
+			std::cout << "Midi stats reporting:" << std::endl;
 			// Set fixed floating-point notation and precision
 			std::cout << std::fixed << std::setprecision(3);
 			std::cout << "\tTotal drag (ms):      " << std::setw(34) << play_reporting.total_drag << " \\" << std::endl;

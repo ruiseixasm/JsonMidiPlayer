@@ -166,7 +166,7 @@ class MidiDevice {
 				try {
 					midiOut.openPort(port);
 					opened_port = true;
-					if (verbose) std::cout << "   " << name;
+					if (verbose) std::cout << "\t" << name << std::endl;
 				} catch (RtMidiError &error) {
 					unavailable_device = true;
 					error.printMessage();
@@ -180,7 +180,7 @@ class MidiDevice {
 			if (opened_port) {
 				midiOut.closePort();
 				opened_port = false;
-				if (verbose) std::cout << "   " << name;
+				if (verbose) std::cout << "\t" << name << std::endl;
 			}
 		}
 
@@ -922,7 +922,7 @@ public:
 
 	int loadJsonContent(const char* json_str, bool verbose) {
 
-        if (verbose) std::cout << "Devices connected:    ";
+        if (verbose) std::cout << "Devices connected:" << std::endl;;
 
         data_processing_start = std::chrono::high_resolution_clock::now();
 
@@ -947,13 +947,13 @@ public:
 			}
 			catch (nlohmann::json::parse_error& ex)
 			{
-				if (verbose) std::cerr << "Unable to extract json data: " << ex.byte << std::endl;
-				goto skip_reading_items;
+				std::cerr << "Unable to extract json data: " << ex.byte << std::endl;
+				return 1;
 			}
 			
 			if (jsonFileType != FILE_TYPE || jsonFileUrl != FILE_URL) {
-				if (verbose) std::cerr << "Wrong type of file!" << std::endl;
-				goto skip_reading_items;
+				std::cerr << "Wrong type of file!" << std::endl;
+				return 1;
 			}
 
 			// Set Length
@@ -980,11 +980,14 @@ public:
 							);
 						}
 					} catch (const nlohmann::json::exception& e) {
-						if (verbose) std::cerr << "Loading Tempos, JSON error: " << e.what() << std::endl;
+						std::cerr << "Loading Tempos, JSON error: " << e.what() << std::endl;
+						return 1;
 					} catch (const std::exception& e) {
-						if (verbose) std::cerr << "Loading Tempos, Error: " << e.what() << std::endl;
+						std::cerr << "Loading Tempos, Error: " << e.what() << std::endl;
+						return 1;
 					} catch (...) {
-						if (verbose) std::cerr << "Loading Tempos, Unknown error occurred." << std::endl;
+						std::cerr << "Loading Tempos, Unknown error occurred." << std::endl;
+						return 1;
 					}
 				}
 
@@ -992,7 +995,7 @@ public:
 				std::unordered_map<std::string, MidiDevice*> devices_by_name;
 				
 				// [&] means: "This lambda may use variables from the surrounding function, and capture them by reference."
-				auto load_clocking_devices = [&](const char* json_key, auto add_device) {
+				auto load_clocking_devices = [&](const char* json_key, auto add_device) -> int {
 
 					nlohmann::json json_devices = jsonFileClocking.at(json_key);
 
@@ -1026,42 +1029,46 @@ public:
 							}
 
 						} catch (const nlohmann::json::exception& e) {
-							if (verbose) std::cerr << "Loading: '" << json_key << "', JSON error: " << e.what() << std::endl;
+							std::cerr << "Loading: '" << json_key << "', JSON error: " << e.what() << std::endl;
+							return 1;
 						} catch (const std::exception& e) {
-							if (verbose) std::cerr << "Loading: '" << json_key << "', Error: " << e.what() << std::endl;
+							std::cerr << "Loading: '" << json_key << "', Error: " << e.what() << std::endl;
+							return 1;
 						} catch (...) {
-							if (verbose) std::cerr << "Loading: '" << json_key << "', Unknown error occurred." << std::endl;
+							std::cerr << "Loading: '" << json_key << "', Unknown error occurred." << std::endl;
+							return 1;
 						}
 					}
+					return 0;
 				};
 
-				load_clocking_devices(
+				if (load_clocking_devices(
 					"clocked_devices",
-					[&](MidiDevice* device) {
-						clocking.addClockedDevice(device);
-					}
-				);
+					[&](MidiDevice* device) { clocking.addClockedDevice(device); }
+				)) {
+					return 1;
+				}
 
-				load_clocking_devices(
+				if (load_clocking_devices(
 					"transport_devices",
-					[&](MidiDevice* device) {
-						clocking.addTransportDevice(device);
-					}
-				);
+					[&](MidiDevice* device) { clocking.addTransportDevice(device); }
+				)) {
+					return 1;
+				}
 
-				load_clocking_devices(
+				if (load_clocking_devices(
 					"mmc_devices",
-					[&](MidiDevice* device) {
-						clocking.addMMCDevice(device);
-					}
-				);
+					[&](MidiDevice* device) { clocking.addMMCDevice(device); }
+				)) {
+					return 1;
+				}
 
-				load_clocking_devices(
+				if (load_clocking_devices(
 					"mtc_devices",
-					[&](MidiDevice* device) {
-						clocking.addMTCDevice(device);
-					}
-				);
+					[&](MidiDevice* device) { clocking.addMTCDevice(device); }
+				)) {
+					return 1;
+				}
 
 
 				// Check if jsonFilePlaylist is a non-empty array
@@ -1144,14 +1151,14 @@ public:
 								}
 							}
 							catch (const nlohmann::json::exception& e) {
-								if (verbose) std::cerr << "Loading Midi Message JSON error: " << e.what() << std::endl;
-								continue;
+								std::cerr << "Loading Midi Message JSON error: " << e.what() << std::endl;
+								return 1;
 							} catch (const std::exception& e) {
-								if (verbose) std::cerr << "Loading Midi Message Error: " << e.what() << std::endl;
-								continue;
+								std::cerr << "Loading Midi Message Error: " << e.what() << std::endl;
+								return 1;
 							} catch (...) {
-								if (verbose) std::cerr << "Loading Midi Message Unknown error occurred." << std::endl;
-								continue;
+								std::cerr << "Loading Midi Message Unknown error occurred." << std::endl;
+								return 1;
 							}
 
 						// Where the last device is updated based on the json "device" input (repeated ones are skip)
@@ -1176,21 +1183,16 @@ public:
 										//
 										auto port_opening_start = std::chrono::high_resolution_clock::now();
 
-										bool device_available = available_device.openPort();
+										available_device.openPort();
 
 										auto port_opening_finish = std::chrono::high_resolution_clock::now();
 										auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(port_opening_finish - port_opening_start);
 										play_reporting.ports_opening += port_processing_time.count();
 
-										if (device_available) {	// Where the connection happens
-											devices_by_name[device_name] = &available_device; 
-											last_called_midi_device = &available_device;
+										devices_by_name[device_name] = &available_device; 
+										last_called_midi_device = &available_device;
 
-											goto skip_to_next_item; // For Message devices only the first one found is connected and NOT all of them
-
-										} else {
-											devices_by_name[device_name] = nullptr; 
-										}
+										goto skip_to_next_item; // For Message devices only the first one found is connected and NOT all of them
 									}
 								}
 							}
@@ -1200,16 +1202,16 @@ public:
 
 				} else {
 					if (verbose) std::cout << "JSON file is empty." << std::endl;
+					return 1;
 				}
 			} else {
 				if (verbose) std::cout << "Clocking Length is 0." << std::endl;
+				return 1;
 			}
         } catch (const nlohmann::json::parse_error& e) {
-            if (verbose) std::cerr << "JSON parse error: " << e.what() << std::endl;
+            std::cerr << "JSON parse error: " << e.what() << std::endl;
+			return 1;
         }
-		
-		skip_reading_items: ;	// Does nothing, just stops reading items
-        if (verbose) std::cout << std::endl;
 		
         #ifdef DEBUGGING
         debugging_now = std::chrono::high_resolution_clock::now();

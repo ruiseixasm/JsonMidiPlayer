@@ -161,19 +161,6 @@ class MidiDevice {
         MidiDevice &operator=(const MidiDevice &) = delete;
     
 
-        // Move assignment operator
-        MidiDevice &operator=(MidiDevice &&other) noexcept {
-            if (this != &other) {
-                // Since name and port are const, they cannot be assigned.
-                opened_port = other.opened_port;
-                // midiOut can't be assigned using the = assignment operator because has none.
-                // midiOut = std::move(other.midiOut);
-            }
-            std::cout << "Move assigned: " << name << std::endl;
-            return *this;
-        }
-    
-
         bool openPort() {
 			if (!opened_port && !unavailable_device) {
 				try {

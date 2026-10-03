@@ -751,10 +751,10 @@ public:
 
 
 
-	void applyTime_ms(std::list<MidiPin> *midiPins_sorted) {
+	void applyTime_ms(std::list<MidiPin> *midiPins) {
     	if (_tempos.empty()) {
 			// In this scenario all the pins ned to be removed or they will be triggered at the same time at 0 ms !
-    		midiPins_sorted->clear();
+    		midiPins->clear();
 			return;	// Failsafe
 		}
 
@@ -789,12 +789,15 @@ public:
 			}
 		}
 
+
+		midiPins->sort();	// Makes sure the pins are sorted first
+
 		// To be compatible with the `pickLeftTempo_it` method
 		std::list<Tempo>::const_iterator left_tempo_it = _tempos.begin();
 		// Adds the cumulative Time
 		uint32_t previous_pin_position_ticks = 0;
 		double pin_time_ms = 0.0;	// The tick 0 one is by definition at 0.0
-		for (auto pin_it = midiPins_sorted->begin(); pin_it != midiPins_sorted->end(); ++pin_it) {
+		for (auto pin_it = midiPins->begin(); pin_it != midiPins->end(); ++pin_it) {
 
 			// Pins above the length of the clocking are removed
 			uint32_t pin_ticks = pin_it->getPositionTicks();
@@ -1415,7 +1418,6 @@ public:
 
 	void applyTime_ms() {
 
-		midiPins.sort();	// Makes sure the pins are sorted first
 		clocking.applyTime_ms(&midiPins);
 
 		#ifdef DEBUGGING

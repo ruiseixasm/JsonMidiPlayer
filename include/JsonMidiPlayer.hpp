@@ -1399,8 +1399,6 @@ public:
 					++pin_it; // Only increment if no removal
 				break;
 			}
-
-			skip_to_next_pin: ;	// Does nothing, just processes next pin
 		}
 	}
 

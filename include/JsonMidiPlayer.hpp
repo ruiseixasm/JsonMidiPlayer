@@ -184,6 +184,11 @@ class MidiDevice {
 		}
 
 
+		bool isAvailable() const {
+			return !unavailable_device;
+		}
+
+
         const std::string& getName() const {
 			return name;
 		}
@@ -1211,6 +1216,18 @@ public:
             std::cerr << "JSON parse error: " << e.what() << std::endl;
 			return 1;
         }
+
+		int total_devices_connected = 0;
+		for (auto& single_midi_device : existing_midi_devices) {
+			if (single_midi_device.isAvailable()) {
+				total_devices_connected++;
+			}
+		}
+
+		if (total_devices_connected == 0) {
+			std::cerr << "(!) No devices available" << std::endl;
+			return 1;
+		}
 		
         #ifdef DEBUGGING
         debugging_now = std::chrono::high_resolution_clock::now();

@@ -1299,6 +1299,15 @@ public:
 							const uint32_t last_note_position_ticks = last_note_on_pin->getPositionTicks();
 
 							if (pin_actual_position_ticks == last_note_position_ticks) {
+								// Transports the new overlapping finish to the previously pressed Note
+								MidiPin* pluck_pin_note_off = pluck_pin.getNoteOffPin();
+								MidiPin* last_note_pin_note_off = last_note_on_pin->getNoteOffPin();
+								if (pluck_pin_note_off != nullptr && last_note_pin_note_off != nullptr) {
+									last_note_pin_note_off->setPositionTicks(
+										pluck_note_off_pin->getPositionTicks()
+									);
+								}
+								// Removes the overlapping note completely
 								pluck_pin.removeNote();	// Sets as removed the respective Note Off too
 								pin_it = midiPins.erase(pin_it);	// Can't trigger the same note twice at the same time
 								++(play_reporting.total_redundant);	// STATS

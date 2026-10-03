@@ -161,7 +161,7 @@ class MidiDevice {
         MidiDevice &operator=(const MidiDevice &) = delete;
     
 
-        bool openPort() {
+        void openPort() {
 			if (!opened_port && !unavailable_device) {
 				try {
 					midiOut.openPort(port);
@@ -172,7 +172,6 @@ class MidiDevice {
 					error.printMessage();
 				}
 			}
-			return opened_port;
 		}
 
 
@@ -858,7 +857,7 @@ class Player {
 	PlayReporting play_reporting;
 
 	Clocking clocking;
-    std::vector<MidiDevice> available_midi_devices;
+    std::vector<MidiDevice> existing_midi_devices;
     std::list<MidiPin> midiPins;
 
     #ifdef DEBUGGING
@@ -890,17 +889,17 @@ public:
             RtMidiOut midiOut;  // Temporary MidiOut manipulator
             unsigned int nPorts = midiOut.getPortCount();
             if (nPorts == 0) {
-                if (verbose) std::cout << "No output Midi devices available.\n";
+                if (verbose) std::cout << "No output Midi devices exist.\n";
                 return 1;
             }
             if (verbose) std::cout << "Existing output Midi devices:\n";
             for (unsigned int i = 0; i < nPorts; i++) {
                 std::string portName = midiOut.getPortName(i);
                 if (verbose) std::cout << "\t" << portName << std::endl;
-                available_midi_devices.push_back(MidiDevice(portName, i, verbose));   // The object is copied
+                existing_midi_devices.push_back(MidiDevice(portName, i, verbose));   // The object is copied
             }
-            if (available_midi_devices.empty()) {
-                if (verbose) std::cout << "\tNo output Midi devices available.\n";
+            if (existing_midi_devices.empty()) {
+                if (verbose) std::cout << "\tNo output Midi devices exist.\n";
                 return 1;
             }
         } catch (RtMidiError &error) {
@@ -1005,24 +1004,24 @@ public:
 
 							for (std::string json_device_name : json_devices) {
 
-								for (auto& available_device : available_midi_devices) {
+								for (auto& single_midi_device : existing_midi_devices) {
 
-									if (available_device.getName().find(json_device_name) != std::string::npos) {
+									if (single_midi_device.getName().find(json_device_name) != std::string::npos) {
 
-										devices_by_name[json_device_name] = &available_device;
+										devices_by_name[json_device_name] = &single_midi_device;
 
 										//
 										// Where the Device Port is connected/opened (Main reason for errors)
 										//
 										auto port_opening_start = std::chrono::high_resolution_clock::now();
-										bool connected_device = available_device.openPort();
+										single_midi_device.openPort();
 										auto port_opening_finish = std::chrono::high_resolution_clock::now();
 										auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(
 											port_opening_finish - port_opening_start
 										);
 										play_reporting.ports_opening += port_processing_time.count();
 
-										add_device(&available_device);
+										add_device(&single_midi_device);
 										break;	// Clocking connects ALL named devices BUT matches ONLY one per name
 									}
 								}
@@ -1167,7 +1166,7 @@ public:
 							// The devices JSON list key
 							nlohmann::json json_device_names = jsonPlaylistItem["devices"];
 
-							last_called_midi_device = nullptr; // No available device found at start
+							last_called_midi_device = nullptr; // No existing device found at start
 							// It's a list of Devices that is given as Device
 							for (std::string device_name : json_device_names) {
 								
@@ -1176,21 +1175,21 @@ public:
 									goto skip_to_next_item;
 								}
 						
-								for (auto &available_device : available_midi_devices) {
-									if (available_device.getName().find(device_name) != std::string::npos) {
+								for (auto &single_midi_device : existing_midi_devices) {
+									if (single_midi_device.getName().find(device_name) != std::string::npos) {
 										//
 										// Where the Device Port is connected/opened (Main reason for errors)
 										//
 										auto port_opening_start = std::chrono::high_resolution_clock::now();
 
-										available_device.openPort();
+										single_midi_device.openPort();
 
 										auto port_opening_finish = std::chrono::high_resolution_clock::now();
 										auto port_processing_time = std::chrono::duration_cast<std::chrono::milliseconds>(port_opening_finish - port_opening_start);
 										play_reporting.ports_opening += port_processing_time.count();
 
-										devices_by_name[device_name] = &available_device; 
-										last_called_midi_device = &available_device;
+										devices_by_name[device_name] = &single_midi_device; 
+										last_called_midi_device = &single_midi_device;
 
 										goto skip_to_next_item; // For Message devices only the first one found is connected and NOT all of them
 									}
@@ -1704,8 +1703,8 @@ public:
 
 			std::cout << "Devices disconnected:" << std::endl;
 			// Disconnect midi devices
-			for (auto &available_device : available_midi_devices) {
-				available_device.closePort();
+			for (auto &single_midi_device : existing_midi_devices) {
+				single_midi_device.closePort();
 			}
 
 			// Where the reporting is finally done

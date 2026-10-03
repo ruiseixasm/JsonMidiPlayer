@@ -1130,8 +1130,8 @@ public:
 												continue;
 											json_midi_message.push_back(data_byte_1);
 											json_midi_message.push_back(data_byte_2);
-											break;
 										}
+										break;
 										case action_program_change:
 										case action_channel_pressure:
 										{
@@ -1139,20 +1139,26 @@ public:
 											if (data_byte_1 & 128)
 												continue;
 											json_midi_message.push_back(data_byte_1);
-											break;
 										}
-										default:
-											break;
+										break;
+										default: break;
 									}
 									
 									unsigned char priority = messagePriority(message_action, data_byte_1);
 									// `emplace_back` is faster than `push_back` because avoids an extra copy
 									midiPins.emplace_back(position_beats_num, position_beats_den, last_called_midi_device, json_midi_message, priority);
-									if (message_action == action_note_on) {
-										last_note_on = &(midiPins.back());
-									} else if (message_action == action_note_off && last_note_on != nullptr) {
-										// Note Off always comes next to Note On in the playlist (in sequence)
-										last_note_on->setNoteOffPin( &(midiPins.back()) );
+
+									switch(message_action) {
+										case action_note_on:
+											last_note_on = &(midiPins.back());
+										break;
+										case action_note_off:
+											if (last_note_on != nullptr) {
+												// Note Off always comes next to Note On in the playlist (in sequence)
+												last_note_on->setNoteOffPin( &(midiPins.back()) );
+											}
+										break;
+										default: break;
 									}
 
 									play_reporting.total_incorrect--;    // Cancels out the initial ++ increase at the beginning of the for loop

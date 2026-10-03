@@ -900,7 +900,7 @@ public:
             unsigned int nPorts = midiOut.getPortCount();
             if (nPorts == 0) {
                 std::cerr << "[ERROR] No output Midi ports exist\n";
-                return 1;
+                return 7;
             }
             if (verbose) std::cout << "Existing output Midi devices:\n";
             for (unsigned int i = 0; i < nPorts; i++) {
@@ -910,7 +910,7 @@ public:
             }
             if (existing_midi_devices.empty()) {
                 std::cerr << "\t[ERROR] No output Midi devices exist\n";
-                return 2;
+                return 8;
             }
         } catch (RtMidiError &error) {
             error.printMessage();
@@ -957,12 +957,12 @@ public:
 			catch (nlohmann::json::parse_error& ex)
 			{
 				std::cerr << "[ERROR] Unable to extract json data: " << ex.byte << std::endl;
-				return 3;
+				return 10;
 			}
 			
 			if (jsonFileType != FILE_TYPE || jsonFileUrl != FILE_URL) {
 				std::cerr << "[ERROR] Wrong type of file" << std::endl;
-				return 4;
+				return 11;
 			}
 
 			// Set Length
@@ -990,13 +990,13 @@ public:
 						}
 					} catch (const nlohmann::json::exception& e) {
 						std::cerr << "[ERROR] Loading Tempos, JSON error: " << e.what() << std::endl;
-						return 5;
+						return 12;
 					} catch (const std::exception& e) {
 						std::cerr << "[ERROR] Loading Tempos, Error: " << e.what() << std::endl;
-						return 6;
+						return 13;
 					} catch (...) {
 						std::cerr << "[ERROR] Loading Tempos, Unknown error occurred" << std::endl;
-						return 7;
+						return 14;
 					}
 				}
 
@@ -1056,7 +1056,7 @@ public:
 						[&](MidiDevice* device) { clocking.addClockedDevice(device); }
 					);
 				if (clocked_error) {
-					return 10 + 3*0 + clocked_error;
+					return 14 + 3*0 + clocked_error;
 				}
 
 				int transport_error = load_clocking_devices(
@@ -1064,7 +1064,7 @@ public:
 						[&](MidiDevice* device) { clocking.addTransportDevice(device); }
 					);
 				if (transport_error) {
-					return 10 + 3*1 + transport_error;
+					return 14 + 3*1 + transport_error;
 				}
 
 				int mmc_error = load_clocking_devices(
@@ -1072,7 +1072,7 @@ public:
 						[&](MidiDevice* device) { clocking.addMMCDevice(device); }
 					);
 				if (mmc_error) {
-					return 10 + 3*2 + mmc_error;
+					return 14 + 3*2 + mmc_error;
 				}
 
 				int mtc_error = load_clocking_devices(
@@ -1080,7 +1080,7 @@ public:
 						[&](MidiDevice* device) { clocking.addMTCDevice(device); }
 					);
 				if (mtc_error) {
-					return 10 + 3*3 + mtc_error;
+					return 14 + 3*3 + mtc_error;	// Last is 14 + 9 + 3 == 14 + 12 == 26
 				}
 
 
@@ -1171,13 +1171,13 @@ public:
 							}
 							catch (const nlohmann::json::exception& e) {
 								std::cerr << "[ERROR] Loading Midi Message JSON error: " << e.what() << std::endl;
-								return 30;
+								return 27;
 							} catch (const std::exception& e) {
 								std::cerr << "[ERROR] Loading Midi Message Error: " << e.what() << std::endl;
-								return 31;
+								return 28;
 							} catch (...) {
 								std::cerr << "[ERROR] Loading Midi Message Unknown error occurred" << std::endl;
-								return 32;
+								return 29;
 							}
 
 						// Where the last device is updated based on the json "device" input (repeated ones are skip)
@@ -1221,15 +1221,15 @@ public:
 
 				} else {
 					std::cerr << "[ERROR] JSON file is empty" << std::endl;
-					return 33;
+					return 30;
 				}
 			} else {
 				std::cerr << "[ERROR] Clocking Length is 0" << std::endl;
-				return 34;
+				return 31;
 			}
         } catch (const nlohmann::json::parse_error& e) {
             std::cerr << "[ERROR] JSON parse error: " << e.what() << std::endl;
-			return 35;
+			return 32;
         }
 
 		bool no_devices_connected = true;
@@ -1242,7 +1242,7 @@ public:
 
 		if (no_devices_connected) {
 			std::cerr << "[ERROR] No devices connected" << std::endl;
-			return 36;
+			return 9;
 		}
 		
         #ifdef DEBUGGING

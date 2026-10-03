@@ -77,7 +77,7 @@ int main(int argc, char *argv[]) {
                 long n = std::strtol(optarg, &end, 10);
                 if (errno != 0 || end == optarg || *end != '\0' || n < 0) {
                     std::cerr << "[ERROR] Invalid amount of loops: " << optarg << std::endl;
-                    return 200;
+                    return 1;
                 }
                 loops = static_cast<int>(n);
                 break;
@@ -91,7 +91,7 @@ int main(int argc, char *argv[]) {
                 long n = std::strtol(optarg, &end, 10);
                 if (errno != 0 || end == optarg || *end != '\0' || n < 0) {
                     std::cerr << "[ERROR] Invalid amount of fps: " << optarg << std::endl;
-                    return 201;
+                    return 2;
                 }
                 mtc_fps = static_cast<int>(n);
                 break;
@@ -104,7 +104,7 @@ int main(int argc, char *argv[]) {
                 return 0;   // Exit after printing the version
             case '?':
 				std::cerr << "[ERROR] Unknown option" << std::endl;
-				return 202;
+				return 3;
             default:
                 abort();
         }
@@ -113,7 +113,7 @@ int main(int argc, char *argv[]) {
     if (optind + 1 > argc) {    // optind points to the first non-option argument (at least 1 file)
         std::cerr << "[ERROR] Missing input file(s)\n";
         printUsage(argv[0]);
-        return 203;
+        return 4;
     }
 
     int read_files = 0;
@@ -133,7 +133,7 @@ int main(int argc, char *argv[]) {
     }
     if (read_files == 0) {
         std::cerr << "[ERROR] No files read" << std::endl;
-        return 204;
+        return 5;
 	}
     
     std::string json_files_list = json_files_buffer.str();

@@ -44,7 +44,7 @@ int play(const char* json_str, int loops, int rec_transport, int mtc_fps, bool v
 
 	if (loops < 0) {
 		std::cerr << "[ERROR] Negative loops are NOT acceptable\n";
-		return 100;
+		return 6;
 	}
 
 	Player player;

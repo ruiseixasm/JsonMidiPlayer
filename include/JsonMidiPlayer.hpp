@@ -1056,7 +1056,7 @@ public:
 						[&](MidiDevice* device) { clocking.addClockedDevice(device); }
 					);
 				if (clocked_error) {
-					return 14 + 3*0 + clocked_error;
+					return 14 + 3*0 + clocked_error;	// First one is the 15
 				}
 
 				int transport_error = load_clocking_devices(
@@ -1080,7 +1080,7 @@ public:
 						[&](MidiDevice* device) { clocking.addMTCDevice(device); }
 					);
 				if (mtc_error) {
-					return 14 + 3*3 + mtc_error;	// Last is 14 + 9 + 3 == 14 + 12 == 26
+					return 14 + 3*3 + mtc_error;	// Last one is 14 + 9 + 3 == 14 + 12 == 26
 				}
 
 

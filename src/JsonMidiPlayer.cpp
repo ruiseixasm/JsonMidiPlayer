@@ -49,7 +49,7 @@ int play(const char* json_str, int loops, int rec_transport, int mtc_fps, bool v
 
 	Player player;
 	// Data input
-	int read_error = player.readAvailableDevices(verbose);
+	int read_error = player.readExistingDevices(verbose);
 	if (read_error) return read_error;
 	int load_error = player.loadJsonContent(json_str, verbose);
 	if (load_error) return load_error;

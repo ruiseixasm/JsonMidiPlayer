@@ -884,7 +884,7 @@ public:
 	}
 
 
-	int readAvailableDevices(bool verbose) {
+	int readExistingDevices(bool verbose) {
 
         try {
             RtMidiOut midiOut;  // Temporary MidiOut manipulator
@@ -893,7 +893,7 @@ public:
                 if (verbose) std::cout << "No output Midi devices available.\n";
                 return 1;
             }
-            if (verbose) std::cout << "Available output Midi devices:\n";
+            if (verbose) std::cout << "Existing output Midi devices:\n";
             for (unsigned int i = 0; i < nPorts; i++) {
                 std::string portName = midiOut.getPortName(i);
                 if (verbose) std::cout << "\t" << portName << std::endl;

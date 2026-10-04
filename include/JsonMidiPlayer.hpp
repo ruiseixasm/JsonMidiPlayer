@@ -45,7 +45,7 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 // #define DEBUGGING true	// UNCOMMENT THIS LINE FOR DEBUGGING METRICS
 #define FILE_TYPE "Json Midi Player"
 #define FILE_URL  "https://github.com/ruiseixasm/JsonMidiPlayer"
-#define VERSION   "8.2.0"
+#define VERSION   "8.2.1"
 #define DRAG_DURATION_MS (1000.0/((120/60)*24))
 
 
@@ -747,11 +747,12 @@ public:
 
 
 
-	void applyTime_ms(std::list<MidiPin> *midiPins) {
+	int applyTime_ms(std::list<MidiPin> *midiPins) {
     	if (_tempos.empty()) {
 			// In this scenario all the pins ned to be removed or they will be triggered at the same time at 0 ms !
     		midiPins->clear();
-			return;	// Failsafe
+			std::cerr << "[ERROR] No clock given" << std::endl;
+			return 33;
 		}
 
 		_tempos.sort();	// Guarantees the tempos are sorted by ticks first
@@ -784,7 +785,6 @@ public:
 				);
 			}
 		}
-
 
 		midiPins->sort();	// Makes sure the pins are sorted first
 
@@ -823,6 +823,7 @@ public:
 				_length_time_ms = interpolateAbsoluteTime_ms(*left_tempo_it, *std::next(left_tempo_it), _length_ticks);
 			}
 		}
+		return 0;
 	}
 	
 	
@@ -1442,16 +1443,22 @@ public:
 	}
 
 
-	void applyTime_ms() {
-
-		clocking.applyTime_ms(&midiPins);
+	int applyTime_ms() {
 
 		#ifdef DEBUGGING
+
+		int error = clocking.applyTime_ms(&midiPins);
 		debugging_now = std::chrono::high_resolution_clock::now();
 		auto completion_time = std::chrono::duration_cast<std::chrono::microseconds>(debugging_now - debugging_last);
 		long long completion_time_us = completion_time.count();
 		std::cout << "\t\tSETTING TIME MS IN: " << completion_time_us << " microseconds" << std::endl;
 		debugging_last = std::chrono::high_resolution_clock::now();
+		return error;
+
+		#else
+
+		return clocking.applyTime_ms(&midiPins);
+
 		#endif
 	}
 

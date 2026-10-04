@@ -751,7 +751,7 @@ public:
     	if (_tempos.empty()) {
 			// In this scenario all the pins ned to be removed or they will be triggered at the same time at 0 ms !
     		midiPins->clear();
-			std::cerr << "[ERROR] No Tempos given" << std::endl;
+			std::cerr << "[ERROR] No Tempos given (BPM)" << std::endl;
 			return 33;
 		}
 

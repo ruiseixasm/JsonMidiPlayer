@@ -88,6 +88,7 @@ Usage: C:\Users\rui\Documents\GitHub\JsonMidiPlayer\build\Release\JsonMidiPlayer
 Options:
   -h, --help       Show this help message and exit
   -l, --loops      The amount of loops the playlist will be played with 1 loop as the default
+  -b, --bpm        Sets a global Tempo to be used instead the one in the playlist file
   -r, --record     Plays with the transport control in record mode
   -f, --fps        Sets the frames per second of the Midi Time Code (MTC) messages (default is 30)
   -v, --verbose    Enable verbose mode

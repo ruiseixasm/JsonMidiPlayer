@@ -15,8 +15,8 @@ https://github.com/ruiseixasm/JsonMidiPlayer
 */
 #include "JsonMidiPlayer_ctypes.hpp"
 
-int play_ctypes(const char* json_str, int loops, int rec_transport, int mtc_fps, int verbose) {
-    return play(json_str, loops, rec_transport, mtc_fps, verbose);
+int play_ctypes(const char* json_str, int loops, int bpm, int rec_transport, int mtc_fps, int verbose) {
+    return play(json_str, loops, bpm, rec_transport, mtc_fps, verbose);
 }
 
 int add_ctypes(int a, int b) {

@@ -54,7 +54,7 @@ void disableBackgroundThrottling();
 void setRealTimeScheduling();
 void highResolutionSleep(long long microseconds);
 
-int play(const char* json_str, int loops = 1, int rec_transport = 0, int mtc_fps = 30, bool verbose = false);
+int play(const char* json_str, int loops = 1, int bpm = 0, int rec_transport = 0, int mtc_fps = 30, bool verbose = false);
 
 
 // Taken from: https://users.cs.cf.ac.uk/Dave.Marshall/Multimedia/node158.html
@@ -932,7 +932,7 @@ public:
 	}
 
 
-	int loadJsonContent(const char* json_str, bool verbose) {
+	int loadJsonContent(const char* json_str, int bpm, bool verbose) {
 
         if (verbose) std::cout << "Devices connected:" << std::endl;;
 
@@ -977,29 +977,35 @@ public:
 			// Load remaining Clocking data
 			if (clocking.getLengthTicks() > 0) {
 
-				// Load the Tempos
-				nlohmann::json jsonFileClocking_tempos = jsonFileClocking.at("tempos");
-				if (jsonFileClocking_tempos.is_array() && !jsonFileClocking_tempos.empty()) {
-					try {
-						for (auto jsonClockingTempo : jsonFileClocking_tempos) {
+				if (bpm > 0) {
+					int16_t bpm_10 = (int16_t)bpm * 10;
+					clocking.addTempo(bpm_10, 0, 1);
 
-							int16_t bpm_10 = jsonClockingTempo["bpm_10"];
-							const auto& pb = jsonClockingTempo.at("position_beats");
-							uint32_t position_beats_num = pb.at(0).get<uint32_t>();
-							uint32_t position_beats_den = pb.at(1).get<uint32_t>();
-							clocking.addTempo(
-								bpm_10, position_beats_num, position_beats_den
-							);
+				} else {
+					// Load the Tempos
+					nlohmann::json jsonFileClocking_tempos = jsonFileClocking.at("tempos");
+					if (jsonFileClocking_tempos.is_array() && !jsonFileClocking_tempos.empty()) {
+						try {
+							for (auto jsonClockingTempo : jsonFileClocking_tempos) {
+
+								int16_t bpm_10 = jsonClockingTempo["bpm_10"];
+								const auto& pb = jsonClockingTempo.at("position_beats");
+								uint32_t position_beats_num = pb.at(0).get<uint32_t>();
+								uint32_t position_beats_den = pb.at(1).get<uint32_t>();
+								clocking.addTempo(
+									bpm_10, position_beats_num, position_beats_den
+								);
+							}
+						} catch (const nlohmann::json::exception& e) {
+							std::cerr << "[ERROR] Loading Tempos, JSON error: " << e.what() << std::endl;
+							return 12;
+						} catch (const std::exception& e) {
+							std::cerr << "[ERROR] Loading Tempos, Error: " << e.what() << std::endl;
+							return 13;
+						} catch (...) {
+							std::cerr << "[ERROR] Loading Tempos, Unknown error occurred" << std::endl;
+							return 14;
 						}
-					} catch (const nlohmann::json::exception& e) {
-						std::cerr << "[ERROR] Loading Tempos, JSON error: " << e.what() << std::endl;
-						return 12;
-					} catch (const std::exception& e) {
-						std::cerr << "[ERROR] Loading Tempos, Error: " << e.what() << std::endl;
-						return 13;
-					} catch (...) {
-						std::cerr << "[ERROR] Loading Tempos, Unknown error occurred" << std::endl;
-						return 14;
 					}
 				}
 
@@ -1227,7 +1233,7 @@ public:
 					return 30;
 				}
 			} else {
-				std::cerr << "[ERROR] Clocking Length is 0" << std::endl;
+				std::cerr << "[ERROR] Entire Playlist length is 0 Beats" << std::endl;
 				return 31;
 			}
         } catch (const nlohmann::json::parse_error& e) {

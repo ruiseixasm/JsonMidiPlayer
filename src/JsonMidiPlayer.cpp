@@ -31,7 +31,7 @@ void setRealTimeScheduling() {
 }
 
 
-int play(const char* json_str, int loops, int rec_transport, int mtc_fps, bool verbose) {
+int play(const char* json_str, int loops, int bpm, int rec_transport, int mtc_fps, bool verbose) {
     
 	#ifdef DEBUGGING
 	std::cout << "\t\tLOOPS:    " << loops << std::endl;
@@ -51,7 +51,7 @@ int play(const char* json_str, int loops, int rec_transport, int mtc_fps, bool v
 	// Data input
 	int read_error = player.readExistingDevices(verbose);
 	if (read_error) return read_error;
-	int load_error = player.loadJsonContent(json_str, verbose);
+	int load_error = player.loadJsonContent(json_str, bpm, verbose);
 	if (load_error) return load_error;
 	// Midi pins processing
 	player.prepareMidiPins();

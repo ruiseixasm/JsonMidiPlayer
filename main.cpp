@@ -38,6 +38,7 @@ void printUsage(const char *programName) {
               << "Options:\n"
               << "  -h, --help       Show this help message and exit\n"
               << "  -l, --loops      The amount of loops the playlist will be played with 1 loop as the default\n"
+              << "  -b, --bpm        Sets a global Tempo to be used instead the one in the playlist file\n"
               << "  -r, --record     Plays with the transport control in record mode\n"
               << "  -f, --fps        Sets the frames per second of the Midi Time Code (MTC) messages (default is 30)\n"
               << "  -v, --verbose    Enable verbose mode\n"
@@ -92,7 +93,7 @@ int main(int argc, char *argv[]) {
                     std::cerr << "[ERROR] Invalid bpm value: " << optarg << std::endl;
                     return 51;
                 }
-                mtc_fps = static_cast<int>(n);
+                bpm = static_cast<int>(n);
                 break;
             }
             case 'r':
@@ -153,5 +154,5 @@ int main(int argc, char *argv[]) {
     // Replace last "," with a "]"
     json_files_list.back() = ']';
 
-    return play(json_files_list.c_str(), loops, record, mtc_fps, verbose);
+    return play(json_files_list.c_str(), loops, bpm, record, mtc_fps, verbose);
 }

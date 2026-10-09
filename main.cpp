@@ -48,6 +48,7 @@ void printUsage(const char *programName) {
 int main(int argc, char *argv[]) {
 
 	int loops = 1;
+	int bpm = 0;
 	int record = 0;
 	int mtc_fps = 30;
     int verbose = 0;
@@ -56,6 +57,7 @@ int main(int argc, char *argv[]) {
     struct option long_options[] = {
         {"help",    no_argument,       nullptr, 'h'},
     	{"loops",   required_argument, nullptr, 'l'},
+    	{"bpm",   	required_argument, nullptr, 'b'},
         {"record", 	no_argument,       nullptr, 'r'},
         {"fps", 	required_argument, nullptr, 'f'},
         {"verbose", no_argument,       nullptr, 'v'},
@@ -64,7 +66,7 @@ int main(int argc, char *argv[]) {
     };
 
     while (true) {
-        int c = getopt_long(argc, argv, "hl:rf:vV", long_options, &option_index);
+        int c = getopt_long(argc, argv, "hl:b:rf:vV", long_options, &option_index);
         if (c == -1) break;
 
         switch (c) {
@@ -77,9 +79,20 @@ int main(int argc, char *argv[]) {
                 long n = std::strtol(optarg, &end, 10);
                 if (errno != 0 || end == optarg || *end != '\0' || n < 0) {
                     std::cerr << "[ERROR] Invalid amount of loops: " << optarg << std::endl;
-                    return 1;
+                    return 50;
                 }
                 loops = static_cast<int>(n);
+                break;
+            }
+            case 'b': {
+                char* end = nullptr;
+                errno = 0;
+                long n = std::strtol(optarg, &end, 10);
+                if (errno != 0 || end == optarg || *end != '\0' || n <= 0) {
+                    std::cerr << "[ERROR] Invalid bpm value: " << optarg << std::endl;
+                    return 51;
+                }
+                mtc_fps = static_cast<int>(n);
                 break;
             }
             case 'r':
@@ -89,9 +102,9 @@ int main(int argc, char *argv[]) {
                 char* end = nullptr;
                 errno = 0;
                 long n = std::strtol(optarg, &end, 10);
-                if (errno != 0 || end == optarg || *end != '\0' || n < 0) {
+                if (errno != 0 || end == optarg || *end != '\0' || n <= 0) {
                     std::cerr << "[ERROR] Invalid amount of fps: " << optarg << std::endl;
-                    return 2;
+                    return 52;
                 }
                 mtc_fps = static_cast<int>(n);
                 break;
@@ -104,7 +117,7 @@ int main(int argc, char *argv[]) {
                 return 0;   // Exit after printing the version
             case '?':
 				std::cerr << "[ERROR] Unknown option" << std::endl;
-				return 3;
+				return 53;
             default:
                 abort();
         }
@@ -113,7 +126,7 @@ int main(int argc, char *argv[]) {
     if (optind + 1 > argc) {    // optind points to the first non-option argument (at least 1 file)
         std::cerr << "[ERROR] Missing input file(s)\n";
         printUsage(argv[0]);
-        return 4;
+        return 54;
     }
 
     int read_files = 0;
@@ -133,7 +146,7 @@ int main(int argc, char *argv[]) {
     }
     if (read_files == 0) {
         std::cerr << "[ERROR] No files read" << std::endl;
-        return 5;
+        return 55;
 	}
     
     std::string json_files_list = json_files_buffer.str();

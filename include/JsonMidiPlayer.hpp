@@ -815,8 +815,7 @@ public:
 		}
 		// Sets the Clocking length time_ms
 		if (_length_ticks <= previous_pin_position_ticks) {
-			_length_ticks = previous_pin_position_ticks;
-			_length_time_ms = pin_time_ms;
+			_length_time_ms = pin_time_ms;	// For `(_length_ticks <= previous_pin_position_ticks)`, the `time_ms` is merely informative and not expansive
 		} else if (_length_ticks > 0) {	// At zero ticks the precise `0.0` value is already given
 			// Picks the right left tempo
 			left_tempo_it = pickLeftTempo_it(left_tempo_it, _length_ticks);
@@ -1454,10 +1453,10 @@ public:
 	void addMtcPins(int mtc_fps = 30) {
 		size_t added_messages = 0;
 
-		const double totalDurationMs = clocking.getLengthTime_ms();
 
-		if (totalDurationMs > 0.0) {
+		if (clocking.getLengthTicks() > 0) {
 
+			const double totalDurationMs = clocking.getLengthTime_ms();
 			double ms_per_quarter_frame = 1000.0 / 120.0;
 			int fps_type = 3;
 			int fps_value = 30;
